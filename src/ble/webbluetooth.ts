@@ -488,6 +488,18 @@
             }.bind(this), wrapReject(reject, "writeValue error"));
         }.bind(this));
     };
+    BluetoothRemoteGATTCharacteristic.prototype.writeValueWithoutResponse  = function(bufferSource) {
+        return new Promise(function(resolve, reject) {
+            if (!this.service.device.gatt.connected) return reject("writeValue error: device not connected");
+
+            var arrayBuffer = bufferSource.buffer || bufferSource;
+            var dataView = new DataView(arrayBuffer);
+            adapter.writeCharacteristic(this._handle, dataView, function() {
+                this.value = dataView;
+                resolve();
+            }.bind(this), wrapReject(reject, "writeValue error"));
+        }.bind(this));
+    };
     BluetoothRemoteGATTCharacteristic.prototype.startNotifications = function() {
         return new Promise(function(resolve, reject) {
             if (!this.service.device.gatt.connected) return reject("startNotifications error: device not connected");

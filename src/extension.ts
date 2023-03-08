@@ -3,27 +3,36 @@
 import { rejects } from 'assert';
 import { resolve } from 'path';
 import * as vscode from 'vscode';
-import { connect } from './bluetooth';
+import { connect,replDataTxQueue } from './bluetooth';
 import { DepNodeProvider, Dependency } from './fileExplorer';
+import ContentProvider, { encodeLocation } from './provider';
 // import {startScan, initializeListners} from './bluetooth';
-
+const util = require('util');
+const encoder = new util.TextEncoder('utf-8');
+import { DeviceFs } from './fileSystemProvider';
 var bluetooth = require('./ble/index').webbluetooth;
 
+export function replHandleResponse(string:string) {
+    writeEmitter.fire(string);
+}
+export const writeEmitter = new vscode.EventEmitter<string>();
 function selectTerminal(): Thenable<vscode.Terminal | undefined> {
-	interface TerminalQuickPickItem extends vscode.QuickPickItem {
-		terminal: vscode.Terminal;
-	}
-	let terminals = <vscode.Terminal[]>(<any>vscode.window).terminals;
-	if(terminals.length===0){
-		vscode.window.createTerminal({
-			name: `Monocle`
-		} as any);
-	  terminals = <vscode.Terminal[]>(<any>vscode.window).terminals;
+	
+	const pty = {
+		onDidWrite: writeEmitter.event,
+		open: () => writeEmitter.fire('Monocle \r\n'),
+		close: () => { /* noop*/ },
+		handleInput: (data: string) => {
+			
+    		replDataTxQueue.push.apply(replDataTxQueue, encoder.encode(data));
 
-	}
-
+		}
+	};
+	const terminal = vscode.window.createTerminal({ name: `REPL`, pty });
+	
 	return new Promise((resolve,reject)=>{
-		resolve(terminals[0]);
+		terminal.show();
+		resolve(terminal);
 	});
 	// return vscode.window.showQuickPick(items).then(item => {
 	// 	return item ? item.terminal : undefined;
@@ -33,48 +42,110 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	
-	// initializeListners();
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "brilliant-ar-studio" is now active!');
-	
+	const provider = new ContentProvider();
+
+	const myscheme = "monocle";
+	// register content provider for scheme `references`
+	// register document link provider for scheme `references`
 	const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
 	? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
-
+	const memFs = new DeviceFs();
 	// Samples of `window.registerTreeDataProvider`
 	const nodeDependenciesProvider = new DepNodeProvider(rootPath);
-	vscode.window.registerTreeDataProvider('deviceFiles', nodeDependenciesProvider);
-	vscode.commands.registerCommand('deviceFiles.refreshEntry', () => nodeDependenciesProvider.refresh());
-	vscode.commands.registerCommand('extension.openPackageOnNpm', moduleName => vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(`https://www.npmjs.com/package/${moduleName}`)));
+	console.log('Congratulations, your extension "brilliant-ar-studio" is now active!');
+
+	// vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse(myscheme+':/'), name: myscheme });
+	const alldisposables = vscode.Disposable.from(
+	vscode.workspace.registerTextDocumentContentProvider(myscheme, provider),
+	vscode.workspace.registerFileSystemProvider(myscheme, memFs, { isCaseSensitive: true }),
+	
+	
+	vscode.window.registerTreeDataProvider('deviceFiles', nodeDependenciesProvider),
+	vscode.commands.registerCommand('deviceFiles.refreshEntry', () => nodeDependenciesProvider.refresh()),
+	
+	vscode.commands.registerCommand('deviceFiles.editEntry', async (context) => {
+		// console.log(context);
+		const uri = vscode.Uri.parse(`${myscheme}:/file.txt`);
+		const doc = await vscode.workspace.openTextDocument(uri); // calls back into the provider
+		await vscode.window.showTextDocument(doc, { preview: false });
+	}),
+	
 	vscode.window.createTreeView('deviceFiles', {
 		treeDataProvider: new DepNodeProvider(rootPath)
-	  });
+	  }),
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('brilliant-ar-studio.helloWorld', () => {
+	vscode.commands.registerCommand('brilliant-ar-studio.helloWorld', () => {
 		// The code you place here will be executed every time your command is executed
 		// Display a message box to the user
 		
 		vscode.window.showInformationMessage('Hello World from Brilliant AR Studio!');
-	});
+	}),
 	
-	let disposable2 = vscode.commands.registerCommand('brilliant-ar-studio.connect', async () => {
+	 vscode.commands.registerCommand('brilliant-ar-studio.connect', async () => {
 		// The code you place here will be executed every time your command is executed
 		// Display a message box to the user
+		selectTerminal().then(terminal => {
+			connect(bluetooth).then(msg=>{
+			
+			}).catch(console.log);
+		});
 		
-		connect(bluetooth).then(msg=>{
-			selectTerminal().then(terminal => {
-				if (terminal) {
-					// terminal.sendText(msg);
-				}
-			});
-		}).catch(console.log);
-	});
+	}),
+	);
+	// context.subscriptions.push(disposable);
+	// context.subscriptions.push(commandRegistration);
+	context.subscriptions.push(alldisposables);
+	// context.subscriptions.push(disposable2);
+	let initialized = false;
+
+	context.subscriptions.push(vscode.commands.registerCommand('memfs.reset', _ => {
+		for (const [name] of memFs.readDirectory(vscode.Uri.parse('memfs:/'))) {
+			// memFs.delete(vscode.Uri.parse(`${myscheme}:/${name}`));
+		}
+		initialized = false;
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('deviceFiles.addFile', async _ => {
 	
-	context.subscriptions.push(disposable);
-	context.subscriptions.push(disposable2);
+		if (!initialized) {
+			vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length:0, null, { uri: vscode.Uri.parse(myscheme+':/'), name: myscheme });
+			
+		}
+		initialized =true;
+		const uri = vscode.Uri.parse(`${myscheme}:/file.py`);
+			memFs.writeFile(uri, Buffer.from('import base64, sys; base64.decode(open(sys.argv[1], "rb"), open(sys.argv[2], "wb"))'), { create: true, overwrite: true });
+		
+			const doc = await vscode.workspace.openTextDocument(uri); // calls back into the provider
+		await vscode.window.showTextDocument(doc, { preview: false });
+		
+
+		// const doc = await vscode.workspace.openTextDocument(uri); // calls back into the provider
+		// await vscode.window.showTextDocument(doc, { preview: false });
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('memfs.deleteFile', _ => {
+		if (initialized) {
+			memFs.delete(vscode.Uri.parse(`${myscheme}:/file.txt`));
+		}
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('memfs.init', _ => {
+		if (initialized) {
+			return;
+		}
+		initialized = true;
+		// most common files types
+		memFs.writeFile(vscode.Uri.parse(`memfs:/file.txt`), Buffer.from('foo'), { create: true, overwrite: true });
+
+
+		memFs.writeFile(vscode.Uri.parse(`memfs:/folder/empty.txt`), new Uint8Array(0), { create: true, overwrite: true });
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('memfs.workspaceInit', _ => {
+		vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse('memfs:/'), name: "MemFS - Sample" });
+	}));
 }
 
 // This method is called when your extension is deactivated

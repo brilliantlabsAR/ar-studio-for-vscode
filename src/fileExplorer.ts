@@ -66,7 +66,14 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 		// 		: [];
 		// 	return deps.concat(devDeps);
 		// } else {
-			return [new Dependency("main.py", "", vscode.TreeItemCollapsibleState.Collapsed),new Dependency("test.py", "", vscode.TreeItemCollapsibleState.Collapsed)];
+			return [new Dependency("main.py",  vscode.TreeItemCollapsibleState.None, 
+							// {
+							// 	command: 'extension.openPackageOnNpm',
+							// 	title: '',
+							// 	arguments: [moduleName]
+							// }
+							),
+					new Dependency("test.py", vscode.TreeItemCollapsibleState.None)];
 		// }
 	}
 
@@ -85,19 +92,18 @@ export class Dependency extends vscode.TreeItem {
 
 	constructor(
 		public readonly label: string,
-		private readonly version: string,
 		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
 		public readonly command?: vscode.Command
 	) {
 		super(label, collapsibleState);
 
-		this.tooltip = `${this.label}-${this.version}`;
-		this.description = this.version;
+		this.tooltip = this.label;
+		// this.description =  this.label;
 	}
 
 	// iconPath = {
-	// 	light: path.join(__filename, '..', '..', 'resources', 'light', 'dependency.svg'),
-	// 	dark: path.join(__filename, '..', '..', 'resources', 'dark', 'dependency.svg')
+	// 	light: path.join(__filename, '..', '..', 'media', 'bulb.svg'),
+	// 	dark: path.join(__filename, '..', '..', 'media',  'bulb.svg')
 	// };
 
 	contextValue = 'dependency';

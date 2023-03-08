@@ -1,5 +1,5 @@
 import { receiveRawData, onDisconnect } from "./main";
-import { replHandleResponse } from "./repl";
+import { replHandleResponse } from "./extension";
 // import { nordicDfuHandleControlResponse } from './nordicdfu.js'
 var util = require('util');
 let device:any = null;
@@ -127,7 +127,7 @@ export async function disconnect() {
 // }
 
 function receiveReplData(event:any) {
-    console.log(event);
+    // console.log(event);
     // Decode the byte array into a UTF-8 string
     const decoder = new util.TextDecoder('utf-8');
 
