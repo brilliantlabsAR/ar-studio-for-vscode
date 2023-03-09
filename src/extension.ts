@@ -3,7 +3,7 @@
 import { rejects } from 'assert';
 import { resolve } from 'path';
 import * as vscode from 'vscode';
-import { connect,replDataTxQueue } from './bluetooth';
+import { connect,replDataTxQueue,isConnected,disconnect } from './bluetooth';
 import { DepNodeProvider, Dependency } from './fileExplorer';
 import ContentProvider, { encodeLocation } from './provider';
 // import {startScan, initializeListners} from './bluetooth';
@@ -11,13 +11,26 @@ const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
 import { DeviceFs } from './fileSystemProvider';
 var bluetooth = require('./ble/index').webbluetooth;
+let statusBarItemBle:vscode.StatusBarItem;
 
 export function replHandleResponse(string:string) {
     writeEmitter.fire(string);
 }
+
+export function onDisconnect() {
+    updateStatusBarItem("disconnected");
+	writeEmitter.fire("Disconnected");
+}
 export const writeEmitter = new vscode.EventEmitter<string>();
+
 function selectTerminal(): Thenable<vscode.Terminal | undefined> {
-	
+	let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
+	if(allTerminals.length>0){
+	return new Promise((resolve,reject)=>{
+		allTerminals[0].show();
+		resolve(allTerminals[0]);
+	});
+	}
 	const pty = {
 		onDidWrite: writeEmitter.event,
 		open: () => writeEmitter.fire('Monocle \r\n'),
@@ -47,6 +60,10 @@ export function activate(context: vscode.ExtensionContext) {
 	const myscheme = "monocle";
 	// register content provider for scheme `references`
 	// register document link provider for scheme `references`
+	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+	statusBarItemBle.command = "brilliant-ar-studio.connect";
+	statusBarItemBle.show();
+	updateStatusBarItem("disconnected");
 	const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
 	? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
 	const memFs = new DeviceFs();
@@ -86,11 +103,23 @@ export function activate(context: vscode.ExtensionContext) {
 	 vscode.commands.registerCommand('brilliant-ar-studio.connect', async () => {
 		// The code you place here will be executed every time your command is executed
 		// Display a message box to the user
-		selectTerminal().then(terminal => {
-			connect(bluetooth).then(msg=>{
-			
-			}).catch(console.log);
-		});
+		if(!isConnected()){
+			updateStatusBarItem("progress");
+			selectTerminal().then(terminal => {
+				connect(bluetooth).then(msg=>{
+					writeEmitter.fire("Connected\r\n");
+					updateStatusBarItem("connected");
+					vscode.window.showInformationMessage("Monocle Connected");
+				}).catch(err=>{
+					updateStatusBarItem("Disconnected");
+					vscode.window.showErrorMessage(err);
+				});
+			});
+		}else{
+			disconnect();
+			vscode.window.showWarningMessage("Monocle Disconnected");
+		}
+		
 		
 	}),
 	);
@@ -146,6 +175,30 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('memfs.workspaceInit', _ => {
 		vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse('memfs:/'), name: "MemFS - Sample" });
 	}));
+	context.subscriptions.push(statusBarItemBle);
+}
+
+function updateStatusBarItem(status:string,msg:string="Monocle",): void {
+
+	statusBarItemBle.text = `${msg}`;
+	let bgColorWarning = new vscode.ThemeColor('statusBarItem.warningBackground');
+	let bgColorError = new vscode.ThemeColor('statusBarItem.errorBackground');
+	if(status==="connected"){
+		// statusBarItemBle.color = "#13f81a";
+		statusBarItemBle.tooltip = "Connected";
+		statusBarItemBle.backgroundColor = "";
+		statusBarItemBle.text = msg;
+	}else if(status==="progress"){
+		statusBarItemBle.text = "$(sync~spin) "+msg;
+		statusBarItemBle.backgroundColor = bgColorWarning;
+		statusBarItemBle.tooltip = "Connecting";
+	}else{
+		statusBarItemBle.tooltip = "Disconncted";
+		// statusBarItemBle.color = "#D90404";
+		statusBarItemBle.backgroundColor =  bgColorError
+		statusBarItemBle.text = "$(debug-disconnect) "+msg;
+	}
+	statusBarItemBle.show();
 }
 
 // This method is called when your extension is deactivated

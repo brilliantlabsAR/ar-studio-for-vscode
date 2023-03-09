@@ -1,5 +1,5 @@
-import { receiveRawData, onDisconnect } from "./main";
-import { replHandleResponse } from "./extension";
+import { receiveRawData } from "./main";
+import { replHandleResponse,onDisconnect } from "./extension";
 // import { nordicDfuHandleControlResponse } from './nordicdfu.js'
 var util = require('util');
 let device:any = null;
