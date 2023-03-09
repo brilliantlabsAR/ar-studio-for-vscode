@@ -31,82 +31,83 @@
         "command": "deviceFiles.refreshEntry",
         "title": "Refresh",
         "icon": "$(refresh)"
-    },
-    {
-      "command": "deviceFiles.addFile",
-      "title": "Edit",
-      "icon": "$(new-file)"
-  },
-    {
-      "command": "deviceFiles.editEntry",
-      "title": "Edit",
-      "icon": {
-        "light": "media/bulb.svg",
-        "dark": "media/bulb.svg"
-      }
-    },
+      },
+      {
+        "command": "deviceFiles.addFile",
+        "title": "Edit",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "deviceFiles.editEntry",
+        "title": "Edit",
+        "icon": {
+          "light": "media/bulb.svg",
+          "dark": "media/bulb.svg"
+        }
+      },
       {
         "command": "brilliant-ar-studio.connect",
         "title": "Connect"
       },
-        {
-          "command": "memfs.workspaceInit",
-          "title": "Setup Workspace",
-          "category": "MemFS"
-        },
-        {
-          "command": "memfs.init",
-          "title": "Create Files",
-          "category": "MemFS"
-        },
-        {
-          "command": "memfs.reset",
-          "title": "Delete Files",
-          "category": "MemFS"
-        },
-        {
-          "command": "memfs.deleteFile",
-          "title": "Delete \"file.txt\"",
-          "category": "MemFS"
-        },
-        {
-          "command": "memfs.addFile",
-          "title": "Add \"file.txt\"",
-          "category": "MemFS"
-        }
+      {
+        "command": "memfs.workspaceInit",
+        "title": "Setup Workspace",
+        "category": "MemFS"
+      },
+      {
+        "command": "memfs.init",
+        "title": "Create Files",
+        "category": "MemFS"
+      },
+      {
+        "command": "memfs.reset",
+        "title": "Delete Files",
+        "category": "MemFS"
+      },
+      {
+        "command": "memfs.deleteFile",
+        "title": "Delete \"file.txt\"",
+        "category": "MemFS"
+      },
+      {
+        "command": "memfs.addFile",
+        "title": "Add \"file.txt\"",
+        "category": "MemFS"
+      }
     ],
     "menus": {
       "commandPalette": [
-				{
-					"command": "memfs.init",
-					"when": "workbenchState == workspace"
-				},
-				{
-					"command": "memfs.reset",
-					"when": "workbenchState == workspace"
-				},
-				{
-					"command": "memfs.deleteFile",
-					"when": "workbenchState == workspace"
-				},
-				{
-					"command": "memfs.addFile",
-					"when": "workbenchState == workspace"
-				},
-				{
-					"command": "memfs.workspaceInit",
-					"when": "workbenchState != workspace"
-				}],
+        {
+          "command": "memfs.init",
+          "when": "workbenchState == workspace"
+        },
+        {
+          "command": "memfs.reset",
+          "when": "workbenchState == workspace"
+        },
+        {
+          "command": "memfs.deleteFile",
+          "when": "workbenchState == workspace"
+        },
+        {
+          "command": "memfs.addFile",
+          "when": "workbenchState == workspace"
+        },
+        {
+          "command": "memfs.workspaceInit",
+          "when": "workbenchState != workspace"
+        }
+      ],
       "view/title": [
-          {
-              "command": "deviceFiles.refreshEntry",
-              "when": "view == deviceFiles",
-              "group": "navigation"
-          },
-          {
-            "command": "deviceFiles.addFile",
-            "when": "view == deviceFiles",
-            "group": "navigation"
+        {
+          "command": "deviceFiles.refreshEntry",
+          "when": "view == deviceFiles",
+          "group": "navigation"
+        },
+        {
+          "command": "deviceFiles.addFile",
+          "when": "view == deviceFiles",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -116,7 +117,7 @@
           "group": "inline"
         }
       ]
-  }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -140,6 +141,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
+    "@s524797336/noble-mac": "^0.1.2",
     "noble-winrt": "^0.1.1"
   }
 }

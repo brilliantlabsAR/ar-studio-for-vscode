@@ -29,13 +29,37 @@
 
 // https://github.com/umdjs/umd
 (function (root, factory) {
+    const os = require('node:os');
+    let platform = os.platform();
+    let nobleble = "noble";
+    switch(platform) {
+        case 'aix': 
+            break;
+        case 'android': 
+            break;
+        case 'darwin': 
+        nobleble = "noble-mac";
+            break;
+        case 'freebsd':
+            break;
+        case 'linux':
+            break;
+        case 'openbsd': 
+            break;
+        case 'sunos':
+            break;
+        case 'win32':
+        nobleble = "noble-winrt";
+            break;    
+        default: console.log("unknown platform");
+    }
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
         define(['noble', 'bleat', './helpers'], factory);
     } else if (typeof exports === 'object') {
         // Node. Does not work with strict CommonJS
         module.exports = function(bleat) {
-            return factory(require('noble-winrt'), bleat, require('./helpers'));
+            return factory(require(nobleble), bleat, require('./helpers'));
         };
     } else {
         // Browser globals with support for web workers (root is window)

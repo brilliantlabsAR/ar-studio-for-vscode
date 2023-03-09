@@ -19,7 +19,7 @@ export function replHandleResponse(string:string) {
 
 export function onDisconnect() {
     updateStatusBarItem("disconnected");
-	writeEmitter.fire("Disconnected");
+	writeEmitter.fire("Disconnected \r\n");
 }
 export const writeEmitter = new vscode.EventEmitter<string>();
 
