@@ -12,13 +12,27 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "views": {
-      "explorer": [
+    "viewsContainers": {
+      "activitybar": [
         {
-          "id": "deviceFiles",
-          "name": "Monocle Files",
-          "icon": "media/bulb.svg",
-          "contextualTitle": "Package Explorer"
+          "id": "brilliantsar",
+          "title": "Brilliant AR",
+          "icon": "media/bulb.svg"
+        }
+      ]
+    },
+    "views": {
+     
+      "brilliantsar":[
+        {
+          "id" : "templates",
+          "name": "Templates",
+          "icon": "media/bulb.svg"
+        },
+        {
+          "id" : "projects",
+          "name": "Projects",
+          "icon": "media/bulb.svg"
         }
       ]
     },
@@ -26,24 +40,6 @@
       {
         "command": "brilliant-ar-studio.helloWorld",
         "title": "Hello World"
-      },
-      {
-        "command": "deviceFiles.refreshEntry",
-        "title": "Refresh",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "deviceFiles.addFile",
-        "title": "Edit",
-        "icon": "$(new-file)"
-      },
-      {
-        "command": "deviceFiles.editEntry",
-        "title": "Edit",
-        "icon": {
-          "light": "media/bulb.svg",
-          "dark": "media/bulb.svg"
-        }
       },
       {
         "command": "brilliant-ar-studio.connect",
@@ -97,25 +93,6 @@
           "command": "memfs.workspaceInit",
           "when": "workbenchState != workspace"
         }
-      ],
-      "view/title": [
-        {
-          "command": "deviceFiles.refreshEntry",
-          "when": "view == deviceFiles",
-          "group": "navigation"
-        },
-        {
-          "command": "deviceFiles.addFile",
-          "when": "view == deviceFiles",
-          "group": "navigation"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "deviceFiles.editEntry",
-          "when": "view == deviceFiles && viewItem == dependency",
-          "group": "inline"
-        }
       ]
     }
   },
@@ -141,7 +118,8 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@s524797336/noble-mac": "^0.1.2",
+    "@octokit/request": "^6.2.3",
+    "jszip": "^3.10.1",
     "noble-winrt": "^0.1.1"
   }
 }

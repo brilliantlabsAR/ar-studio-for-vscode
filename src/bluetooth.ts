@@ -1,8 +1,9 @@
-import { receiveRawData } from "./main";
-import { replHandleResponse,onDisconnect } from "./extension";
-// import { nordicDfuHandleControlResponse } from './nordicdfu.js'
+import { receiveRawData } from "./repl";
+import { replHandleResponse,onDisconnect } from "./repl";
+import { nordicDfuHandleControlResponse } from './nordicdfu.js';
 var util = require('util');
 let device:any = null;
+var bluetooth = require('./ble/index').webbluetooth;
 
 let nordicDfuControlCharacteristic:any = null;
 let nordicDfuPacketCharacteristic:any = null;
@@ -41,7 +42,7 @@ export function isConnected() {
     return false;
 }
 
-export async function connect(bluetooth:any) {
+export async function connect() {
 
     if (!bluetooth) {
         return Promise.reject("This browser doesn't support WebBluetooth. " +
@@ -75,11 +76,11 @@ export async function connect(bluetooth:any) {
         .catch(() => { });
 
     if (nordicDfuService) {
-        // nordicDfuControlCharacteristic = await nordicDfuService.getCharacteristic(nordicDfuControlCharacteristicUUID);
-        // nordicDfuPacketCharacteristic = await nordicDfuService.getCharacteristic(nordicDfuPacketCharacteristicUUID);
-        // await nordicDfuControlCharacteristic.startNotifications();
-        // nordicDfuControlCharacteristic.addEventListener('characteristicvaluechanged', receiveNordicDfuControlData);
-        // return Promise.resolve("dfu connected");
+        nordicDfuControlCharacteristic = await nordicDfuService.getCharacteristic(nordicDfuControlCharacteristicUUID);
+        nordicDfuPacketCharacteristic = await nordicDfuService.getCharacteristic(nordicDfuPacketCharacteristicUUID);
+        await nordicDfuControlCharacteristic.startNotifications();
+        nordicDfuControlCharacteristic.addEventListener('characteristicvaluechanged', receiveNordicDfuControlData);
+        return Promise.resolve("dfu connected");
     }
 
     if (replService) {
@@ -114,17 +115,17 @@ export async function disconnect() {
     onDisconnect();
 }
 
-// function receiveNordicDfuControlData(event) {
-//     nordicDfuHandleControlResponse(event.target.value);
-// }
+function receiveNordicDfuControlData(event:any) {
+    nordicDfuHandleControlResponse(event.target.value);
+}
 
-// export async function transmitNordicDfuControlData(bytes) {
-//     await nordicDfuControlCharacteristic.writeValue(new Uint8Array(bytes));
-// }
+export async function transmitNordicDfuControlData(bytes:any) {
+    await nordicDfuControlCharacteristic.writeValue(new Uint8Array(bytes));
+}
 
-// export async function transmitNordicDfuPacketData(bytes) {
-//     await nordicDfuPacketCharacteristic.writeValueWithoutResponse(new Uint8Array(bytes));
-// }
+export async function transmitNordicDfuPacketData(bytes:any) {
+    await nordicDfuPacketCharacteristic.writeValueWithoutResponse(new Uint8Array(bytes));
+}
 
 function receiveReplData(event:any) {
     // console.log(event);
@@ -157,7 +158,7 @@ async function transmitReplData() {
 
         .catch((error:any) => {
 
-            if (error == "NetworkError: GATT operation already in progress.") {
+            if (error === "NetworkError: GATT operation already in progress.") {
                 // Ignore busy errors. Just wait and try again later
             }
             else {
