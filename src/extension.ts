@@ -4,7 +4,7 @@
 import * as vscode from 'vscode';
 import { isConnected,disconnect } from './bluetooth';
 import {ensureConnected,replSend,sendFileUpdate} from './repl';
-
+import { DepNodeProvider } from './snippets/provider';
 const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
 import { DeviceFs } from './fileSystemProvider';
@@ -59,6 +59,10 @@ export function activate(context: vscode.ExtensionContext) {
 	// register content provider for scheme `references`
 	// register document link provider for scheme `references`
 	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+	const nodeDependenciesProvider = new DepNodeProvider("rootPath");
+
+	vscode.window.registerTreeDataProvider('snippetTemplates', nodeDependenciesProvider);
+
 	statusBarItemBle.command = "brilliant-ar-studio.connect";
 	let initializedWorkSpace = false;
 	statusBarItemBle.show();
@@ -98,9 +102,10 @@ export function activate(context: vscode.ExtensionContext) {
 	// 	await vscode.window.showTextDocument(doc, { preview: false });
 	// }),
 	
-	// vscode.window.createTreeView('deviceFiles', {
-	// 	treeDataProvider: new DepNodeProvider(rootPath)
-	//   }),
+	vscode.window.createTreeView('snippetTemplates', {
+		treeDataProvider: new DepNodeProvider(rootPath),
+		dragAndDropController: new DepNodeProvider(rootPath)
+	  }),
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json

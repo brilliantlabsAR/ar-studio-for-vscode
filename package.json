@@ -25,7 +25,7 @@
      
       "brilliantsar":[
         {
-          "id" : "templates",
+          "id" : "snippetTemplates",
           "name": "Templates",
           "icon": "media/bulb.svg"
         },
@@ -94,7 +94,13 @@
           "when": "workbenchState != workspace"
         }
       ]
-    }
+    },
+    "snippets": [
+      {
+        "language": "python",
+        "path": "./snippets/display.json"
+      }
+  ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

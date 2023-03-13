@@ -162,7 +162,7 @@ export async function sendFileUpdate(update:any){
     await replRawMode(true);
     let response:any = await replSend(decoder.decode(update));
     // replDataTxQueue.push.apply(replDataTxQueue,update);
-    if(response!==null){
+    if(response!==null && typeof(response)!=='undefined'){
         let textToEcho =response.slice(response.indexOf('OK')+2,response.indexOf('>'));
         if(typeof textToEcho!=='undefined' || textToEcho!==null){
             writeEmitter.fire("\r\n"+textToEcho);
