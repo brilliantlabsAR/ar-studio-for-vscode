@@ -22,15 +22,14 @@
       ]
     },
     "views": {
-     
-      "brilliantsar":[
+      "brilliantsar": [
         {
-          "id" : "snippetTemplates",
+          "id": "snippetTemplates",
           "name": "Templates",
           "icon": "media/bulb.svg"
         },
         {
-          "id" : "projects",
+          "id": "projects",
           "name": "Projects",
           "icon": "media/bulb.svg"
         }
@@ -100,7 +99,7 @@
         "language": "python",
         "path": "./snippets/display.json"
       }
-  ]
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
