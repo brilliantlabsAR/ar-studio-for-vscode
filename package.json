@@ -9,7 +9,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -22,17 +24,26 @@
       ]
     },
     "views": {
-     
-      "brilliantsar":[
+      "brilliantsar": [
         {
-          "id" : "snippetTemplates",
+          "id": "snippetTemplates",
           "name": "Templates",
           "icon": "media/bulb.svg"
         },
+       
         {
-          "id" : "projects",
+          "id": "projects",
           "name": "Projects",
           "icon": "media/bulb.svg"
+        }
+      ],
+      "explorer": [
+        {
+          "id": "fileExplorer",
+          "name": "Device Files",
+          "icon": "media/bulb.svg",
+          "when": "monocle.deviceConnected"
+          
         }
       ]
     },
@@ -40,6 +51,14 @@
       {
         "command": "brilliant-ar-studio.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "fileExplorer.openFile",
+        "title": "openFile"
+      },
+      {
+        "command": "brilliant-ar-studio.selectWorkspace",
+        "title": "Select Workspace"
       },
       {
         "command": "brilliant-ar-studio.connect",
@@ -69,6 +88,36 @@
         "command": "memfs.addFile",
         "title": "Add \"file.txt\"",
         "category": "MemFS"
+      },
+      {
+        "command": "brilliant-ar-studio.runFile",
+        "title": "Run in Device",
+        "icon": "$(play-circle)"
+      },
+      {
+        "command": "brilliant-ar-studio.refreshDeviceFiles",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "brilliant-ar-studio.syncFiles",
+        "title": "Start Developer Mode (continuous file sync)",
+        "icon": "$(code)"
+      },
+      {
+        "command": "brilliant-ar-studio.deleteDeviceFile",
+        "title": "Delete file from device",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "brilliant-ar-studio.syncStop",
+        "title": "Stop Developer Mode",
+        "icon": "$(stop)"
+      },
+      {
+        "command": "brilliant-ar-studio.fpgaUpdate",
+        "title": "FPGA Update",
+        "icon": "$(cloud)"
       }
     ],
     "menus": {
@@ -93,14 +142,63 @@
           "command": "memfs.workspaceInit",
           "when": "workbenchState != workspace"
         }
+      ],
+      "view/title": [
+				
+        {
+					"command": "brilliant-ar-studio.refreshDeviceFiles",
+					"when": "view == fileExplorer",
+					"group": "navigation@0"
+				},
+        {
+					"command": "brilliant-ar-studio.syncFiles",
+					"when": "view == fileExplorer && !monocle.sync",
+					"group": "navigation@1"
+				},
+        {
+					"command": "brilliant-ar-studio.syncStop",
+					"when": "view == fileExplorer && monocle.sync",
+					"group": "navigation@1"
+				},
+        {
+					"command": "brilliant-ar-studio.fpgaUpdate",
+					"when": "view == fileExplorer",
+					"group": "navigation@2"
+				}
+      ],
+      "view/item/context": [
+        {
+					"command": "brilliant-ar-studio.deleteDeviceFile",
+					"when": "view == fileExplorer",
+					"group": "inline"
+				}
+      ],
+      "editor/title": [
+        {
+          "when": "resourceLangId == python && monocle.deviceConnected",
+          "command": "brilliant-ar-studio.runFile",
+          "group": "navigation"
+        }
       ]
     },
     "snippets": [
       {
         "language": "python",
         "path": "./snippets/display.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/loops.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/camera.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/logic.json"
       }
-  ]
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

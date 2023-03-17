@@ -1,6 +1,6 @@
 import { isConnected, replDataTxQueue,connect,disconnect } from './bluetooth';
-import { checkForUpdates, startFirmwareUpdate, startFPGAUpdate } from "./update";
-import { writeEmitter,updateStatusBarItem } from './extension';
+import { checkForUpdates, startFirmwareUpdate, startFpgaUpdate } from "./update";
+import { writeEmitter,updateStatusBarItem,outputChannel } from './extension';
 import { startNordicDFU } from './nordicdfu'; 
 import * as vscode from 'vscode';
 let util = require('util');
@@ -9,16 +9,17 @@ let replRawModeEnabled = false;
 let rawReplResponseString = '';
 let rawReplResponseCallback:any;
 let fileWriteStart = false;
+
 export async function replRawMode(enable:boolean) {
 
     if (enable === true) {
         replRawModeEnabled = true;
-        // console.log("Entering raw REPL mode");
+        outputChannel.appendLine("Entering raw REPL mode");
         await replSend('\x03\x01');
         return;
     }
 
-    // console.log("Leaving raw REPL mode");
+     outputChannel.appendLine("Leaving raw REPL mode");
     replRawModeEnabled = false;
     await replSend('\x02');
 
@@ -39,6 +40,14 @@ export async function replSend(string:string) {
         if (/[\x20-\x7F]/.test(string)) {
             string += '\x04';
         }
+        
+        outputChannel.appendLine('Raw REPL ⬆️: ' +
+        string
+            .replaceAll('\n', '\\n')
+            .replaceAll('\x01', '\\x01')
+            .replaceAll('\x02', '\\x02')
+            .replaceAll('\x03', '\\x03')
+            .replaceAll('\x04', '\\x04'));
 
     }
 
@@ -50,7 +59,7 @@ export async function replSend(string:string) {
     // response handler calls the function associated with rawReplResponseCallback
     return new Promise(resolve => {
         rawReplResponseCallback = function (responseString:string) {
-            // console.log('Raw REPL ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'))
+            outputChannel.appendLine('Raw REPL ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'))
             resolve(responseString);
         };
         setTimeout(() => {
@@ -89,17 +98,17 @@ export async function ensureConnected() {
         if (connectionResult === "repl connected") {
             // infoText.innerHTML = "Connected";
             // replResetConsole();
-        
+            vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', true);
                 // writeEmitter.fire("Connected\r\n");
                 updateStatusBarItem("connected");
-
-            
-            let updateInfo = await checkForUpdates();
             let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
             if(allTerminals.length>0){
                 allTerminals[0].show();
                 vscode.commands.executeCommand('workbench.action.terminal.clear');
             }
+            
+            let updateInfo = await checkForUpdates();
+            
             if(!initializedWorkspace){
                 // setupWorkSpace();
                 // initializedWorkspace = true;
@@ -174,6 +183,7 @@ export async function sendFileUpdate(update:any){
   
 }
 export function onDisconnect() {
+    vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', false);
     updateStatusBarItem("disconnected");
 	writeEmitter.fire("Disconnected \r\n");
 }
@@ -184,5 +194,11 @@ export function reportUpdatePercentage(perc:any){
 }
 export function receiveRawData(data:any){
     console.log(data);
+}
+
+export async function triggerFpgaUpdate(){
+    updateStatusBarItem("connected","$(cloud-download) Updating");
+    await startFpgaUpdate();
+    updateStatusBarItem("connected");
 }
 

@@ -2,11 +2,11 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import {snippets} from './snippets';
+import {snippets} from '.';
 export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode.TreeDragAndDropController<Snippet> {
 
     dropMimeTypes = [];
-	dragMimeTypes = ['application/vnd.code.tree.depNodeProvider'];
+	dragMimeTypes = ['application/vnd.code.tree.snippettemplates'];
 	private _onDidChangeTreeData: vscode.EventEmitter<Snippet | undefined | void> = new vscode.EventEmitter<Snippet | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<Snippet | undefined | void> = this._onDidChangeTreeData.event;
 
@@ -16,7 +16,8 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
 
     //  for drag 
     public async handleDrag(source: Snippet[], treeDataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): Promise<void> {
-		treeDataTransfer.set('application/vnd.code.tree.depNodeProvider', new vscode.DataTransferItem(source));
+		treeDataTransfer.set('application/vnd.code.tree.snippettemplates', new vscode.DataTransferItem(source[0].label));
+		return ;
 	}
 
     // public async handleDrop(target: any | undefined, sources: vscode.DataTransfer, token: vscode.CancellationToken): Promise<void> {
@@ -44,7 +45,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
 		return element;
 	}
 
-
+	
 	getChildren(element?: Snippet): Thenable<Snippet[]> {
         // return Promise.resolve(categories);
 		if (element) {
@@ -128,7 +129,7 @@ export class Snippet extends vscode.TreeItem {
 		public readonly command?: vscode.Command
 	) {
 		super(label, collapsibleState);
-
+		this.id = "snippet_"+label;
 		this.tooltip = `${this.description}`;
 		this.description = this.description;
 	}
