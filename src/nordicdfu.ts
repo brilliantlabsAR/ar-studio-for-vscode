@@ -1,30 +1,30 @@
 // Details on how this works: 
 // https://infocenter.nordicsemi.com/topic/sdk_nrf5_v17.1.0/lib_dfu_transport_ble.html
 
-import { transmitNordicDfuControlData, transmitNordicDfuPacketData } from "./bluetooth"
+import { transmitNordicDfuControlData, transmitNordicDfuPacketData } from "./bluetooth";
+import { outputChannel } from "./extension";
 import { gitInfo } from "./update";
 import { reportUpdatePercentage } from "./repl";
 import { request } from "@octokit/request";
-import * as https from "https";
 let JSZIP = require("jszip");
 let fetch = require('node-fetch');
 let controlResponseCallback:any;
 
 export async function startNordicDFU() {
 
-    // console.log('Entering nRF52 DFU');
+    outputChannel.appendLine('Entering nRF52 DFU');
 
     let files:any = await obtainFiles();
 
     await transferFile(files.dat, 'init');
     await transferFile(files.bin, 'image');
 
-    // console.log('Leaving nRF52 DFU');
+    outputChannel.appendLine('Leaving nRF52 DFU');
 }
 
 export async function nordicDfuSendControl(bytes:any) {
 
-    // console.log('DFU control ⬆️: ' + bytes);
+    outputChannel.appendLine('DFU control ⬆️: ' + bytes);
 
     transmitNordicDfuControlData(bytes);
 
@@ -32,7 +32,7 @@ export async function nordicDfuSendControl(bytes:any) {
     // response handler calls the function associated with controlResponseCallback
     return new Promise(resolve => {
         controlResponseCallback = function (responseBytes:Uint8Array) {
-            // console.log('DFU control ⬇️: ' + new Uint8Array(responseBytes.buffer));
+            outputChannel.appendLine('DFU control ⬇️: ' + new Uint8Array(responseBytes.buffer));
             resolve(responseBytes);
         };
         setTimeout(() => {
@@ -47,7 +47,7 @@ export function nordicDfuHandleControlResponse(bytes:Uint8Array) {
 
 export async function nordicDfuSendPacket(bytes:Uint8Array) {
     const payload = new Uint8Array(bytes);
-    // console.log('DFU packet ⬆️: ' + payload);
+    outputChannel.appendLine('DFU packet ⬆️: ' + payload);
     await transmitNordicDfuPacketData(payload);
     // Wait a little while as this is a write without response
     await new Promise(r => setTimeout(r, 10));
@@ -61,7 +61,7 @@ async function obtainFiles() {
         gitInfo.repo = 'monocle-micropython';
     }
 
-    console.log("Downloading latest release from: github.com/" +
+    outputChannel.appendLine("Downloading latest release from: github.com/" +
         gitInfo.owner + "/" + gitInfo.repo);
 
     let response:any = await request("GET /repos/{owner}/{repo}/releases/latest", {
@@ -129,12 +129,12 @@ async function transferFile(file:any, type:any) {
     // Select command
     switch (type) {
         case 'init':
-            console.log('Transferring init file');
+            outputChannel.appendLine('Transferring init file');
             response = await nordicDfuSendControl([0x06, 0x01]);
             break;
 
         case 'image':
-            console.log('Transferring image file');
+            outputChannel.appendLine('Transferring image file');
             response = await nordicDfuSendControl([0x06, 0x02]);
             break;
 
@@ -144,16 +144,16 @@ async function transferFile(file:any, type:any) {
 
     const fileSize = file.byteLength;
 
-    console.log("fileSize: " + fileSize);
+    outputChannel.appendLine("fileSize: " + fileSize);
 
     const maxSize = response.getUint32(3, true);
     const offset = response.getUint32(7, true);
     const crc = response.getUint32(11, true);
 
-    console.log("maxSize: " + maxSize + ", offset: " + offset + ", crc: " + crc);
+    outputChannel.appendLine("maxSize: " + maxSize + ", offset: " + offset + ", crc: " + crc);
 
     let chunks = Math.ceil(fileSize / maxSize);
-    console.log("Sending file as " + chunks + " chunks");
+    outputChannel.appendLine("Sending file as " + chunks + " chunks");
 
     let fileOffset = 0;
     for (let chk = 0; chk < chunks; chk++) {
@@ -168,10 +168,10 @@ async function transferFile(file:any, type:any) {
         const chunkCrc = crc32(new Uint8Array(file)
             .slice(0, fileOffset + chunkSize));
 
-        console.log(
+            outputChannel.appendLine(
             "chunk " + chk +
-            ", fileOffset: ", + fileOffset +
-            ", chunkSize: " + chunkSize + ", chunkCrc", + chunkCrc);
+            ", fileOffset: " + fileOffset +
+            ", chunkSize: " + chunkSize + ", chunkCrc: " + chunkCrc);
 
         // Create command with size
         let chunkSizeAsBytes =
@@ -207,7 +207,7 @@ async function transferFile(file:any, type:any) {
         let returnedOffset = response.getUint32(3, true);
         let returnedCrc = response.getUint32(7, true);
 
-        // console.log("returnedOffset: " + returnedOffset + ", returnedCrc: " + returnedCrc);
+        outputChannel.appendLine("returnedOffset: " + returnedOffset + ", returnedCrc: " + returnedCrc);
 
         if (returnedCrc !== chunkCrc) {
             return Promise.reject('CRC mismatch after sending this chunk. Expected: ' + chunkCrc);

@@ -2,20 +2,15 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { EventEmitter } from 'vscode';
-
-
-
-import {snippets} from './snippets';
+import {snippets} from '.';
 export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode.TreeDragAndDropController<Snippet> {
 
-    dropMimeTypes :any= [];
-	dragMimeTypes = ['application/vnd.code.tree.depNodeProvider'];
-
+    dropMimeTypes = [];
+	dragMimeTypes = ['application/vnd.code.tree.snippettemplates'];
 	private _onDidChangeTreeData: vscode.EventEmitter<Snippet | undefined | void> = new vscode.EventEmitter<Snippet | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<Snippet | undefined | void> = this._onDidChangeTreeData.event;
 
-	private dragDataEmitter = new EventEmitter<any>();
+	private dragDataEmitter = new vscode.EventEmitter<any>();
   public readonly onDragData = this.dragDataEmitter.event;
 
 
@@ -28,14 +23,8 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
 
     //  for drag 
     public async handleDrag(source: Snippet[], treeDataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): Promise<void> {
-		console.log(JSON.parse(JSON.stringify(source)));
-		// this.dropMimeTypes.push(source);
-		// this.dropMimeTypes.push(JSON.stringify(source));
-		treeDataTransfer.set('application/vnd.code.tree.depNodeProvider', new vscode.DataTransferItem(source));
-		
-		// this.dragDataEmitter.fire(source);
-
-		//this._onDidChangeDragValue.fire(source);
+		treeDataTransfer.set('application/vnd.code.tree.snippettemplates', new vscode.DataTransferItem(source[0].label));
+		return ;
 	}
 
 
@@ -53,7 +42,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
 		return element;
 	}
 
-
+	
 	getChildren(element?: Snippet): Thenable<Snippet[]> {
         // return Promise.resolve(categories);
 		if (element) {
@@ -110,7 +99,7 @@ export class Snippet extends vscode.TreeItem {
 
 	) {
 		super(label, collapsibleState);
-
+		this.id = "snippet_"+label;
 		this.tooltip = `${this.description}`;
 		this.description = this.description;
 	}
