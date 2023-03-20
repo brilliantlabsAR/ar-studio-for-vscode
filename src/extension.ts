@@ -9,19 +9,10 @@ import { DepNodeProvider } from './snippets/provider';
 const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
 import { DeviceFs } from './fileSystemProvider';
-import { ExtensionContext, workspace, Uri } from 'vscode';
-
-//import simpleGit from 'simple-git';
+import { workspace } from 'vscode';
 
 
 let statusBarItemBle:vscode.StatusBarItem;
-
-const namePattern = /^[A-Za-z0-9_-]+$/;
-
-// // Check if the name matches the pattern
-// if (!namePattern.test(workspaceName)) {
-//   throw new Error('Invalid workspace name format. Only alphanumeric characters, underscores, and hyphens are allowed.');
-// }
 
 export const writeEmitter = new vscode.EventEmitter<string>();
 export const myscheme = "monocle";
@@ -66,25 +57,7 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 // Your extension is activated the very first time the command is executed
 
 
-
-
 export function activate(context: vscode.ExtensionContext) {
-
-	 // Get the Git API
-	 const gitExtension = vscode.extensions.getExtension('vscode.git')!;
-	 const git = gitExtension.exports.getAPI(1);
-   
-	 // Subscribe to the onDidPush event
-	 git.onDidPush(async (pushedRepository: Uri, commits: any[]) => {
-	   // Handle the push event
-	   console.log(`Pushed to repository: ${pushedRepository.toString()}`);
-	   console.log(`Pushed commits: ${JSON.stringify(commits)}`);
-   
-	   // You can perform additional actions here, such as notifying the user or running a task.
-	 });
-
-
-	
 	// const provider = new ContentProvider();
 	var currentSyncPath:vscode.Uri|null = null;
 	const memFs = new DeviceFs();
@@ -174,8 +147,6 @@ export function activate(context: vscode.ExtensionContext) {
 				memFs.deleteFile(devicePath);
 			}
 		}),
-
-		
 	
 		// vscode.window.registerTreeDataProvider('deviceFiles', nodeDependenciesProvider),
 		// vscode.commands.registerCommand('deviceFiles.refreshEntry', () => nodeDependenciesProvider.refresh()),
@@ -297,6 +268,36 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "brilliant-ar-studio" is now active!');
 
 	// new FileExplorer(context);
+
+
+	  // Get the Git API
+	  const gitExtension = vscode.extensions.getExtension('vscode.git')!;
+	  const git = gitExtension.exports.getAPI(1);
+
+
+	  async function pushCode() {
+		// Validate the workspace name
+		console.log('welcome ');
+		const workspaceName = workspace.name!;
+		const namePattern = /^[A-Za-z0-9_-]+$/;
+		if (!namePattern.test(workspaceName)) {
+		  throw new Error('Invalid workspace name format. Only alphanumeric characters, underscores, and hyphens are allowed.');
+		}
+	  
+		// Push the code to the Git repository
+		// const git = simpleGit();
+		// await git.push();
+	  }
+	  
+	
+	  // Subscribe to the onDidPush event
+	//   git.onDidPush(async (pushedRepository: vscode.Uri, commits: any[]) => {
+	// 	// Handle the push event
+	// 	console.log(`Pushed to repository: ${pushedRepository.toString()}`);
+	// 	console.log(`Pushed commits: ${JSON.stringify(commits)}`);
+	
+	// 	// You can perform additional actions here, such as notifying the user or running a task.
+	//   });
 }
 
 export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
