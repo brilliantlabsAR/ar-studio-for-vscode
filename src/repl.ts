@@ -59,7 +59,7 @@ export async function replSend(string:string) {
     // response handler calls the function associated with rawReplResponseCallback
     return new Promise(resolve => {
         rawReplResponseCallback = function (responseString:string) {
-            outputChannel.appendLine('Raw REPL ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'))
+            outputChannel.appendLine('Raw REPL ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'));
             resolve(responseString);
         };
         setTimeout(() => {
