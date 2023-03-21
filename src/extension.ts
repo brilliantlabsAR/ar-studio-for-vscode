@@ -12,6 +12,7 @@ const encoder = new util.TextEncoder('utf-8');
 import { DeviceFs } from './fileSystemProvider';
 import { workspace, Disposable ,extensions   } from 'vscode';
 //import * as git from 'isomorphic-git';
+import { commands } from 'vscode';
 
 let disposable: Disposable;
 
@@ -96,51 +97,45 @@ export function activate(context: vscode.ExtensionContext) {
 		// sendFileUpdate(fileData);
 	});
 
-	const commitDisposable = vscode.commands.registerCommand('extension.commit', async () => {
-		const repoPath = vscode.workspace.rootPath;
-		const message = await vscode.window.showInputBox({ prompt: 'Commit message' });
+	// const commitDisposable = vscode.commands.registerCommand('extension.commit', async () => {
+	// 	const repoPath = vscode.workspace.rootPath;
+	// 	const message = await vscode.window.showInputBox({ prompt: 'Commit message' });
 	
-		console.log('welcome');
-		try {
-		 // await git.commit({ fs: git.FS, dir: repoPath, message });
-		  vscode.window.showInformationMessage('Changes committed successfully.');
-		} catch (err) {
-		 // vscode.window.showErrorMessage(`Failed to commit changes: ${err.message}`);
-		}
-	  });
+	// 	console.log('welcome');
+	// 	try {
+	// 	 // await git.commit({ fs: git.FS, dir: repoPath, message });
+	// 	  vscode.window.showInformationMessage('Changes committed successfully.');
+	// 	} catch (err) {
+	// 	 // vscode.window.showErrorMessage(`Failed to commit changes: ${err.message}`);
+	// 	}
+	//   });
 
-	  async function pushCodeToGitHub() {
-		console.log('welcome');
-//   const repositoryPath = vscode.workspace.rootPath;
-//   const repositoryName = vscode.workspace.getConfiguration('github').get('defaultCloneDirectory');
-//   const octokit = new github.Octokit({ auth: 'token ' + vscode.workspace.getConfiguration('github').get('personalAccessToken') });
-//   try {
-//     await octokit.repos.get({ owner: 'github', repo: repositoryName });
-//     // Repository name is valid, proceed with pushing code to GitHub
-//     const gitClient = git(repositoryPath);
-//     await gitClient.add('.');
-//     await gitClient.commit('My commit message');
-//     await gitClient.push('origin', 'master');
-//   } catch (error) {
-//     // Repository name is invalid, show error message
-//     vscode.window.showErrorMessage(`Could not find repository ${repositoryName}.`);
-//   }
-}
+
+	function myCustomCommitFunction() {
+		// Your custom code here
+		console.log('welcome ');
+	}
+	
+	let disposable = commands.registerCommand('extension.myCommitFunction', () => {
+		myCustomCommitFunction();
+	});
+	  
+	
 
 	// workspace.onDidCommit(commitInfo => {
 	// 	console.log(`Commit message: ${commitInfo.message}`);
 	// });
 
-	const gitExtension1 = extensions.getExtension('vscode.git');
-    if (gitExtension1) {
-        const git = gitExtension1.exports.getAPI(1);
-        disposable = git.onDidChangeStatus((e: { commit: { message: any; }; }) => {
-            if (e.commit) {
-                console.log(`Commit message: ${e.commit.message}`);
-                // Handle the commit event here
-            }
-        });
-    }
+	// const gitExtension1 = extensions.getExtension('vscode.git');
+    // if (gitExtension1) {
+    //     const git = gitExtension1.exports.getAPI(1);
+    //     disposable = git.onDidChangeStatus((e: { commit: { message: any; }; }) => {
+    //         if (e.commit) {
+    //             console.log(`Commit message: ${e.commit.message}`);
+    //             // Handle the commit event here
+    //         }
+    //     });
+    // }
 	// function validateRepoName(repoName: string) {
 	// 	console.log(repoName);
 	// 	return true;
