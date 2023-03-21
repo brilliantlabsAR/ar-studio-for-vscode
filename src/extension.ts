@@ -134,7 +134,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const gitExtension1 = extensions.getExtension('vscode.git');
     if (gitExtension1) {
         const git = gitExtension1.exports.getAPI(1);
-        disposable = git.onDidChangeStatus((e: { commit: { message: any; }; }) => {
+        disposable = git.onDidChangeState((e: { commit: { message: any; }; }) => {
             if (e.commit) {
                 console.log(`Commit message: ${e.commit.message}`);
                 // Handle the commit event here
@@ -334,27 +334,27 @@ export function activate(context: vscode.ExtensionContext) {
 	// new FileExplorer(context);
 
 
-	  // Get the Git API
-	//   const gitExtension = vscode.extensions.getExtension('vscode.git')!;
-	//   const git = gitExtension.exports.getAPI(1);
+	//   Get the Git API
+	  const gitExtension = vscode.extensions.getExtension('vscode.git')!;
+	  const git = gitExtension.exports.getAPI(1);
 
 
-	//   async function pushCode() {
-	// 	// Validate the workspace name
-	// 	console.log('welcome ');
-	// 	const workspaceName = workspace.name!;
-	// 	const namePattern = /^[A-Za-z0-9_-]+$/;
-	// 	if (!namePattern.test(workspaceName)) {
-	// 	  throw new Error('Invalid workspace name format. Only alphanumeric characters, underscores, and hyphens are allowed.');
-	// 	}
+	  async function pushCode() {
+		// Validate the workspace name
+		console.log('welcome ');
+		const workspaceName = workspace.name!;
+		const namePattern = /^[A-Za-z0-9_-]+$/;
+		if (!namePattern.test(workspaceName)) {
+		  throw new Error('Invalid workspace name format. Only alphanumeric characters, underscores, and hyphens are allowed.');
+		}
 	  
-	// 	// Push the code to the Git repository
-	// 	// const git = simpleGit();
-	// 	// await git.push();
-	//   }
+		// Push the code to the Git repository
+		// const git = simpleGit();
+		// await git.push();
+	  }
 	  
 	
-	  // Subscribe to the onDidPush event
+	//   Subscribe to the onDidPush event/
 	//   git.onDidPush(async (pushedRepository: vscode.Uri, commits: any[]) => {
 	// 	// Handle the push event
 	// 	console.log(`Pushed to repository: ${pushedRepository.toString()}`);
