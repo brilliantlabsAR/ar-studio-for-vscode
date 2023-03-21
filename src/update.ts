@@ -1,8 +1,11 @@
 import { replSend, replRawMode, ensureConnected,reportUpdatePercentage } from "./repl";
 import { outputChannel } from "./extension";
 import { request } from "@octokit/request";
-import {disconnect } from './bluetooth';
+import {disconnect,isConnected } from './bluetooth';
+import * as vscode from 'vscode';
+import { btoa } from "buffer";
 let fetch = require('node-fetch');
+
 export let gitInfo :any = {};
 export let fpgaGit:any = {};
 
@@ -78,30 +81,47 @@ export async function startFirmwareUpdate() {
     await ensureConnected();
     
 }
+let fpgaUpdateInProgress:any = false;
 
-export async function startFpgaUpdate() {
+export async function startFpgaUpdate(binPath?:vscode.Uri) {
 
-     outputChannel.appendLine("Starting FPGA update");
-    let file = await obtainFpgaFile();
-
-     outputChannel.appendLine("Converting " + file.byteLength + " bytes of file to base64");
-    let bytes = new Uint8Array(file);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
+    if (!isConnected()) {
+        return Promise.reject("Connect to Monocle first.");
     }
-    let asciiFile = Buffer.from(binary,'base64');
+
+    if (fpgaUpdateInProgress === true) {
+        return Promise.reject("FPGA update already in progress.");
+    }
+
+    fpgaUpdateInProgress = true;
+
+    outputChannel.appendLine("Starting FPGA update");
+    let file = await obtainFpgaFile(binPath);
+
+    outputChannel.appendLine("Converting " + file.byteLength + " bytes of file to base64");
+    // let bytes = new Uint8Array(file);
+    // let binary = '';
+    // for (let i = 0; i < bytes.byteLength; i++) {
+    //     binary += String.fromCharCode(bytes[i]);
+    // }
+    let asciiFile =Buffer.from(file).toString('base64');
 
     await replRawMode(true);
     await replSend('import ubinascii;import storage;import device');
     await replSend('storage.delete("FPGA_BITSTREAM")');
 
-    let chunkSize = 340; // Corresponds to 255 bytes
+    let chunkSize = 84;
     let chunks = Math.ceil(asciiFile.length / chunkSize);
     for (let chk = 0; chk < chunks; chk++) {
-        await replSend('storage.append("FPGA_BITSTREAM",ubinascii.a2b_base64("' +
+        let response:any = await replSend('storage.append("FPGA_BITSTREAM",ubinascii.a2b_base64("' +
             asciiFile.slice(chk * chunkSize, (chk * chunkSize) + chunkSize)
             + '"))');
+
+        if (response.includes("Error")) {
+            outputChannel.appendLine("Retrying this chunk");
+            chk--;
+        }
+
         reportUpdatePercentage((100 / asciiFile.length) * chk * chunkSize);
     }
 
@@ -109,42 +129,48 @@ export async function startFpgaUpdate() {
     await replSend('device.reset()');
     await replRawMode(false);
 
-     outputChannel.appendLine("Completed FPGA update. Resetting");
+    outputChannel.appendLine("Completed FPGA update. Resetting");
+
+    fpgaUpdateInProgress = false;
 }
 
-async function obtainFpgaFile() {
-
-    if (!fpgaGit.owner || !fpgaGit.repo) {
-        // TODO
-        fpgaGit.owner = 'brilliantlabsAR';
-        fpgaGit.repo = 'monocle-fpga';
-    }
-
-     outputChannel.appendLine("Downloading latest release from: github.com/" +
-        fpgaGit.owner + "/" + fpgaGit.repo);
-
-    let response:any = await request("GET /repos/{owner}/{repo}/releases/latest", {
-        owner: fpgaGit.owner,
-        repo: fpgaGit.repo
-    });
-
-    let assetId;
-    response.data.assets.forEach((item:any, index:number) => {
-        if (item.content_type === 'application/macbinary') {
-            assetId = item.id;
+async function obtainFpgaFile(binPath?:vscode.Uri) {
+    let bin:any;
+    if(!binPath){
+        if (!fpgaGit.owner || !fpgaGit.repo) {
+            // TODO
+            fpgaGit.owner = 'brilliantlabsAR';
+            fpgaGit.repo = 'monocle-fpga';
         }
-    });
-
-    response = await request("GET /repos/{owner}/{repo}/releases/assets/{assetId}", {
-        owner: fpgaGit.owner,
-        repo: fpgaGit.repo,
-        assetId: assetId
-    });
-
-    // Annoyingly we have to fetch the data via a cors proxy
-    let download = await fetch('https://api.brilliant.xyz/firmware?url=' + response.data.browser_download_url);
-    let blob = await download.blob();
-    let bin = await blob.arrayBuffer();
-
+    
+        outputChannel.appendLine("Downloading latest release from: github.com/" +
+            fpgaGit.owner + "/" + fpgaGit.repo);
+    
+        let response:any = await request("GET /repos/{owner}/{repo}/releases/latest", {
+            owner: fpgaGit.owner,
+            repo: fpgaGit.repo
+        });
+    
+        let assetId;
+        response.data.assets.forEach((item:any, index:number) => {
+            if (item.content_type === 'application/macbinary') {
+                assetId = item.id;
+            }
+        });
+    
+        response = await request("GET /repos/{owner}/{repo}/releases/assets/{assetId}", {
+            owner: fpgaGit.owner,
+            repo: fpgaGit.repo,
+            assetId: assetId
+        });
+    
+        // Annoyingly we have to fetch the data via a cors proxy
+        let download = await fetch('https://api.brilliant.xyz/firmware?url=' + response.data.browser_download_url);
+        let blob = await download.blob();
+        bin = await blob.arrayBuffer();
+    }else{
+        bin = await vscode.workspace.fs.readFile(binPath);
+        // bin = bin.arrayBuffer();
+    }
     return bin;
 }
