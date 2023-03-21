@@ -4,7 +4,7 @@
 import * as vscode from 'vscode';
 import { isConnected,disconnect } from './bluetooth';
 import {ensureConnected,replSend,sendFileUpdate,triggerFpgaUpdate} from './repl';
-import {getRepoList} from './projects';
+import {getRepoList,ProjectProvider} from './projects';
 import { DepNodeProvider } from './snippets/provider';
 // import { FileExplorer } from './fileExplorer';
 const util = require('util');
@@ -72,8 +72,9 @@ export function activate(context: vscode.ExtensionContext) {
 	// register document link provider for scheme `references`
 	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
 	const nodeDependenciesProvider = new DepNodeProvider("rootPath");
-
+	const projectProvider = new ProjectProvider();
 	vscode.window.registerTreeDataProvider('snippetTemplates', nodeDependenciesProvider);
+	vscode.window.registerTreeDataProvider('projects', projectProvider);
 	
 	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
 	outputChannel.clear();
@@ -255,16 +256,33 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.fpgaUpdate', async (thiscontext) => {
-			vscode.commands.executeCommand('setContext', 'monocle.sync', false);
-			currentSyncPath = null;
-			await triggerFpgaUpdate();
+			let oper = await vscode.window.showQuickPick(
+				[{label:"Update from Brilliants",target:"NORMAL"},{label:"Select Binary",target:"CUSTOM"}],
+				{ title: "Select Source" }
+			  );
+			
+			if(oper?.target==="NORMAL"){
+				vscode.commands.executeCommand('setContext', 'monocle.sync', false);
+				currentSyncPath = null;
+				await triggerFpgaUpdate();
+			}
+			if(oper?.target==="CUSTOM"){
+				let success = await vscode.window.showOpenDialog({filters:{fpga:["bin"]},openLabel:"Select FPGA binary file",canSelectFiles:true,canSelectMany:false,canSelectFolders:false});
+				if(success?.[0].path.endsWith(".bin")){
+					vscode.commands.executeCommand('setContext', 'monocle.sync', false);
+					currentSyncPath = null;
+					await triggerFpgaUpdate(success?.[0]);
+				}
+				
+			}
+			
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.syncStop', async (thiscontext) => {
 			currentSyncPath = null;
 			vscode.commands.executeCommand('setContext', 'monocle.sync', false);
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.getPublicApps', async (thiscontext) => {
-			await getRepoList();
+			projectProvider.refresh();
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.syncFiles', async (thiscontext) => {
 			// launch.json configuration
@@ -280,7 +298,7 @@ export function activate(context: vscode.ExtensionContext) {
 					// if value exist ask for confirmation
 					let oper = await vscode.window.showQuickPick(
 						[{label:values.split("/").slice(-1)[0],target:values},{label:"New folder",target:"NEW"}],
-						{ title: "Select workspace?" }
+						{ title: "Select workspace" }
 					  );
 					 // if new skip
 					  if(oper?.target==="NEW"){

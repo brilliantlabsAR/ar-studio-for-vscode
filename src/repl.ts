@@ -87,6 +87,7 @@ export async function ensureConnected() {
                     throw Error("Bluetooth error. Reconnect or check console for details");
                 });
             await disconnect();
+            vscode.window.showInformationMessage("Firmware Update done");
             updateStatusBarItem("progress");
             
             // after 2 sec try to connect;
@@ -188,17 +189,18 @@ export function onDisconnect() {
 	writeEmitter.fire("Disconnected \r\n");
 }
 
-export function reportUpdatePercentage(perc:any){
-    updateStatusBarItem("updating", perc);
+export function reportUpdatePercentage(perc:number){
+    updateStatusBarItem("updating", perc.toFixed(2));
     
 }
 export function receiveRawData(data:any){
     console.log(data);
 }
 
-export async function triggerFpgaUpdate(){
+export async function triggerFpgaUpdate(binPath?:vscode.Uri){
     updateStatusBarItem("connected","$(cloud-download) Updating");
-    await startFpgaUpdate();
+    await startFpgaUpdate(binPath);
+    vscode.window.showInformationMessage("FPGA Update done");
     updateStatusBarItem("connected");
 }
 
