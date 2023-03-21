@@ -10,8 +10,10 @@ import { DepNodeProvider } from './snippets/provider';
 const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
 import { DeviceFs } from './fileSystemProvider';
-import { workspace } from 'vscode';
+import { workspace, Disposable ,extensions   } from 'vscode';
+//import * as git from 'isomorphic-git';
 
+let disposable: Disposable;
 
 let statusBarItemBle:vscode.StatusBarItem;
 
@@ -93,6 +95,83 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 		// sendFileUpdate(fileData);
 	});
+
+	const commitDisposable = vscode.commands.registerCommand('extension.commit', async () => {
+		const repoPath = vscode.workspace.rootPath;
+		const message = await vscode.window.showInputBox({ prompt: 'Commit message' });
+	
+		console.log('welcome');
+		try {
+		 // await git.commit({ fs: git.FS, dir: repoPath, message });
+		  vscode.window.showInformationMessage('Changes committed successfully.');
+		} catch (err) {
+		 // vscode.window.showErrorMessage(`Failed to commit changes: ${err.message}`);
+		}
+	  });
+
+	  async function pushCodeToGitHub() {
+		console.log('welcome');
+//   const repositoryPath = vscode.workspace.rootPath;
+//   const repositoryName = vscode.workspace.getConfiguration('github').get('defaultCloneDirectory');
+//   const octokit = new github.Octokit({ auth: 'token ' + vscode.workspace.getConfiguration('github').get('personalAccessToken') });
+//   try {
+//     await octokit.repos.get({ owner: 'github', repo: repositoryName });
+//     // Repository name is valid, proceed with pushing code to GitHub
+//     const gitClient = git(repositoryPath);
+//     await gitClient.add('.');
+//     await gitClient.commit('My commit message');
+//     await gitClient.push('origin', 'master');
+//   } catch (error) {
+//     // Repository name is invalid, show error message
+//     vscode.window.showErrorMessage(`Could not find repository ${repositoryName}.`);
+//   }
+}
+
+	// workspace.onDidCommit(commitInfo => {
+	// 	console.log(`Commit message: ${commitInfo.message}`);
+	// });
+
+	const gitExtension1 = extensions.getExtension('vscode.git');
+    if (gitExtension1) {
+        const git = gitExtension1.exports.getAPI(1);
+        disposable = git.onDidChangeStatus((e: { commit: { message: any; }; }) => {
+            if (e.commit) {
+                console.log(`Commit message: ${e.commit.message}`);
+                // Handle the commit event here
+            }
+        });
+    }
+	// function validateRepoName(repoName: string) {
+	// 	console.log(repoName);
+	// 	return true;
+	// 	// your validation logic here
+	// 	// return true if repoName is valid, false otherwise
+	//   }
+	  
+
+	// const commitDisposable = vscode.commands.registerCommand('extension.commit', async () => {
+	// 	const repoName = 'my-repo-name'; // replace with the actual repo name
+	// 	console.log('welcom');
+	// 	if (!validateRepoName(repoName)) {
+	// 	  vscode.window.showErrorMessage(`Invalid repo name: ${repoName}`);
+	// 	  return;
+	// 	}
+	
+	// 	// continue with the commit process
+	// 	// ...
+	//   });
+
+//  const gitExtension = GitExtension.getOrCreate();
+//     if (gitExtension) {
+//         const git = gitExtension.getAPI(1);
+//         disposable = git.onDidChangeStatus((e: { commit: { message: any; }; }) => {
+//             if (e.commit) {
+//                 console.log(`Commit message: ${e.commit.message}`);
+//                 // Handle the commit event here
+//             }
+//         });
+//     }
+
 	// if(!initializedWorkSpace){
 	// 	// let startFolders = vscode.workspace.workspaceFolders? vscode.workspace.workspaceFolders.length:0;
 	// 	// let workspaceFolders = [{ uri: vscode.Uri.parse(myscheme+':/'), name: myscheme }]
@@ -256,23 +335,23 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	  // Get the Git API
-	  const gitExtension = vscode.extensions.getExtension('vscode.git')!;
-	  const git = gitExtension.exports.getAPI(1);
+	//   const gitExtension = vscode.extensions.getExtension('vscode.git')!;
+	//   const git = gitExtension.exports.getAPI(1);
 
 
-	  async function pushCode() {
-		// Validate the workspace name
-		console.log('welcome ');
-		const workspaceName = workspace.name!;
-		const namePattern = /^[A-Za-z0-9_-]+$/;
-		if (!namePattern.test(workspaceName)) {
-		  throw new Error('Invalid workspace name format. Only alphanumeric characters, underscores, and hyphens are allowed.');
-		}
+	//   async function pushCode() {
+	// 	// Validate the workspace name
+	// 	console.log('welcome ');
+	// 	const workspaceName = workspace.name!;
+	// 	const namePattern = /^[A-Za-z0-9_-]+$/;
+	// 	if (!namePattern.test(workspaceName)) {
+	// 	  throw new Error('Invalid workspace name format. Only alphanumeric characters, underscores, and hyphens are allowed.');
+	// 	}
 	  
-		// Push the code to the Git repository
-		// const git = simpleGit();
-		// await git.push();
-	  }
+	// 	// Push the code to the Git repository
+	// 	// const git = simpleGit();
+	// 	// await git.push();
+	//   }
 	  
 	
 	  // Subscribe to the onDidPush event
