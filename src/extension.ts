@@ -4,7 +4,7 @@
 import * as vscode from 'vscode';
 import { isConnected,disconnect } from './bluetooth';
 import {ensureConnected,replSend,sendFileUpdate,triggerFpgaUpdate} from './repl';
-import {getRepoList,ProjectProvider} from './projects';
+import {getRepoList} from './projects';
 import { DepNodeProvider } from './snippets/provider';
 // import { FileExplorer } from './fileExplorer';
 const util = require('util');
@@ -72,9 +72,8 @@ export function activate(context: vscode.ExtensionContext) {
 	// register document link provider for scheme `references`
 	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
 	const nodeDependenciesProvider = new DepNodeProvider("rootPath");
-	const projectProvider = new ProjectProvider();
+
 	vscode.window.registerTreeDataProvider('snippetTemplates', nodeDependenciesProvider);
-	vscode.window.registerTreeDataProvider('projects', projectProvider);
 	
 	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
 	outputChannel.clear();
@@ -112,14 +111,14 @@ export function activate(context: vscode.ExtensionContext) {
 	//   });
 
 
-	function myCustomCommitFunction() {
-		// Your custom code here
-		console.log('welcome ');
-	}
+	// function myCustomCommitFunction() {
+	// 	// Your custom code here
+	// 	console.log('welcome ');
+	// }
 	
-	let disposable = commands.registerCommand('extension.myCommitFunction', () => {
-		myCustomCommitFunction();
-	});
+	// let disposable = commands.registerCommand('extension.myCommitFunction', () => {
+	// 	myCustomCommitFunction();
+	// });
 	  
 	
 
@@ -127,16 +126,49 @@ export function activate(context: vscode.ExtensionContext) {
 	// 	console.log(`Commit message: ${commitInfo.message}`);
 	// });
 
-	// const gitExtension1 = extensions.getExtension('vscode.git');
-    // if (gitExtension1) {
-    //     const git = gitExtension1.exports.getAPI(1);
-    //     disposable = git.onDidChangeStatus((e: { commit: { message: any; }; }) => {
-    //         if (e.commit) {
-    //             console.log(`Commit message: ${e.commit.message}`);
-    //             // Handle the commit event here
-    //         }
-    //     });
-    // }
+	const gitExtension1 = extensions.getExtension('vscode.git');
+    if (gitExtension1) {
+        const git = gitExtension1.exports.getAPI(1);
+		console.log(`Commit messagkkkkkkkkke: kjaksjak`);
+
+        disposable = git.onDidCommit((e: { commit: { message: any; }; }) => {
+			console.log(`Commit commit: kjaksjak`);
+
+            if (e.commit) {
+                console.log(`Commit message: ${e.commit.message}`);
+                // Handle the commit event here
+            }
+        });
+
+
+		disposable = git.onDidPush((e: { commit: { message: any; }; }) => {
+			console.log(`push push: kjaksjak`);
+
+            if (e.commit) {
+                console.log(`Commit message: ${e.commit.message}`);
+                // Handle the commit event here
+            }
+        });
+
+
+		disposable = git.onDidChangeFile((e: { commit: { message: any; }; }) => {
+			console.log(`push changefile: kjaksjak`);
+
+            if (e.commit) {
+                console.log(`Commit message: ${e.commit.message}`);
+                // Handle the commit event here
+            }
+        });
+
+		disposable = git.onDidOpenRepository((e: { commit: { message: any; }; }) => {
+			console.log(`repo open: test`);
+
+            if (e.commit) {
+                console.log(`Commit message: ${e.commit.message}`);
+                // Handle the commit event here
+            }
+        });
+    }
 	// function validateRepoName(repoName: string) {
 	// 	console.log(repoName);
 	// 	return true;
@@ -256,33 +288,16 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.fpgaUpdate', async (thiscontext) => {
-			let oper = await vscode.window.showQuickPick(
-				[{label:"Update from Brilliants",target:"NORMAL"},{label:"Select Binary",target:"CUSTOM"}],
-				{ title: "Select Source" }
-			  );
-			
-			if(oper?.target==="NORMAL"){
-				vscode.commands.executeCommand('setContext', 'monocle.sync', false);
-				currentSyncPath = null;
-				await triggerFpgaUpdate();
-			}
-			if(oper?.target==="CUSTOM"){
-				let success = await vscode.window.showOpenDialog({filters:{fpga:["bin"]},openLabel:"Select FPGA binary file",canSelectFiles:true,canSelectMany:false,canSelectFolders:false});
-				if(success?.[0].path.endsWith(".bin")){
-					vscode.commands.executeCommand('setContext', 'monocle.sync', false);
-					currentSyncPath = null;
-					await triggerFpgaUpdate(success?.[0]);
-				}
-				
-			}
-			
+			vscode.commands.executeCommand('setContext', 'monocle.sync', false);
+			currentSyncPath = null;
+			await triggerFpgaUpdate();
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.syncStop', async (thiscontext) => {
 			currentSyncPath = null;
 			vscode.commands.executeCommand('setContext', 'monocle.sync', false);
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.getPublicApps', async (thiscontext) => {
-			projectProvider.refresh();
+			await getRepoList();
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.syncFiles', async (thiscontext) => {
 			// launch.json configuration
@@ -298,7 +313,7 @@ export function activate(context: vscode.ExtensionContext) {
 					// if value exist ask for confirmation
 					let oper = await vscode.window.showQuickPick(
 						[{label:values.split("/").slice(-1)[0],target:values},{label:"New folder",target:"NEW"}],
-						{ title: "Select workspace" }
+						{ title: "Select workspace?" }
 					  );
 					 // if new skip
 					  if(oper?.target==="NEW"){
@@ -347,27 +362,27 @@ export function activate(context: vscode.ExtensionContext) {
 	// new FileExplorer(context);
 
 
-	  // Get the Git API
-	//   const gitExtension = vscode.extensions.getExtension('vscode.git')!;
-	//   const git = gitExtension.exports.getAPI(1);
+	//   Get the Git API
+	  const gitExtension = vscode.extensions.getExtension('vscode.git')!;
+	  const git = gitExtension.exports.getAPI(1);
 
 
-	//   async function pushCode() {
-	// 	// Validate the workspace name
-	// 	console.log('welcome ');
-	// 	const workspaceName = workspace.name!;
-	// 	const namePattern = /^[A-Za-z0-9_-]+$/;
-	// 	if (!namePattern.test(workspaceName)) {
-	// 	  throw new Error('Invalid workspace name format. Only alphanumeric characters, underscores, and hyphens are allowed.');
-	// 	}
+	  async function pushCode() {
+		// Validate the workspace name
+		console.log('welcome ');
+		const workspaceName = workspace.name!;
+		const namePattern = /^[A-Za-z0-9_-]+$/;
+		if (!namePattern.test(workspaceName)) {
+		  throw new Error('Invalid workspace name format. Only alphanumeric characters, underscores, and hyphens are allowed.');
+		}
 	  
-	// 	// Push the code to the Git repository
-	// 	// const git = simpleGit();
-	// 	// await git.push();
-	//   }
+		// Push the code to the Git repository
+		// const git = simpleGit();
+		// await git.push();
+	  }
 	  
 	
-	  // Subscribe to the onDidPush event
+	//   Subscribe to the onDidPush event/
 	//   git.onDidPush(async (pushedRepository: vscode.Uri, commits: any[]) => {
 	// 	// Handle the push event
 	// 	console.log(`Pushed to repository: ${pushedRepository.toString()}`);
