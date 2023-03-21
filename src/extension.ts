@@ -4,6 +4,7 @@
 import * as vscode from 'vscode';
 import { isConnected,disconnect } from './bluetooth';
 import {ensureConnected,replSend,sendFileUpdate,triggerFpgaUpdate} from './repl';
+import {getRepoList} from './projects';
 import { DepNodeProvider } from './snippets/provider';
 // import { FileExplorer } from './fileExplorer';
 const util = require('util');
@@ -64,11 +65,13 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.window.createTreeView('fileExplorer', { treeDataProvider:memFs }));
 	let fileSubs = vscode.workspace.registerFileSystemProvider(myscheme, memFs, { isCaseSensitive: true });
 	// register content provider for scheme `references`
+	// vscode.commands.executeCommand('')
 	// register document link provider for scheme `references`
 	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
 	const nodeDependenciesProvider = new DepNodeProvider("rootPath");
 
 	vscode.window.registerTreeDataProvider('snippetTemplates', nodeDependenciesProvider);
+	
 	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
 	outputChannel.clear();
 	// outputChannel.show();
@@ -90,17 +93,17 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 		// sendFileUpdate(fileData);
 	});
-	if(!initializedWorkSpace){
-		let startFolders = vscode.workspace.workspaceFolders? vscode.workspace.workspaceFolders.length:0;
-		let workspaceFolders = [{ uri: vscode.Uri.parse(myscheme+':/'), name: myscheme }]
-		// if(vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length>0){
-			// vscode.workspace.updateWorkspaceFolders(startFolders, null, );
-			// vscode.workspace.updateWorkspaceFolders(startFolders, null, ...workspaceFolders);
+	// if(!initializedWorkSpace){
+	// 	// let startFolders = vscode.workspace.workspaceFolders? vscode.workspace.workspaceFolders.length:0;
+	// 	// let workspaceFolders = [{ uri: vscode.Uri.parse(myscheme+':/'), name: myscheme }]
+	// 	// if(vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length>0){
+	// 		// vscode.workspace.updateWorkspaceFolders(startFolders, null, );
+	// 		// vscode.workspace.updateWorkspaceFolders(startFolders, null, ...workspaceFolders);
 
-		// }
+	// 	// }
 
-		initializedWorkSpace = true;
-	}
+	// 	initializedWorkSpace = true;
+	// }
 	// Samples of `window.registerTreeDataProvider`
 	// const nodeDependenciesProvider = new DepNodeProvider(rootPath);
 	const fsWatcher = vscode.workspace.createFileSystemWatcher("**");
@@ -186,6 +189,9 @@ export function activate(context: vscode.ExtensionContext) {
 			currentSyncPath = null;
 			vscode.commands.executeCommand('setContext', 'monocle.sync', false);
 		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.getPublicApps', async (thiscontext) => {
+			await getRepoList();
+		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.syncFiles', async (thiscontext) => {
 			// launch.json configuration
 			if(vscode.workspace.workspaceFolders){
@@ -225,29 +231,8 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 				 
 			}else{
-				vscode.commands.executeCommand('brilliant-ar-studio.selectWorkspace');
+				await vscode.commands.executeCommand('vscode.openFolder');
 			}
-		}),
-		
-		vscode.commands.registerCommand('brilliant-ar-studio.selectWorkspace', async(thiscontext) => {
-			// The code you place here will be executed every time your command is executed
-			// Display a message box to the user
-			// console.log(thiscontext);
-			if(vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length>0){
-				
-				  const newFolder = await vscode.window.showQuickPick(
-					vscode.workspace.workspaceFolders.map(ws=>{return {label:ws.name};}),
-					{ title: "Select workspace?" }
-				  );
-				//   console.log(newFolder);
-				//   projectFolder = newFolder?.label;
-				//   if (!newFolder) return;
-				//   if (newFolder.label !== baseFolder) uri = vscode.Uri.parse(`${uri.path}/${subFolder}`);
-			}else{
-				let opened = await vscode.commands.executeCommand('vscode.openFolder');
-				// console.log(opened)
-			}
-			// vscode.window.showInformationMessage('Hello World from Brilliant AR Studio!');
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.connect', async () => {
 			// The code you place here will be executed every time your command is executed
@@ -260,7 +245,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 			
 			
-	}),
+		}),
 	);
 	context.subscriptions.push(alldisposables);
 	context.subscriptions.push(statusBarItemBle);

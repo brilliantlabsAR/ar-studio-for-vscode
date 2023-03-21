@@ -57,10 +57,6 @@
         "title": "openFile"
       },
       {
-        "command": "brilliant-ar-studio.selectWorkspace",
-        "title": "Select Workspace"
-      },
-      {
         "command": "brilliant-ar-studio.connect",
         "title": "Connect"
       },
@@ -118,6 +114,11 @@
         "command": "brilliant-ar-studio.fpgaUpdate",
         "title": "FPGA Update",
         "icon": "$(cloud)"
+      },
+      {
+        "command": "brilliant-ar-studio.getPublicApps",
+        "title": "Get public apps",
+        "icon": "$(cloud)"
       }
     ],
     "menus": {
@@ -164,6 +165,11 @@
 					"command": "brilliant-ar-studio.fpgaUpdate",
 					"when": "view == fileExplorer",
 					"group": "navigation@2"
+				},
+        {
+					"command": "brilliant-ar-studio.getPublicApps",
+					"when": "view == projects",
+					"group": "navigation@0"
 				}
       ],
       "view/item/context": [
@@ -208,6 +214,7 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js"
   },
+  
   "devDependencies": {
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",

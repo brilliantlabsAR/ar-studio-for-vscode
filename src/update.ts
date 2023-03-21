@@ -7,8 +7,8 @@ export let gitInfo :any = {};
 export let fpgaGit:any = {};
 
 export async function checkForUpdates() {
-
-    await replRawMode(true);
+    try {
+        await replRawMode(true);
     // Short delay to throw away bluetooth data received upon connection
     await new Promise(r => setTimeout(r, 100));
 
@@ -56,6 +56,11 @@ export async function checkForUpdates() {
 
     await replRawMode(false);
     return Promise.resolve(`New firmware ([${latestVersion}](${getTag.url})) update available, Do you want to update?`);
+    } catch (error:any) {
+        outputChannel.appendLine(error);
+        await replRawMode(false);
+    }
+    
 }
 
 export async function startFirmwareUpdate() {
