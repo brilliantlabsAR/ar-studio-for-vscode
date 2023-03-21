@@ -126,7 +126,6 @@ export function activate(context: vscode.ExtensionContext) {
 	// 	console.log(`Commit message: ${commitInfo.message}`);
 	// });
 
-<<<<<<< HEAD
 	const gitExtension1 = extensions.getExtension('vscode.git');
     if (gitExtension1) {
         const git = gitExtension1.exports.getAPI(1);
@@ -137,18 +136,6 @@ export function activate(context: vscode.ExtensionContext) {
             }
         });
     }
-=======
-	// const gitExtension1 = extensions.getExtension('vscode.git');
-    // if (gitExtension1) {
-    //     const git = gitExtension1.exports.getAPI(1);
-    //     disposable = git.onDidChangeStatus((e: { commit: { message: any; }; }) => {
-    //         if (e.commit) {
-    //             console.log(`Commit message: ${e.commit.message}`);
-    //             // Handle the commit event here
-    //         }
-    //     });
-    // }
->>>>>>> f249ee5e075e06d8d253184a99c0391a5ad13267
 	// function validateRepoName(repoName: string) {
 	// 	console.log(repoName);
 	// 	return true;
