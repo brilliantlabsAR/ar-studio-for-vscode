@@ -129,45 +129,33 @@ export function activate(context: vscode.ExtensionContext) {
 	const gitExtension1 = extensions.getExtension('vscode.git');
     if (gitExtension1) {
         const git = gitExtension1.exports.getAPI(1);
-		console.log(`Commit messagkkkkkkkkke: kjaksjak`);
-
-        disposable = git.onDidCommit((e: { commit: { message: any; }; }) => {
-			console.log(`Commit commit: kjaksjak`);
-
-            if (e.commit) {
-                console.log(`Commit message: ${e.commit.message}`);
+        disposable = git.onDidChangeState((e:any) => {
+            if (e) {
+                console.log(`Commit message: ${e}`);
+                // Handle the commit event here
+            }
+			
+        });
+		disposable = git.onDidCloseRepository((e:any) => {
+            if (e) {
+                console.log(`Commit message: ${e}`);
                 // Handle the commit event here
             }
         });
-
-
-		disposable = git.onDidPush((e: { commit: { message: any; }; }) => {
-			console.log(`push push: kjaksjak`);
-
-            if (e.commit) {
-                console.log(`Commit message: ${e.commit.message}`);
+		disposable = git.onDidOpenRepository((e:any) => {
+            if (e) {
+                console.log(`Commit message: ${e}`);
                 // Handle the commit event here
             }
         });
-
-
-		disposable = git.onDidChangeFile((e: { commit: { message: any; }; }) => {
-			console.log(`push changefile: kjaksjak`);
-
-            if (e.commit) {
-                console.log(`Commit message: ${e.commit.message}`);
+		disposable = git.onDidPublish((e:any) => {
+			console.log(e);
+            if (e) {
+                console.log(`Commit message: ${e}`);
                 // Handle the commit event here
             }
         });
-
-		disposable = git.onDidOpenRepository((e: { commit: { message: any; }; }) => {
-			console.log(`repo open: test`);
-
-            if (e.commit) {
-                console.log(`Commit message: ${e.commit.message}`);
-                // Handle the commit event here
-            }
-        });
+		
     }
 	// function validateRepoName(repoName: string) {
 	// 	console.log(repoName);
