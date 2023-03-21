@@ -10,13 +10,17 @@ import { DepNodeProvider } from './snippets/provider';
 const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
 import { DeviceFs } from './fileSystemProvider';
-
+const monocleFolder = "monocleFiles";
 let statusBarItemBle:vscode.StatusBarItem;
 
 export const writeEmitter = new vscode.EventEmitter<string>();
 export const myscheme = "monocle";
 export var outputChannel:vscode.OutputChannel;
 
+const initFiles = (rootUri:vscode.Uri) => {
+	vscode.workspace.fs.writeFile(vscode.Uri.joinPath(rootUri,monocleFolder+'/main.py'),Buffer.from("print(\"Hello Monocle!\")"));
+	vscode.workspace.fs.writeFile(vscode.Uri.joinPath(rootUri,'./README.md'),Buffer.from("###  \"Monocle App!\""));
+};
 function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 	let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
 	
@@ -60,7 +64,7 @@ export function activate(context: vscode.ExtensionContext) {
 	var currentSyncPath:vscode.Uri|null = null;
 	const memFs = new DeviceFs();
 	context.subscriptions.push(vscode.window.createTreeView('fileExplorer', { treeDataProvider:memFs }));
-	let fileSubs = vscode.workspace.registerFileSystemProvider(myscheme, memFs, { isCaseSensitive: true });
+	// let fileSubs = vscode.workspace.registerFileSystemProvider(myscheme, memFs, { isCaseSensitive: true });
 	// register content provider for scheme `references`
 	// vscode.commands.executeCommand('')
 	// register document link provider for scheme `references`
@@ -72,45 +76,23 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
 	outputChannel.clear();
-	// outputChannel.show();
 	statusBarItemBle.command = "brilliant-ar-studio.connect";
-	let initializedWorkSpace = false;
 	statusBarItemBle.show();
-	updateStatusBarItem("disconnected");
-	let projectFolder:string|undefined;
+	if(isConnected()){
+		updateStatusBarItem("connected");
+	}else{
+		updateStatusBarItem("disconnected");
+
+	}
 	const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
 	? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
-	
-	memFs.onDidChangeFile( (events:any)=>{
-		
-		events.forEach((e:any)=>{
-			// let fileData = memFs.readFile(vscode.Uri.parse(e.uri));
-			// if(fileData.byteLength!==0){
-			// 	sendFileUpdate(fileData);
-			// }
-		});
-		// sendFileUpdate(fileData);
-	});
-	// if(!initializedWorkSpace){
-	// 	// let startFolders = vscode.workspace.workspaceFolders? vscode.workspace.workspaceFolders.length:0;
-	// 	// let workspaceFolders = [{ uri: vscode.Uri.parse(myscheme+':/'), name: myscheme }]
-	// 	// if(vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length>0){
-	// 		// vscode.workspace.updateWorkspaceFolders(startFolders, null, );
-	// 		// vscode.workspace.updateWorkspaceFolders(startFolders, null, ...workspaceFolders);
 
-	// 	// }
 
-	// 	initializedWorkSpace = true;
-	// }
-	// Samples of `window.registerTreeDataProvider`
-	// const nodeDependenciesProvider = new DepNodeProvider(rootPath);
 	const fsWatcher = vscode.workspace.createFileSystemWatcher("**");
 	
 	// vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse(myscheme+':/'), name: myscheme });
 	const alldisposables = vscode.Disposable.from(
-		// vscode.workspace.registerTextDocumentContentProvider(myscheme, provider),
-		// vscode.workspace.registerFileSystemProvider(myscheme, memFs, { isCaseSensitive: true }),
-		
+
 		vscode.languages.registerDocumentDropEditProvider('python', {
 			provideDocumentDropEdits(document, position, dataTransfer, token) {
 				let itemValue:any;
@@ -124,11 +106,8 @@ export function activate(context: vscode.ExtensionContext) {
 				
 					return null;
 				}
-		   //  new vscode.SnippetTextEdit(new vscode.Position(0, 0),itemValue)
-			
 		  },
 		}),
-		// vscode.commands.executeCommand()
 		fsWatcher.onDidCreate((e)=>{
 			if(currentSyncPath!==null && e.fsPath.includes(currentSyncPath.fsPath)){
 				let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
@@ -149,27 +128,9 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}),
 	
-		// vscode.window.registerTreeDataProvider('deviceFiles', nodeDependenciesProvider),
-		// vscode.commands.registerCommand('deviceFiles.refreshEntry', () => nodeDependenciesProvider.refresh()),
-		
-		// vscode.commands.registerCommand('deviceFiles.editEntry', async (context) => {
-		// 	// console.log(context);
-		// 	const uri = vscode.Uri.parse(`${myscheme}:/file.txt`);
-		// 	const doc = await vscode.workspace.openTextDocument(uri); // calls back into the provider
-		// 	await vscode.window.showTextDocument(doc, { preview: false });
-		// }),
 		vscode.window.createTreeView('snippetTemplates', {
 			treeDataProvider: new DepNodeProvider(rootPath),
 			dragAndDropController: new DepNodeProvider(rootPath)
-		}),
-		// The command has been defined in the package.json file
-		// Now provide the implementation of the command with registerCommand
-		// The commandId parameter must match the command field in package.json
-		vscode.commands.registerCommand('brilliant-ar-studio.helloWorld', () => {
-			// The code you place here will be executed every time your command is executed
-			// Display a message box to the user
-			
-			vscode.window.showInformationMessage('Hello World from Brilliant AR Studio!');
 		}),
 
 		vscode.commands.registerCommand('brilliant-ar-studio.runFile', async (thiscontext) => {
@@ -210,43 +171,36 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('brilliant-ar-studio.syncFiles', async (thiscontext) => {
 			// launch.json configuration
 			if(vscode.workspace.workspaceFolders){
-				const config = vscode.workspace.getConfiguration(
-					'launch',
-					vscode.workspace.workspaceFolders[0].uri
-				  );
-				  // retrieve values
-				  const values:string|undefined = config.get('monocle');
-				  let newFolderToSync = false;
-				  if(values){
-					// if value exist ask for confirmation
-					let oper = await vscode.window.showQuickPick(
-						[{label:values.split("/").slice(-1)[0],target:values},{label:"New folder",target:"NEW"}],
-						{ title: "Select workspace" }
-					  );
-					 // if new skip
-					  if(oper?.target==="NEW"){
-						newFolderToSync = true;
-					 }
-					//   if confirmed then start
-					  if(oper?.target===values){
-						currentSyncPath = vscode.Uri.parse(values);
-						vscode.commands.executeCommand('setContext', 'monocle.sync', true);
-					  }
-					
-				  }
-				  
-				//   set new folder for sync if not set or asked for new
-				 if(!values || newFolderToSync) {
-					let success = await vscode.window.showOpenDialog({defaultUri:vscode.workspace.workspaceFolders[0].uri,openLabel:"Select Folder To be synced with device",canSelectFiles:false,canSelectMany:false,canSelectFolders:true});
-					if(success && success[0]){
-						currentSyncPath = vscode.Uri.parse(success[0].path);
-						config.update("monocle",currentSyncPath.path);
-						vscode.commands.executeCommand('setContext', 'monocle.sync', true);
-					}
+				let rootUri = vscode.workspace.workspaceFolders[0].uri;
+				const projectFiles = new vscode.RelativePattern(rootUri, monocleFolder+'/*.py');
+				let filesFound = await vscode.workspace.findFiles(projectFiles);
+				if(filesFound.length===0){
+					// let newPathPy = vscode.Uri.joinPath(rootUri,monocleFolder+'/main.py');
+					// let newPathReadMe = vscode.Uri.joinPath(rootUri,'./README.md');
+					initFiles(rootUri);
 				}
+				currentSyncPath = vscode.Uri.joinPath(rootUri,monocleFolder);
+				vscode.commands.executeCommand('setContext', 'monocle.sync', true);
 				 
 			}else{
-				await vscode.commands.executeCommand('vscode.openFolder');
+				// let pickOptions = vscode.
+				let projectName = await vscode.window.showInputBox({title:"Enter Project Name",placeHolder:"MonocleApp"});
+				if(projectName?.trim()!==''){
+					let selectedPath = await vscode.window.showOpenDialog({canSelectFolders:true,canSelectFiles:false,canSelectMany:false,title:"Select project path"});
+					if(selectedPath && projectName){
+						let workspacePath = vscode.Uri.joinPath(selectedPath[0],projectName);
+						if((await vscode.workspace.findFiles(new vscode.RelativePattern(workspacePath,''))).length===0){
+							vscode.workspace.fs.createDirectory(workspacePath);
+							initFiles(workspacePath);
+							vscode.workspace.updateWorkspaceFolders(0,null,{uri:workspacePath,name:projectName});
+						}else{
+							vscode.window.showErrorMessage("Directory exist, open if you want to use existing directory")
+						}
+					}
+					
+				}
+				// await vscode.commands.executeCommand('vscode.openFolder');
+				// console.log(projectName);
 			}
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.connect', async () => {
@@ -259,12 +213,11 @@ export function activate(context: vscode.ExtensionContext) {
 				// vscode.window.showWarningMessage("Monocle Disconnected");
 			}
 			
-			
 		}),
 	);
 	context.subscriptions.push(alldisposables);
 	context.subscriptions.push(statusBarItemBle);
-	context.subscriptions.push(fileSubs);
+	// context.subscriptions.push(fileSubs);
 	console.log('Congratulations, your extension "brilliant-ar-studio" is now active!');
 
 	// new FileExplorer(context);
