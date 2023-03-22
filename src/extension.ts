@@ -17,9 +17,19 @@ export const writeEmitter = new vscode.EventEmitter<string>();
 export const myscheme = "monocle";
 export var outputChannel:vscode.OutputChannel;
 
-const initFiles = (rootUri:vscode.Uri) => {
-	vscode.workspace.fs.writeFile(vscode.Uri.joinPath(rootUri,monocleFolder+'/main.py'),Buffer.from("print(\"Hello Monocle!\")"));
-	vscode.workspace.fs.writeFile(vscode.Uri.joinPath(rootUri,'./README.md'),Buffer.from("###  \"Monocle App!\""));
+const isPathExist = async (uri:vscode.Uri):Promise<boolean>=>{
+	let files = await vscode.workspace.findFiles(new vscode.RelativePattern(uri,''));
+return files.length!==0;
+};
+const initFiles = async (rootUri:vscode.Uri,projectName:string) => {
+	let monocleUri = vscode.Uri.joinPath(rootUri,monocleFolder+'/main.py');
+	let readmeUri = vscode.Uri.joinPath(rootUri,'./README.md');
+	if(! await isPathExist(monocleUri)){
+		vscode.workspace.fs.writeFile(monocleUri,Buffer.from("print(\"Hello Monocle from "+projectName+"!\")"));
+	}
+	if(! await isPathExist(readmeUri)){
+		vscode.workspace.fs.writeFile(readmeUri,Buffer.from("###  "+projectName));
+	}
 };
 function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 	let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
@@ -177,7 +187,7 @@ export function activate(context: vscode.ExtensionContext) {
 				if(filesFound.length===0){
 					// let newPathPy = vscode.Uri.joinPath(rootUri,monocleFolder+'/main.py');
 					// let newPathReadMe = vscode.Uri.joinPath(rootUri,'./README.md');
-					initFiles(rootUri);
+					initFiles(rootUri,vscode.workspace.workspaceFolders[0].name);
 				}
 				currentSyncPath = vscode.Uri.joinPath(rootUri,monocleFolder);
 				vscode.commands.executeCommand('setContext', 'monocle.sync', true);
@@ -185,22 +195,23 @@ export function activate(context: vscode.ExtensionContext) {
 			}else{
 				// let pickOptions = vscode.
 				let projectName = await vscode.window.showInputBox({title:"Enter Project Name",placeHolder:"MonocleApp"});
-				if(projectName?.trim()!==''){
+				if(projectName && projectName.trim()!==''){
 					let selectedPath = await vscode.window.showOpenDialog({canSelectFolders:true,canSelectFiles:false,canSelectMany:false,title:"Select project path"});
 					if(selectedPath && projectName){
 						let workspacePath = vscode.Uri.joinPath(selectedPath[0],projectName);
 						if((await vscode.workspace.findFiles(new vscode.RelativePattern(workspacePath,''))).length===0){
 							vscode.workspace.fs.createDirectory(workspacePath);
-							initFiles(workspacePath);
-							vscode.workspace.updateWorkspaceFolders(0,null,{uri:workspacePath,name:projectName});
+							initFiles(workspacePath,projectName);
+							// vscode.workspace.
+							vscode.commands.executeCommand('vscode.openFolder', workspacePath);
+							// vscode.workspace.updateWorkspaceFolders(0,null,{uri:workspacePath,name:projectName});
+						
 						}else{
 							vscode.window.showErrorMessage("Directory exist, open if you want to use existing directory")
 						}
 					}
 					
 				}
-				// await vscode.commands.executeCommand('vscode.openFolder');
-				// console.log(projectName);
 			}
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.connect', async () => {
