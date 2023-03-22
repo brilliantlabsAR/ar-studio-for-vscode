@@ -4,7 +4,7 @@
 import * as vscode from 'vscode';
 import { isConnected,disconnect } from './bluetooth';
 import {ensureConnected,replSend,sendFileUpdate,triggerFpgaUpdate} from './repl';
-import {getRepoList} from './projects';
+import {getRepoList, publishProject,ProjectProvider} from './projects';
 import { DepNodeProvider } from './snippets/provider';
 
 // import { FileExplorer } from './fileExplorer';
@@ -71,11 +71,12 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 // Your extension is activated the very first time the command is executed
 
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 	// const provider = new ContentProvider();
 	var currentSyncPath:vscode.Uri|null = null;
 
 	const memFs = new DeviceFs();
+
 	context.subscriptions.push(vscode.window.createTreeView('fileExplorer', { treeDataProvider:memFs }));
 	// let fileSubs = vscode.workspace.registerFileSystemProvider(myscheme, memFs, { isCaseSensitive: true });
 	// register content provider for scheme `references`
@@ -83,9 +84,11 @@ export function activate(context: vscode.ExtensionContext) {
 	// register document link provider for scheme `references`
 	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
 	const nodeDependenciesProvider = new DepNodeProvider("rootPath");
+	const projectProvider =  new ProjectProvider();
+
 
 	vscode.window.registerTreeDataProvider('snippetTemplates', nodeDependenciesProvider);
-	
+	vscode.window.registerTreeDataProvider('projects',projectProvider);
 	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
 	outputChannel.clear();
 	statusBarItemBle.command = "brilliant-ar-studio.connect";
@@ -99,41 +102,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
 	? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
 	
-		const gitExtension1 = vscode.extensions.getExtension('vscode.git');
-	if(gitExtension1){
-        const git = gitExtension1.exports.getAPI(1);
-		context.subscriptions.push(
-			git.onDidChangeState((e:any) => {
-				if (e) {
-					console.log(`Commit message: ${e}`);
-					// Handle the commit event here
-				}
-			
-        	}),
-			git.onDidCloseRepository((e:any) => {
-				if (e) {
-					console.log(`Commit message: ${e}`);
-					// Handle the commit event here
-				}
-			}),
-			git.onDidOpenRepository((e:any) => {
-				if (e) {
-					console.log(`Commit message: ${e}`);
-					// Handle the commit event here
-				}
-			}),
-			git.onDidPublish((e:any) => {
-				console.log(e);
-				if (e) {
-					console.log(`Commit message: ${e}`);
-					// Handle the commit event here
-				}
-			})
-		);
-	}
-       
-
-
+		
 	const fsWatcher = vscode.workspace.createFileSystemWatcher("**");
 	
 	// vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse(myscheme+':/'), name: myscheme });
@@ -194,8 +163,19 @@ export function activate(context: vscode.ExtensionContext) {
 			currentSyncPath = null;
 			vscode.commands.executeCommand('setContext', 'monocle.sync', false);
 		}),
-		vscode.commands.registerCommand('brilliant-ar-studio.getPublicApps', async (thiscontext) => {
-			await getRepoList();
+		vscode.commands.registerCommand('brilliant-ar-studio.getPublicApps',  (thiscontext) => {
+			 projectProvider.refresh();
+		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.publishMonocleApp', async (thiscontext) => {
+			const gitExtension1 = vscode.extensions.getExtension('vscode.git');
+			if(gitExtension1){
+				const git = gitExtension1.exports.getAPI(1);
+				if(git && git.repositories && git.repositories[0].repository.remotes.length>0){
+					let pushUrl = git.repositories[0].repository.remotes[0].pushUrl;
+					publishProject(pushUrl);
+				}
+				// console.log(git);
+			}
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.syncFiles', async (thiscontext) => {
 			// launch.json configuration
