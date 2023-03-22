@@ -1,26 +1,31 @@
 {
    
     "fill(color)": {
+        "id":1,
         "prefix": "fill",
         "body": "display.fill(${1:color})",
         "description": "Fills the entire display with a color. color should be a 24-bit RGB value such as 0xAABBCC."
     },
     "pixel(x, y, color)": {
+        "id":2,
         "prefix": "pixel",
         "body": "display.pixel(${1:x}, ${2:y}, ${3:color})",
         "description": "Draws a single pixel of color color at the position x, y."
     },
     "hline(x, y, width, color)": {
+        "id":3,
         "prefix": "hline",
         "body": "display.hline(${1:x}, ${2:y}, ${3:width}, ${4:color})",
         "description": "Draws a horizontal line from the position x, y, with a given width and color."
     },
     "vline(x, y, height, color)": {
+        "id":4,
         "prefix": "vline",
         "body": "display.vline(${1:x}, ${2:y}, ${3:height}, ${4:color})",
         "description": "Draws a horizontal line from the position x, y, with a given height and color."
     },
     "show()": {
+        "id":5,
         "prefix": "show",
         "body": "display.show()",
         "description": "Prints the populated frame buffer to the display. After this call, another series of drawing functions may be called and show() can be used to print the next frame. This also clears the display."
