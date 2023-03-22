@@ -118,12 +118,22 @@
       {
         "command": "brilliant-ar-studio.getPublicApps",
         "title": "Get public apps",
-        "icon": "$(cloud)"
+        "icon": "$(refresh)"
       },
       {
         "command": "brilliant-ar-studio.publishMonocleApp",
         "title": "Publish app",
-        "icon": "$(upload)"
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "brilliant-ar-studio.UnPublishMonocleApp",
+        "title": "Unpublish app",
+        "icon": "$(star-full)"
+      },
+      {
+        "command": "brilliant-ar-studio.forkProject",
+        "title": "Fork to Edit",
+        "icon": "$(repo-forked)"
       }
     ],
     "menus": {
@@ -151,7 +161,12 @@
 				},
         {
 					"command": "brilliant-ar-studio.publishMonocleApp",
-					"when": "view == fileExplorer",
+					"when": "view == fileExplorer && workspaceFolderCount !=0 && !monocle.published",
+					"group": "navigation@3"
+				},
+        {
+					"command": "brilliant-ar-studio.UnPublishMonocleApp",
+					"when": "view == fileExplorer && workspaceFolderCount !=0 && monocle.published==true",
 					"group": "navigation@3"
 				},
         {
@@ -164,6 +179,11 @@
         {
 					"command": "brilliant-ar-studio.deleteDeviceFile",
 					"when": "view == fileExplorer",
+					"group": "inline"
+				},
+        {
+					"command": "brilliant-ar-studio.forkProject",
+					"when": "view == projects",
 					"group": "inline"
 				}
       ],
