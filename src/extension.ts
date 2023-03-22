@@ -131,27 +131,92 @@ export function activate(context: vscode.ExtensionContext) {
         const git = gitExtension1.exports.getAPI(1);
         disposable = git.onDidChangeState((e:any) => {
             if (e) {
-                console.log(`Commit message: ${e}`);
+                console.log(`Commit message change state: ${e}`);
                 // Handle the commit event here
             }
 			
         });
 		disposable = git.onDidCloseRepository((e:any) => {
             if (e) {
-                console.log(`Commit message: ${e}`);
+                console.log(`Commit message close repo: ${(e)}`);
                 // Handle the commit event here
             }
         });
-		disposable = git.onDidOpenRepository((e:any) => {
+		const vscode = require('vscode');
+
+		disposable = git.onDidOpenRepository(async (e:any) => {
             if (e) {
-                console.log(`Commit message: ${e}`);
+                console.log('Commit message open repo yyyy:', e);
+				const repoName = vscode.workspace.getWorkspaceFolder(e.rootUri).name;
+
+				console.log(repoName);
+				console.log(repoName.includes('monocle'));
+
+				if(repoName.includes('monocle')){
+					//alert("working fine");
+					console.log('working fine');
+				} else {
+				//	alert('monocle should be in repo name ');
+					console.log('monocle should be in repo name ');
+
+				}
+
                 // Handle the commit event here
             }
+
+    // Get the name and owner of the repository
+    // const repoUri = e.rootUri;
+    // const [owner, repoName] = /([^/]+)\/([^/]+)\.git$/.exec(repoUri.path).slice(1) ;
+
+    // // Make a request to the GitHub API to get the repository's topics
+    // const topicsUrl = `https://api.github.com/repos/${owner}/${repoName}/topics`;
+    // const response = await fetch(topicsUrl, {
+    //     headers: {
+    //         Accept: 'application/vnd.github.mercy-preview+json' // needed for the topics API
+    //     }
+    // });
+    // const data = await response.json();
+
+    // // Get the list of topics from the response
+    // const topics = data.names;
+    // console.log(`Opened repository: ${repoName}`);
+    // console.log(`Topics: ${topics.join(', ')}`);
+
+
+	// const gitExtension = vscode.extensions.getExtension('vscode.git').exports;
+    // const api = gitExtension.getAPI(1);
+    // const { owner, name } = api.getState().repositories.find((r: { rootUri: { toString: () => any; }; }) => r.rootUri.toString() === e.rootUri.toString());
+    // console.log(`Owner: ${owner}, Repository name: ${name}`);
+
+
+    // const gitExtension = vscode.extensions.getExtension('vscode.git').exports;
+    // const api = gitExtension.getAPI(1);
+    // const repository = api.repositories.find((r: { rootUri: { toString: () => any; }; }) => r.rootUri.toString() === e.rootUri.toString());
+    // if (repository) {
+    //     const owner = repository.state.remotes[0].fetchUrl.split('/')[3];
+    //     const name = repository.state.remotes[0].fetchUrl.split('/')[4].split('.')[0];
+    //     console.log(`Owner: ${owner}, Repository name: ${name}`);
+    // }
+
+	// const gitExtension = vscode.extensions.getExtension('vscode.git').exports;
+    // const api = gitExtension.getAPI(1);
+    // const repository = api.repositories.find((r: { rootUri: { toString: () => any; }; }) => r.rootUri.toString() === e.rootUri.toString());
+    // if (repository && repository.state.remotes.length > 0) {
+    //     const remote = repository.state.remotes[0];
+	// 	console.log(`ffff: ${remote}`);
+
+    //     if (remote && remote.fetchUrl) {
+    //         const owner = remote.fetchUrl.split('/')[3];
+    //         const name = remote.fetchUrl.split('/')[4].split('.')[0];
+    //         console.log(`Owner: ${owner}, Repository name: ${name}`);
+    //     }
+    // }
+
         });
 		disposable = git.onDidPublish((e:any) => {
 			console.log(e);
             if (e) {
-                console.log(`Commit message: ${e}`);
+                console.log(`Commit message publish repo: ${e}`);
                 // Handle the commit event here
             }
         });
