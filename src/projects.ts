@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 
 export async function getRepoList(){
     let resp =  await request("GET /search/repositories?q={q}", {
-        q: "monocle-ar in:topics",
+        q: "monocle-ar-project in:topics",
     }).catch((err:any)=>console.log(err));
     console.log(resp);
     return resp;
@@ -72,5 +72,21 @@ export class Project extends vscode.TreeItem {
 
 	contextValue = 'category';
 }
-
+export async function publishProject(pushUrl:string){
+    const SCOPES = ['read:user', 'user:email', 'repo', 'workflow'];
+	let auth = await vscode.authentication.getSession('github',SCOPES,{createIfNone:true});
+	let repoPath = pushUrl.replace('https://github.com/','').replace('.git','').split('/');
+	await request('PUT /repos/{owner}/{repo}/topics', {
+			owner: repoPath[0],
+			repo: repoPath[1],
+			names: [
+			  'monocle-ar-project',
+			],
+			headers: {
+			   authorization: "token "+auth.accessToken,
+			  'X-GitHub-Api-Version': '2022-11-28'
+			}
+		  });
+	  
+}
 
