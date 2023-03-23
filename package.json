@@ -30,6 +30,7 @@
           "name": "Templates",
           "icon": "media/bulb.svg"
         },
+       
         {
           "id": "projects",
           "name": "Projects",
