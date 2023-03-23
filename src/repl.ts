@@ -1,6 +1,6 @@
 import { isConnected, replDataTxQueue,connect,disconnect } from './bluetooth';
 import { checkForUpdates, startFirmwareUpdate, startFpgaUpdate } from "./update";
-import { writeEmitter,updateStatusBarItem,outputChannel } from './extension';
+import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus } from './extension';
 import { startNordicDFU } from './nordicdfu'; 
 import * as vscode from 'vscode';
 let util = require('util');
@@ -97,6 +97,7 @@ export async function ensureConnected() {
         }
 
         if (connectionResult === "repl connected") {
+            updatePublishStatus();
             // infoText.innerHTML = "Connected";
             // replResetConsole();
             vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', true);
