@@ -4,7 +4,7 @@
 import * as vscode from 'vscode';
 import { isConnected,disconnect } from './bluetooth';
 import {ensureConnected,replSend,sendFileUpdate,triggerFpgaUpdate} from './repl';
-import {getRepoList, publishProject,ProjectProvider} from './projects';
+import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
 import { DepNodeProvider } from './snippets/provider';
 
 // import { FileExplorer } from './fileExplorer';
@@ -15,6 +15,7 @@ const monocleFolder = "monocleFiles";
 let statusBarItemBle:vscode.StatusBarItem;
 
 export const writeEmitter = new vscode.EventEmitter<string>();
+const gitOper = new GitOperation();
 export const myscheme = "monocle";
 export var outputChannel:vscode.OutputChannel;
 
@@ -32,6 +33,22 @@ const initFiles = async (rootUri:vscode.Uri,projectName:string) => {
 		vscode.workspace.fs.writeFile(readmeUri,Buffer.from("###  "+projectName));
 	}
 };
+
+export const updatePublishStatus = async ()=>{
+	const gitExtension1 = vscode.extensions.getExtension('vscode.git');
+	if(gitExtension1){
+		const git = gitExtension1.exports.getAPI(1);
+		if(git && git.repositories.length>0 && git.repositories[0].repository.remotes.length>0){
+			let pushUrl = git.repositories[0].repository.remotes[0].pushUrl;
+			if(await gitOper.checkPublisStatus(pushUrl)){
+				vscode.commands.executeCommand('setContext', 'monocle.published', true);
+			}else{
+				vscode.commands.executeCommand('setContext', 'monocle.published', false);
+			};
+		}
+	}
+};
+
 function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 	let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
 	
@@ -76,7 +93,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	var currentSyncPath:vscode.Uri|null = null;
 
 	const memFs = new DeviceFs();
-
 	context.subscriptions.push(vscode.window.createTreeView('fileExplorer', { treeDataProvider:memFs }));
 	// let fileSubs = vscode.workspace.registerFileSystemProvider(myscheme, memFs, { isCaseSensitive: true });
 	// register content provider for scheme `references`
@@ -85,8 +101,51 @@ export async function activate(context: vscode.ExtensionContext) {
 	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
 	const nodeDependenciesProvider = new DepNodeProvider("rootPath");
 	const projectProvider =  new ProjectProvider();
-
-
+	
+	// const projectTree = vscode.window.createTreeView('projects',{treeDataProvider:projectProvider});
+	// projectTree.onDidChangeVisibility(() => {
+	// 	if (projectTree.visible) {
+	// 	  const disposable = vscode.commands.registerCommand('myTree.search', async () => {
+	// 		const searchTerm = await vscode.window.showInputBox({ prompt: 'Search' });
+	// 		if (searchTerm) {
+	// 		  const items = await projectProvider.search(searchTerm);
+	// 		//   projectProvider.dataProvider = new ProjectProvider(items);
+	// 		}
+	// 	  });
+	// 	//   projectTree.message = { text: 'Search: "Ctrl+Shift+F"' };
+	// 	//   projectTree.onDidDispose(() => disposable.dispose());
+	// 	} else {
+	// 		projectTree.message = undefined;
+	// 	}
+	//   });
+	const thisProvider={
+        resolveWebviewView:function(thisWebview:any, thisWebviewContext:any, thisToken:any){
+            thisWebview.webview.options={enableScripts:true}
+            thisWebview.webview.html=`<!DOCTYPE html>
+			<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<!--
+					Use a content security policy to only allow loading styles from our extension directory,
+					and only allow scripts that have a specific nonce.
+					(See the 'webview-sample' extension sample for img-src content security policy examples)
+				-->
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none';">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				
+				<title>Cat Colors</title>
+			</head>
+			<body>
+				<ul class="color-list">
+				</ul>
+				<button class="add-color-button">Add Color</button>
+			</body>
+			</html>`;
+        }
+    };
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider("projects", thisProvider)
+    );
 	vscode.window.registerTreeDataProvider('snippetTemplates', nodeDependenciesProvider);
 	vscode.window.registerTreeDataProvider('projects',projectProvider);
 	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
@@ -166,14 +225,65 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('brilliant-ar-studio.getPublicApps',  (thiscontext) => {
 			 projectProvider.refresh();
 		}),
-		vscode.commands.registerCommand('brilliant-ar-studio.publishMonocleApp', async (thiscontext) => {
+		vscode.commands.registerCommand('brilliant-ar-studio.UnPublishMonocleApp',  (thiscontext) => {
 			const gitExtension1 = vscode.extensions.getExtension('vscode.git');
 			if(gitExtension1){
 				const git = gitExtension1.exports.getAPI(1);
-				if(git && git.repositories && git.repositories[0].repository.remotes.length>0){
+				if(git.repositories && git.repositories.length>0 && git.repositories[0].repository.remotes.length>0){
 					let pushUrl = git.repositories[0].repository.remotes[0].pushUrl;
-					publishProject(pushUrl);
+					gitOper.publishProject(pushUrl,true);
+					vscode.commands.executeCommand('setContext', 'monocle.published', false);
+					projectProvider.refresh();
+				}else{
+					vscode.window.showErrorMessage('Not set remote repository');
 				}
+			}
+		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.forkProject',  async (thiscontext) => {
+			let cloneurl = thiscontext.cloneurl;
+			let ownerRepo = cloneurl.replace('https://github.com/','').replace('.git','').split('/');
+			let projectName = await vscode.window.showInputBox({title:"Project Name",placeHolder:ownerRepo[1]});
+			let selectedPath = await vscode.window.showOpenDialog({canSelectFolders:true,canSelectFiles:false,canSelectMany:false,title:"Select project path"});
+			
+			if(projectName && selectedPath){
+				let newPath = vscode.Uri.joinPath(selectedPath[0],projectName);
+				let newRepo = await gitOper.createFork(cloneurl,projectName);
+				if(newRepo){
+					cloneAndOpenRepo(newRepo.data.clone_url,newPath);
+				}
+			}
+		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.publishMonocleApp',  (thiscontext) => {
+			const gitExtension1 = vscode.extensions.getExtension('vscode.git');
+			if(gitExtension1){
+				const git = gitExtension1.exports.getAPI(1);
+
+				if(!vscode.workspace.workspaceFolders){
+					// open workspace
+					// git.init(vscode.workspace.workspaceFolders[0].uri);
+					vscode.window.showErrorMessage('Worspace not set');
+					return;
+				}
+				let monocleFilesUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,monocleFolder+"/*.py");
+				if(! isPathExist(monocleFilesUri)){
+					// initialized folder
+					initFiles(vscode.workspace.workspaceFolders[0].uri,vscode.workspace.workspaceFolders[0].name);
+				}
+				if(git.repositories && git.repositories.length===0){
+					git.init(vscode.workspace.workspaceFolders[0].uri);
+					git.publishRepository();
+					return;
+				}
+				
+				if(git.repositories[0].repository.remotes.length>0){
+					let pushUrl = git.repositories[0].repository.remotes[0].pushUrl;
+					gitOper.publishProject(pushUrl);
+					vscode.commands.executeCommand('setContext', 'monocle.published', true);
+					projectProvider.refresh();
+				}else{
+					vscode.window.showErrorMessage('Not set remote repository');
+				}
+				return;
 				// console.log(git);
 			}
 		}),
@@ -193,14 +303,15 @@ export async function activate(context: vscode.ExtensionContext) {
 				 
 			}else{
 				// let pickOptions = vscode.
+				// let newOpenexisting = 
 				let projectName = await vscode.window.showInputBox({title:"Enter Project Name",placeHolder:"MonocleApp"});
 				if(projectName && projectName.trim()!==''){
 					let selectedPath = await vscode.window.showOpenDialog({canSelectFolders:true,canSelectFiles:false,canSelectMany:false,title:"Select project path"});
 					if(selectedPath && projectName){
 						let workspacePath = vscode.Uri.joinPath(selectedPath[0],projectName);
 						if((await vscode.workspace.findFiles(new vscode.RelativePattern(workspacePath,''))).length===0){
-							vscode.workspace.fs.createDirectory(workspacePath);
-							initFiles(workspacePath,projectName);
+							await vscode.workspace.fs.createDirectory(workspacePath);
+							await initFiles(workspacePath,projectName);
 							// vscode.workspace.
 							vscode.commands.executeCommand('vscode.openFolder', workspacePath);
 							// vscode.workspace.updateWorkspaceFolders(0,null,{uri:workspacePath,name:projectName});
