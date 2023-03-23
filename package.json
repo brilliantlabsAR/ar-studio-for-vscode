@@ -33,7 +33,7 @@
         {
           "id": "projects",
           "name": "Projects",
-          "icon": "media/bulb.svg",
+          "icon": "media/bulb.svg"
         }
       ],
       "explorer": [
