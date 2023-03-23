@@ -141,7 +141,60 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
 	
-
+	// const projectTree = vscode.window.createTreeView('projects',{treeDataProvider:projectProvider});
+	// projectTree.onDidChangeVisibility(() => {
+	// 	if (projectTree.visible) {
+	// 	  const disposable = vscode.commands.registerCommand('myTree.search', async () => {
+	// 		const searchTerm = await vscode.window.showInputBox({ prompt: 'Search' });
+	// 		if (searchTerm) {
+	// 		  const items = await projectProvider.search(searchTerm);
+	// 		//   projectProvider.dataProvider = new ProjectProvider(items);
+	// 		}
+	// 	  });
+	// 	//   projectTree.message = { text: 'Search: "Ctrl+Shift+F"' };
+	// 	//   projectTree.onDidDispose(() => disposable.dispose());
+	// 	} else {
+	// 		projectTree.message = undefined;
+	// 	}
+	//   });
+	const thisProvider={
+        resolveWebviewView:function(thisWebview:any, thisWebviewContext:any, thisToken:any){
+            thisWebview.webview.options={enableScripts:true}
+            thisWebview.webview.html=`<!DOCTYPE html>
+			<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<!--
+					Use a content security policy to only allow loading styles from our extension directory,
+					and only allow scripts that have a specific nonce.
+					(See the 'webview-sample' extension sample for img-src content security policy examples)
+				-->
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none';">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				
+				<title>Cat Colors</title>
+			</head>
+			<body>
+				<ul class="color-list">
+				</ul>
+				<button class="add-color-button">Add Color</button>
+			</body>
+			</html>`;
+        }
+    };
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider("projects", thisProvider)
+    );
+	vscode.window.registerTreeDataProvider('snippetTemplates', nodeDependenciesProvider);
+	vscode.window.registerTreeDataProvider('projects',projectProvider);
+	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
+	outputChannel.clear();
+	statusBarItemBle.command = "brilliant-ar-studio.connect";
+	statusBarItemBle.show();
+	if(isConnected()){
+		updateStatusBarItem("connected");
+	}else{
+		updateStatusBarItem("disconnected");
 
 //   class MyTreeDataProvider implements TreeDataProvider<MyTreeItem> {
 //   // implementation of the TreeDataProvider interface

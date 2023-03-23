@@ -31,6 +31,9 @@ export class ProjectProvider implements vscode.TreeDataProvider<Project>, vscode
 	getTreeItem(element: Project): vscode.TreeItem {
 		return element;
 	}
+	search(term:string){
+console.log(term);
+	}
 
 	
 	async getChildren(element?: Project): Promise<Project[]> {
@@ -165,4 +168,30 @@ export function cloneAndOpenRepo(repoUrl:string,uri:vscode.Uri): void {
   });
 }
 
+
+// import { TreeDataProvider, TreeItem, TreeView } from 'vscode';
+
+// class MyTreeDataProvider implements TreeDataProvider<MyTreeItem> {
+//   // implementation of the TreeDataProvider interface
+// }
+
+// const treeDataProvider = new MyTreeDataProvider();
+// const treeView = vscode.window.createTreeView('myTree', { treeDataProvider });
+	
+// // add a search bar to the tree view
+// treeView.onDidChangeVisibility(() => {
+//   if (treeView.visible) {
+//     const disposable = commands.registerCommand('myTree.search', async () => {
+//       const searchTerm = await window.showInputBox({ prompt: 'Search' });
+//       if (searchTerm) {
+//         const items = await treeDataProvider.search(searchTerm);
+//         // treeView.dataProvider = new MyTreeDataProvider(items);
+//       }
+//     });
+//     // treeView.message = { text: 'Search: "Ctrl+Shift+F"' };
+//     // treeView.onDidDispose(() => disposable.dispose());
+//   } else {
+//     // treeView.message = undefined;
+//   }
+// });
 
