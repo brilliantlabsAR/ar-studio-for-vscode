@@ -6,7 +6,9 @@ import { isConnected,disconnect } from './bluetooth';
 import {ensureConnected,replSend,sendFileUpdate,triggerFpgaUpdate} from './repl';
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
 import { DepNodeProvider } from './snippets/provider';
-
+// import * as vscode from 'vscode';
+import * as path from 'path';
+import { spawn } from 'child_process';
 // import { FileExplorer } from './fileExplorer';
 const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
@@ -33,7 +35,14 @@ const initFiles = async (rootUri:vscode.Uri,projectName:string) => {
 		vscode.workspace.fs.writeFile(readmeUri,Buffer.from("###  "+projectName));
 	}
 };
-
+function getNonce() {
+	let text = '';
+	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	for (let i = 0; i < 32; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
+}
 export const updatePublishStatus = async ()=>{
 	const gitExtension1 = vscode.extensions.getExtension('vscode.git');
 	if(gitExtension1){
@@ -98,7 +107,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	// register content provider for scheme `references`
 	// vscode.commands.executeCommand('')
 	// register document link provider for scheme `references`
-	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
 	const nodeDependenciesProvider = new DepNodeProvider("rootPath");
 	const projectProvider =  new ProjectProvider();
 	
@@ -118,9 +127,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	// 		projectTree.message = undefined;
 	// 	}
 	//   });
+	
 	const thisProvider={
         resolveWebviewView:function(thisWebview:any, thisWebviewContext:any, thisToken:any){
-            thisWebview.webview.options={enableScripts:true}
+            thisWebview.webview.options={enableScripts:true};
+			const scriptUri = thisWebview.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'media', 'main.js'));
+			const nonce = getNonce();
             thisWebview.webview.html=`<!DOCTYPE html>
 			<html lang="en">
 			<head>
@@ -130,7 +142,6 @@ export async function activate(context: vscode.ExtensionContext) {
 					and only allow scripts that have a specific nonce.
 					(See the 'webview-sample' extension sample for img-src content security policy examples)
 				-->
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none';">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				
 				<title>Cat Colors</title>
@@ -138,14 +149,16 @@ export async function activate(context: vscode.ExtensionContext) {
 			<body>
 				<ul class="color-list">
 				</ul>
-				<button class="add-color-button">Add Color</button>
+				<button class="scann">Add Color</button>
+		
+				<script nonce="${nonce}" src="${scriptUri}"></script>
 			</body>
 			</html>`;
         }
     };
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider("projects", thisProvider)
-    );
+    // context.subscriptions.push(
+    //     vscode.window.registerWebviewViewProvider("projects", thisProvider)
+    // );
 	vscode.window.registerTreeDataProvider('snippetTemplates', nodeDependenciesProvider);
 	vscode.window.registerTreeDataProvider('projects',projectProvider);
 	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
@@ -182,7 +195,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 		  },
 		}),
-		fsWatcher.onDidCreate((e)=>{
+		fsWatcher.onDidCreate(async (e)=>{
 			if(currentSyncPath!==null && e.fsPath.includes(currentSyncPath.fsPath)){
 				let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
 				memFs.addFile(e,devicePath);
@@ -213,6 +226,9 @@ export async function activate(context: vscode.ExtensionContext) {
 					sendFileUpdate(fileData);
 				}
 		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.refreshDeviceFiles', async (thiscontext) => {
+			memFs.refresh();
+		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.fpgaUpdate', async (thiscontext) => {
 			vscode.commands.executeCommand('setContext', 'monocle.sync', false);
 			currentSyncPath = null;
@@ -224,6 +240,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.getPublicApps',  (thiscontext) => {
 			 projectProvider.refresh();
+	   
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.UnPublishMonocleApp',  (thiscontext) => {
 			const gitExtension1 = vscode.extensions.getExtension('vscode.git');
@@ -241,8 +258,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.forkProject',  async (thiscontext) => {
 			let cloneurl = thiscontext.cloneurl;
-			let ownerRepo = cloneurl.replace('https://github.com/','').replace('.git','').split('/');
-			let projectName = await vscode.window.showInputBox({title:"Project Name",placeHolder:ownerRepo[1]});
+			let ownerRepo = gitOper.getOwnerRepo(cloneurl);
+			// let ownerRepo = cloneurl.replace('https://github.com/','').replace('.git','').split('/');
+			let projectName = await vscode.window.showInputBox({title:"Project Name",placeHolder:ownerRepo.repo});
 			let selectedPath = await vscode.window.showOpenDialog({canSelectFolders:true,canSelectFiles:false,canSelectMany:false,title:"Select project path"});
 			
 			if(projectName && selectedPath){
@@ -298,7 +316,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					// let newPathReadMe = vscode.Uri.joinPath(rootUri,'./README.md');
 					initFiles(rootUri,vscode.workspace.workspaceFolders[0].name);
 				}
-				currentSyncPath = vscode.Uri.joinPath(rootUri,monocleFolder);
+				currentSyncPath = vscode.Uri.joinPath(rootUri,monocleFolder+"/");
 				vscode.commands.executeCommand('setContext', 'monocle.sync', true);
 				 
 			}else{

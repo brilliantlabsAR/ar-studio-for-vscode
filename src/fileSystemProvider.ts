@@ -7,7 +7,7 @@
 import { file } from 'jszip';
 import * as path from 'path';
 import * as vscode from 'vscode';
-
+import {listFiles} from './repl';
 export class Snippet extends vscode.TreeItem {
 
 	constructor(
@@ -103,8 +103,16 @@ export class DeviceFs implements  vscode.TreeDataProvider<Entry>,vscode.FileSyst
 		}
 		throw vscode.FileSystemError.FileNotFound();
 	}
-	addFile(uri:vscode.Uri,devicePath:string){
-		this.allFiles.push(devicePath);
+	async addFile(uri:vscode.Uri,devicePath:string){
+		const basename = path.posix.basename(devicePath);
+		let file = await vscode.workspace.fs.stat(uri);
+		if(file.type===vscode.FileType.Directory){
+			//  here needs to create directory in monocle
+			this.allFiles.push(new Directory(basename,vscode.TreeItemCollapsibleState.Collapsed));
+		}else if(file.type===vscode.FileType.File){
+			//  here needs to create file in monocle
+			this.allFiles.push(new File(basename));
+		}
 		this.refresh();
 	}
 	updateFile(uri:vscode.Uri,devicePath:string){
@@ -198,6 +206,7 @@ export class DeviceFs implements  vscode.TreeDataProvider<Entry>,vscode.FileSyst
 		return element;
 	}
 	async getChildren(element?: Entry): Promise<Entry[]> {
+		
 		if (element) {
 			if (element instanceof Directory) {
 				return [new File('inside.py')];
@@ -213,44 +222,29 @@ export class DeviceFs implements  vscode.TreeDataProvider<Entry>,vscode.FileSyst
 			// const children = await this.readDirectory(element.uri);
 			// return children.map(([name, type]) => ({ uri: vscode.Uri.file(path.join(element.uri.fsPath, name)), type }));
 		}
-    //    fetch files from device
-	if(this.allFiles.length!==0){
 		let files:Entry[]= [];
-		this.allFiles.forEach(path=>{
-			// let entry = this._lookupAsDirectory(vscode.Uri.parse(path),true);
-			files.push(new File(path));
+		
+		let topDirectory = await listFiles();
+		topDirectory.forEach(f=>{
+			if(f.includes('.')){
+				files.push(new File(f));
+			}else{
+				files.push(new Directory(f,vscode.TreeItemCollapsibleState.Collapsed));
+			}
 		});
 		return files;
+    //    fetch files from device
+	if(this.allFiles.length!==0){
+		// let files:Entry[]= [];
+		// this.allFiles.forEach(path=>{
+		// 	// let entry = this._lookupAsDirectory(vscode.Uri.parse(path),true);
+		// 	files.push(new File(path));
+		// });
+		return this.allFiles;
 	}
-	let files:Entry[]= [];
 	files.push(new Directory("testDir",vscode.TreeItemCollapsibleState.Collapsed));
 	files.push(new File("file.py"));
 	return files;
-		// const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
-		// if (workspaceFolder) {
-		// 	// const children =  this.readDirectory(workspaceFolder.uri);
-		// 	const entry = this._lookupAsDirectory(vscode.Uri.parse(this.scheme), true);
-		// 	const result: Entry[] = [];
-		// 	for (const [name, child] of entry.entries) {
-		// 		result.push(child);
-		// 	}
-		// 	return result;
-		// 	// children.sort((a, b) => {
-		// 	// 	if (a[1] === b[1]) {
-		// 	// 		return a[0].localeCompare(b[0]);
-		// 	// 	}
-		// 	// 	return a[1] === vscode.FileType.Directory ? -1 : 1;
-		// 	// });
-		// 	// let entry = this._lookup( vscode.Uri.file(path.join(workspaceFolder.uri.fsPath, "name")),true)
-		// 	// return children.map((entry) => ({ uri: vscode.Uri.file(path.join(workspaceFolder.uri.fsPath, "name")), type }));
-		// 	// return children.map((entry)=>{
-		// 	// 	if(entry.entries.lenth)
-		// 	// });
-		// 	// return entry;
-
-		// }
-
-		return [new ProjectEmptyTreeItem];
 	}
 	// --- lookup
 

@@ -42,7 +42,6 @@
           "name": "Device Files",
           "icon": "media/bulb.svg",
           "when": "monocle.deviceConnected"
-          
         }
       ]
     },
@@ -137,54 +136,53 @@
     ],
     "menus": {
       "view/title": [
-				
         {
-					"command": "brilliant-ar-studio.refreshDeviceFiles",
-					"when": "view == fileExplorer",
-					"group": "navigation@0"
-				},
+          "command": "brilliant-ar-studio.refreshDeviceFiles",
+          "when": "view == fileExplorer",
+          "group": "navigation@0"
+        },
         {
-					"command": "brilliant-ar-studio.syncFiles",
-					"when": "view == fileExplorer && !monocle.sync",
-					"group": "navigation@1"
-				},
+          "command": "brilliant-ar-studio.syncFiles",
+          "when": "view == fileExplorer && !monocle.sync",
+          "group": "navigation@1"
+        },
         {
-					"command": "brilliant-ar-studio.syncStop",
-					"when": "view == fileExplorer && monocle.sync",
-					"group": "navigation@1"
-				},
+          "command": "brilliant-ar-studio.syncStop",
+          "when": "view == fileExplorer && monocle.sync",
+          "group": "navigation@1"
+        },
         {
-					"command": "brilliant-ar-studio.fpgaUpdate",
-					"when": "view == fileExplorer",
-					"group": "navigation@2"
-				},
+          "command": "brilliant-ar-studio.fpgaUpdate",
+          "when": "view == fileExplorer",
+          "group": "navigation@2"
+        },
         {
-					"command": "brilliant-ar-studio.publishMonocleApp",
-					"when": "view == fileExplorer && workspaceFolderCount !=0 && !monocle.published",
-					"group": "navigation@3"
-				},
+          "command": "brilliant-ar-studio.publishMonocleApp",
+          "when": "view == fileExplorer && workspaceFolderCount !=0 && !monocle.published",
+          "group": "navigation@3"
+        },
         {
-					"command": "brilliant-ar-studio.UnPublishMonocleApp",
-					"when": "view == fileExplorer && workspaceFolderCount !=0 && monocle.published==true",
-					"group": "navigation@3"
-				},
+          "command": "brilliant-ar-studio.UnPublishMonocleApp",
+          "when": "view == fileExplorer && workspaceFolderCount !=0 && monocle.published==true",
+          "group": "navigation@3"
+        },
         {
-					"command": "brilliant-ar-studio.getPublicApps",
-					"when": "view == projects",
-					"group": "navigation@0"
-				}
+          "command": "brilliant-ar-studio.getPublicApps",
+          "when": "view == projects",
+          "group": "navigation@0"
+        }
       ],
       "view/item/context": [
         {
-					"command": "brilliant-ar-studio.deleteDeviceFile",
-					"when": "view == fileExplorer",
-					"group": "inline"
-				},
+          "command": "brilliant-ar-studio.deleteDeviceFile",
+          "when": "view == fileExplorer",
+          "group": "inline"
+        },
         {
-					"command": "brilliant-ar-studio.forkProject",
-					"when": "view == projects",
-					"group": "inline"
-				}
+          "command": "brilliant-ar-studio.forkProject",
+          "when": "view == projects",
+          "group": "inline"
+        }
       ],
       "editor/title": [
         {
@@ -221,7 +219,6 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js"
   },
-  
   "devDependencies": {
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",

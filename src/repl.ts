@@ -9,7 +9,7 @@ let replRawModeEnabled = false;
 let rawReplResponseString = '';
 let rawReplResponseCallback:any;
 let fileWriteStart = false;
-
+let internalOperation = false;
 export async function replRawMode(enable:boolean) {
 
     if (enable === true) {
@@ -121,7 +121,11 @@ export async function ensureConnected() {
                 const updateMsg = new vscode.MarkdownString(updateInfo);
                 vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
                     if(op==="Update Now"){
+                        if(updateInfo?.includes('New firmware')){
                          startFirmwareUpdate();
+                        }else if(updateInfo?.includes('New FPGA')){
+                            triggerFpgaUpdate();
+                        }
                     }
                 });
                 // infoText.innerHTML = updateInfo + " Click <a href='#' " +
@@ -162,12 +166,19 @@ export function replHandleResponse(string:string) {
     writeEmitter.fire(string.slice(string.indexOf('>>>')));
         return;
     }
+    if(internalOperation){
+        return;
+    }
     writeEmitter.fire(string);
 
 }
 
 export async function sendFileUpdate(update:any){
     // console.log(JSON.stringify(update));
+    if(replRawModeEnabled){
+        vscode.window.showInformationMessage("Device Busy");
+        return [];
+    }
     fileWriteStart = true;
     const decoder = new util.TextDecoder('utf-8');
     await replRawMode(true);
@@ -200,8 +211,46 @@ export function receiveRawData(data:any){
 
 export async function triggerFpgaUpdate(binPath?:vscode.Uri){
     updateStatusBarItem("connected","$(cloud-download) Updating");
-    await startFpgaUpdate(binPath);
+    await startFpgaUpdate(binPath).catch(err=>{
+        vscode.window.showErrorMessage(err);
+    });
     vscode.window.showInformationMessage("FPGA Update done");
     updateStatusBarItem("connected");
+}
+
+export async function listFiles():Promise<string[]>{
+    if(!isConnected()){return [];};
+    if(replRawModeEnabled){
+        await new Promise(r => {
+            let interval = setInterval(()=>{
+                if(!replRawModeEnabled){
+                    setTimeout(()=>{
+                        r("");
+                    },1000);
+                    clearInterval(interval);
+                }
+            },1000);
+        });
+    }
+    internalOperation = true;
+    await replRawMode(true);
+    // Short delay to throw away bluetooth data received upon connection
+    await new Promise(r => setTimeout(r, 100));
+
+    let response:any = await replSend("import os;print(os.listdir());del(os)");
+    await replRawMode(false);
+    internalOperation = false;
+    if(response){
+        try{
+            let strList = response.slice(response.indexOf('OK')+2,response.indexOf('\r\n\x04'));
+            strList = JSON.parse(strList);
+            // strList.push('main.py');
+            return strList;
+        }catch(error:any){
+            outputChannel.appendLine(error);
+            return [];
+        }
+    }
+    return [];
 }
 
