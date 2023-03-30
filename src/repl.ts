@@ -10,6 +10,7 @@ let rawReplResponseString = '';
 let rawReplResponseCallback:any;
 let fileWriteStart = false;
 let internalOperation = false;
+const decoder = new util.TextDecoder('utf-8');
 export async function replRawMode(enable:boolean) {
 
     if (enable === true) {
@@ -180,7 +181,6 @@ export async function sendFileUpdate(update:any){
         return [];
     }
     fileWriteStart = true;
-    const decoder = new util.TextDecoder('utf-8');
     await replRawMode(true);
     let response:any = await replSend(decoder.decode(update));
     // replDataTxQueue.push.apply(replDataTxQueue,update);
@@ -218,8 +218,11 @@ export async function triggerFpgaUpdate(binPath?:vscode.Uri){
     updateStatusBarItem("connected");
 }
 
-export async function listFiles():Promise<string[]>{
-    if(!isConnected()){return [];};
+async function exitRawReplInternal(){
+    await replRawMode(false);
+    internalOperation = false;
+}
+async function enterRawReplInternal(){
     if(replRawModeEnabled){
         await new Promise(r => {
             let interval = setInterval(()=>{
@@ -234,12 +237,14 @@ export async function listFiles():Promise<string[]>{
     }
     internalOperation = true;
     await replRawMode(true);
-    // Short delay to throw away bluetooth data received upon connection
     await new Promise(r => setTimeout(r, 100));
+}
 
+export async function listFilesDevice():Promise<string[]>{
+
+    await enterRawReplInternal();
     let response:any = await replSend("import os;print(os.listdir());del(os)");
-    await replRawMode(false);
-    internalOperation = false;
+    await exitRawReplInternal();
     if(response){
         try{
             let strList = response.slice(response.indexOf('OK')+2,response.indexOf('\r\n\x04'));
@@ -252,5 +257,41 @@ export async function listFiles():Promise<string[]>{
         }
     }
     return [];
+}
+
+export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
+    if(!isConnected()){return false;};
+    
+    await enterRawReplInternal();
+    let response:any = await replSend("import os;os.mkdir('"+ devicePath +"');del(os)");
+    await exitRawReplInternal();
+    if(response && !response.includes("Error")){
+        return true;
+    }
+    return false;
+}
+export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):Promise<boolean>{
+    if(!isConnected()){return false;};
+    let fileData = await vscode.workspace.fs.readFile(uri);
+
+    await enterRawReplInternal();
+
+    if(fileData.byteLength===0){
+         let response:any = await replSend("open('"+ devicePath +"', 'wb').write(b'')");
+        await exitRawReplInternal();
+        if(response &&  !response.includes("Error")){return true;};
+    }
+    if(fileData.byteLength<4000){
+        // if file size less write in one attempt
+       
+        let response:any = await replSend("open('"+ devicePath +"', 'wb').write(b'"+decoder.decode(fileData)+"')");
+        await exitRawReplInternal();
+        if(response &&  !response.includes("Error")){return true;};
+    }else{
+        // if larger file send in small chunks
+        return false;
+    }
+    
+    return false;
 }
 

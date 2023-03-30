@@ -7,7 +7,7 @@
 import { file } from 'jszip';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {listFiles} from './repl';
+import {listFilesDevice,createDirectoryDevice,creatUpdateFileDevice} from './repl';
 export class Snippet extends vscode.TreeItem {
 
 	constructor(
@@ -108,16 +108,37 @@ export class DeviceFs implements  vscode.TreeDataProvider<Entry>,vscode.FileSyst
 		let file = await vscode.workspace.fs.stat(uri);
 		if(file.type===vscode.FileType.Directory){
 			//  here needs to create directory in monocle
-			this.allFiles.push(new Directory(basename,vscode.TreeItemCollapsibleState.Collapsed));
+			if(await createDirectoryDevice(devicePath)){
+				this.refresh();
+			}
+			// this.allFiles.push(new Directory(basename,vscode.TreeItemCollapsibleState.Collapsed));
 		}else if(file.type===vscode.FileType.File){
 			//  here needs to create file in monocle
-			this.allFiles.push(new File(basename));
+			if(await creatUpdateFileDevice(uri, devicePath)){
+				this.refresh();
+			}
+			
+			
+			// this.allFiles.push(new File(basename));
 		}
-		this.refresh();
 	}
-	updateFile(uri:vscode.Uri,devicePath:string){
-		// this.allFiles.push(devicePath);
-		this.refresh();
+	async updateFile(uri:vscode.Uri,devicePath:string){
+		const basename = path.posix.basename(devicePath);
+		let file = await vscode.workspace.fs.stat(uri);
+		if(file.type===vscode.FileType.Directory){
+			//  here needs to update directory in monocle
+			// if(await createDirectoryDevice(devicePath)){
+			// 	this.refresh();
+			// }
+			// this.allFiles.push(new Directory(basename,vscode.TreeItemCollapsibleState.Collapsed));
+		}else if(file.type===vscode.FileType.File){
+			//  here needs to update file in monocle
+			if(await creatUpdateFileDevice(uri, devicePath)){
+				this.refresh();
+			}
+			
+			// this.allFiles.push(new File(basename));
+		}
 	}
 	deleteFile(devicePath:string){
 		this.allFiles = this.allFiles.filter(p=>p!==devicePath);
@@ -224,7 +245,7 @@ export class DeviceFs implements  vscode.TreeDataProvider<Entry>,vscode.FileSyst
 		}
 		let files:Entry[]= [];
 		
-		let topDirectory = await listFiles();
+		let topDirectory = await listFilesDevice();
 		topDirectory.forEach(f=>{
 			if(f.includes('.')){
 				files.push(new File(f));
