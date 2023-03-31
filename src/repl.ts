@@ -240,9 +240,17 @@ async function enterRawReplInternal(){
     await new Promise(r => setTimeout(r, 100));
 }
 
-export async function listFilesDevice():Promise<string[]>{
+export async function listFilesDevice(currentPath="/"):Promise<string[]>{
 
     await enterRawReplInternal();
+    let cmd = `import os;
+d="${currentPath}"
+l =[]
+if os.stat(d)[0] & 0x4000:
+    for f in os.ilistdir(d):
+        if f[0] not in ('.', '..'):
+            l.append({name:f[0])
+del(os)`;
     let response:any = await replSend("import os;print(os.listdir());del(os)");
     await exitRawReplInternal();
     if(response){
@@ -281,17 +289,38 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
         await exitRawReplInternal();
         if(response &&  !response.includes("Error")){return true;};
     }
-    if(fileData.byteLength<4000){
+    if(fileData.byteLength<1200){
         // if file size less write in one attempt
        
-        let response:any = await replSend("open('"+ devicePath +"', 'wb').write(b'"+decoder.decode(fileData)+"')");
+        let response:any = await replSend("open('"+ devicePath +"', 'wb').write(b'''"+decoder.decode(fileData)+"''')");
         await exitRawReplInternal();
         if(response &&  !response.includes("Error")){return true;};
     }else{
-        // if larger file send in small chunks
+        vscode.window.showInformationMessage('Please keep files smaller. Meanwhile we are wroking to allow larger files');
         return false;
     }
     
     return false;
 }
 
+export async function deletFilesDevice(devicePath:string):Promise<boolean>{
+    if(!isConnected){return false;};
+    await enterRawReplInternal();
+    let cmd = `import os;
+def rm(d):
+    try:
+        if os.stat(d)[0] & 0x4000:
+            for f in os.ilistdir(d):
+                if f[0] not in ('.', '..'):
+                    rm("/".join((d, f[0])))
+            os.rmdir(d)
+        else:
+            os.remove(d)
+    except Exception as e:
+        print("rm of '%s' failed" % d,e)
+rm('${devicePath}'); del(os);del(rm)`;
+    let response:any = await replSend(cmd);
+    await exitRawReplInternal();
+    if(response &&  !response.includes("failed")){return true;};
+    return false;
+}

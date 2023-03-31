@@ -7,7 +7,7 @@
 import { file } from 'jszip';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {listFilesDevice,createDirectoryDevice,creatUpdateFileDevice} from './repl';
+import {listFilesDevice,createDirectoryDevice,creatUpdateFileDevice, deletFilesDevice} from './repl';
 export class Snippet extends vscode.TreeItem {
 
 	constructor(
@@ -140,9 +140,10 @@ export class DeviceFs implements  vscode.TreeDataProvider<Entry>,vscode.FileSyst
 			// this.allFiles.push(new File(basename));
 		}
 	}
-	deleteFile(devicePath:string){
-		this.allFiles = this.allFiles.filter(p=>p!==devicePath);
-		this.refresh();
+	async deleteFile(devicePath:string){
+		if(await deletFilesDevice(devicePath)){
+			this.refresh();
+		}
 	}
 	writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void {
 		const basename = path.posix.basename(uri.path);
