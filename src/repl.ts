@@ -243,15 +243,17 @@ async function enterRawReplInternal(){
 export async function listFilesDevice(currentPath="/"):Promise<string[]>{
 
     await enterRawReplInternal();
-    let cmd = `import os;
+    let cmd = `import os,ujson;
 d="${currentPath}"
 l =[]
+l.append({"name":"main.py","file":True})
 if os.stat(d)[0] & 0x4000:
     for f in os.ilistdir(d):
         if f[0] not in ('.', '..'):
-            l.append({name:f[0])
-del(os)`;
-    let response:any = await replSend("import os;print(os.listdir());del(os)");
+            l.append({"name":f[0],"file":f[1] & 0x4000})
+print(ujson.dumps(l))
+del(os,l,d)`;
+    let response:any = await replSend(cmd);
     await exitRawReplInternal();
     if(response){
         try{
