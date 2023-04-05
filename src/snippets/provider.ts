@@ -17,17 +17,11 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
 	constructor(private workspaceRoot: string | undefined) {
 	}
 
-
-
-	
-
     //  for drag 
     public async handleDrag(source: Snippet[], treeDataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): Promise<void> {
 		treeDataTransfer.set('application/vnd.code.tree.snippettemplates', new vscode.DataTransferItem(source[0].label));
 		return ;
 	}
-
-
 
    returnData(){
 	return this.dropMimeTypes;
@@ -84,8 +78,6 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
 		
 			return [];
 	}
-
-
 }
 
 export class Snippet extends vscode.TreeItem {

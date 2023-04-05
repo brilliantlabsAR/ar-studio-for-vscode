@@ -118,10 +118,16 @@ export async function activate(context: vscode.ExtensionContext) {
   // const provider = new ContentProvider();
   var currentSyncPath: vscode.Uri | null = null;
 
+
+
+
   const memFs = new DeviceFs();
   context.subscriptions.push(
     vscode.window.createTreeView("fileExplorer", { treeDataProvider: memFs })
   );
+
+
+
   // let fileSubs = vscode.workspace.registerFileSystemProvider(myscheme, memFs, { isCaseSensitive: true });
   // register content provider for scheme `references`
   // vscode.commands.executeCommand('')
@@ -132,6 +138,9 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   const nodeDependenciesProvider = new DepNodeProvider("rootPath");
   const projectProvider = new ProjectProvider();
+
+
+ // vscode.bluetooth
 
   // const projectTree = vscode.window.createTreeView('projects',{treeDataProvider:projectProvider});
   // projectTree.onDidChangeVisibility(() => {
@@ -182,34 +191,48 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
       thisWebview.webview.options = { enableScripts: true };
-      thisWebview.webview.html = `<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-				<!--
-					Use a content security policy to only allow loading styles from our extension directory,
-					and only allow scripts that have a specific nonce.
-					(See the 'webview-sample' extension sample for img-src content security policy examples)
-				-->
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none';">
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+      // thisWebview.webview.html = `<!DOCTYPE html>
+			// <html lang="en">
+			// <head>
+			// 	<meta charset="UTF-8">
+			// 	<meta http-equiv="Content-Security-Policy" content="default-src 'none';">
+			// 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				
-				<title>Cat Colors</title>
-			</head>
-			<body>
-			<div style="display:flex; justify-content:center;">
-			<input type="text" placeholder="Search..." style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px;">
-			<button type="submit" style="padding: 10px 20px; background-color: #007bff; border: none; color: #fff; border-radius: 4px; font-size: 16px; margin-left: -1px;">Go</button>
-		  </div><div id="list-container" style="display: flex; flex-wrap: wrap; justify-content: center;">`+html+`</div></body>
-			</html>`;
-      // Get a reference to the HTML element where you want to add the list
+			// 	<title>Cat Colors</title>
+			// </head>
+			// <body>
+			// <div style="display:flex; justify-content:center;">
+			// <input type="text" id="nameInput" placeholder="Search..." style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px;">
+			// <button type="submit" id="submitButton" style="padding: 10px 20px; background-color: #007bff; border: none; color: #fff; border-radius: 4px; font-size: 16px; margin-left: -1px;">Go</button>
+		  // </div>
+      // <div id="list-container" style="display: flex; flex-wrap: wrap; justify-content: center;">`+html+`</div>
+      // </body>
+			// </html>`;
+    
 
-   
-	  	console.log(html);
 
-		  
+      // thisWebview.webview.onDidReceiveMessage(() => {
+      //   const inputField = thisWebview.webview.findWebviewView('nameInput');
+      //   const submitButton = thisWebview.webview.findWebviewView('submitButton');
+
+      //   console.log('event');
+
+        
+      //   submitButton.addEventListener('click', () => {
+      //     console.log('event');
+      //     const inputValue = inputField.value;
+      //     thisWebview.webview.postMessage({
+      //       command: 'inputValue',
+      //       value: inputValue
+      //     });
+      //   });
+      // });
     },
   };
+
+
+
+
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("projects", thisProvider)
   );
@@ -218,7 +241,7 @@ export async function activate(context: vscode.ExtensionContext) {
     nodeDependenciesProvider
   );
 
-  //vscode.window.registerTreeDataProvider('projects',projectProvider);
+  vscode.window.registerTreeDataProvider('projects',projectProvider);
   outputChannel = vscode.window.createOutputChannel("RAW-REPL", "python");
   outputChannel.clear();
   statusBarItemBle.command = "brilliant-ar-studio.connect";

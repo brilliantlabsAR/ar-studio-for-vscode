@@ -179,7 +179,6 @@ export async function sendFileUpdate(update:any){
             writeEmitter.fire("\r\n"+textToEcho);
         }
     }
-    
     await replRawMode(false);
     fileWriteStart  = false;
   
