@@ -9,7 +9,8 @@ let replRawModeEnabled = false;
 let rawReplResponseString = '';
 let rawReplResponseCallback:any;
 let fileWriteStart = false;
-
+let internalOperation = false;
+const decoder = new util.TextDecoder('utf-8');
 export async function replRawMode(enable:boolean) {
 
     if (enable === true) {
@@ -121,7 +122,11 @@ export async function ensureConnected() {
                 const updateMsg = new vscode.MarkdownString(updateInfo);
                 vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
                     if(op==="Update Now"){
+                        if(updateInfo?.includes('New firmware')){
                          startFirmwareUpdate();
+                        }else if(updateInfo?.includes('New FPGA')){
+                            triggerFpgaUpdate();
+                        }
                     }
                 });
                 // infoText.innerHTML = updateInfo + " Click <a href='#' " +
@@ -162,14 +167,20 @@ export function replHandleResponse(string:string) {
     writeEmitter.fire(string.slice(string.indexOf('>>>')));
         return;
     }
+    if(internalOperation){
+        return;
+    }
     writeEmitter.fire(string);
 
 }
 
 export async function sendFileUpdate(update:any){
     // console.log(JSON.stringify(update));
+    if(replRawModeEnabled){
+        vscode.window.showInformationMessage("Device Busy");
+        return [];
+    }
     fileWriteStart = true;
-    const decoder = new util.TextDecoder('utf-8');
     await replRawMode(true);
     let response:any = await replSend(decoder.decode(update));
     // replDataTxQueue.push.apply(replDataTxQueue,update);
@@ -199,8 +210,118 @@ export function receiveRawData(data:any){
 
 export async function triggerFpgaUpdate(binPath?:vscode.Uri){
     updateStatusBarItem("connected","$(cloud-download) Updating");
-    await startFpgaUpdate(binPath);
+    await startFpgaUpdate(binPath).catch(err=>{
+        vscode.window.showErrorMessage(err);
+    });
     vscode.window.showInformationMessage("FPGA Update done");
     updateStatusBarItem("connected");
 }
 
+async function exitRawReplInternal(){
+    await replRawMode(false);
+    internalOperation = false;
+}
+async function enterRawReplInternal(){
+    if(replRawModeEnabled){
+        await new Promise(r => {
+            let interval = setInterval(()=>{
+                if(!replRawModeEnabled){
+                    setTimeout(()=>{
+                        r("");
+                    },1000);
+                    clearInterval(interval);
+                }
+            },1000);
+        });
+    }
+    internalOperation = true;
+    await replRawMode(true);
+    await new Promise(r => setTimeout(r, 100));
+}
+
+export async function listFilesDevice(currentPath="/"):Promise<string[]>{
+
+    await enterRawReplInternal();
+    let cmd = `import os,ujson;
+d="${currentPath}"
+l =[]
+l.append({"name":"main.py","file":True})
+if os.stat(d)[0] & 0x4000:
+    for f in os.ilistdir(d):
+        if f[0] not in ('.', '..'):
+            l.append({"name":f[0],"file":f[1] & 0x4000})
+print(ujson.dumps(l))
+del(os,l,d)`;
+    let response:any = await replSend(cmd);
+    await exitRawReplInternal();
+    if(response){
+        try{
+            let strList = response.slice(response.indexOf('OK')+2,response.indexOf('\r\n\x04'));
+            strList = JSON.parse(strList);
+            // strList.push('main.py');
+            return strList;
+        }catch(error:any){
+            outputChannel.appendLine(error);
+            return [];
+        }
+    }
+    return [];
+}
+
+export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
+    if(!isConnected()){return false;};
+    
+    await enterRawReplInternal();
+    let response:any = await replSend("import os;os.mkdir('"+ devicePath +"');del(os)");
+    await exitRawReplInternal();
+    if(response && !response.includes("Error")){
+        return true;
+    }
+    return false;
+}
+export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):Promise<boolean>{
+    if(!isConnected()){return false;};
+    let fileData = await vscode.workspace.fs.readFile(uri);
+
+    await enterRawReplInternal();
+
+    if(fileData.byteLength===0){
+         let response:any = await replSend("open('"+ devicePath +"', 'wb').write(b'')");
+        await exitRawReplInternal();
+        if(response &&  !response.includes("Error")){return true;};
+    }
+    if(fileData.byteLength<1200){
+        // if file size less write in one attempt
+       
+        let response:any = await replSend("open('"+ devicePath +"', 'wb').write(b'''"+decoder.decode(fileData)+"''')");
+        await exitRawReplInternal();
+        if(response &&  !response.includes("Error")){return true;};
+    }else{
+        vscode.window.showInformationMessage('Please keep files smaller. Meanwhile we are wroking to allow larger files');
+        return false;
+    }
+    
+    return false;
+}
+
+export async function deletFilesDevice(devicePath:string):Promise<boolean>{
+    if(!isConnected){return false;};
+    await enterRawReplInternal();
+    let cmd = `import os;
+def rm(d):
+    try:
+        if os.stat(d)[0] & 0x4000:
+            for f in os.ilistdir(d):
+                if f[0] not in ('.', '..'):
+                    rm("/".join((d, f[0])))
+            os.rmdir(d)
+        else:
+            os.remove(d)
+    except Exception as e:
+        print("rm of '%s' failed" % d,e)
+rm('${devicePath}'); del(os);del(rm)`;
+    let response:any = await replSend(cmd);
+    await exitRawReplInternal();
+    if(response &&  !response.includes("failed")){return true;};
+    return false;
+}
