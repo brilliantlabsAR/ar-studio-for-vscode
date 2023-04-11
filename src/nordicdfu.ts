@@ -132,7 +132,6 @@ async function transferFile(file:any, type:any) {
             outputChannel.appendLine('Transferring init file');
             response = await nordicDfuSendControl([0x06, 0x01]);
             break;
-
         case 'image':
             outputChannel.appendLine('Transferring image file');
             response = await nordicDfuSendControl([0x06, 0x02]);
