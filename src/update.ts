@@ -182,7 +182,7 @@ async function downloadLatestFpgaImage() {
         }
     });
 
-    response = await request("GET /repos/{owner}/{repo}/releases/assets/{assetId}", {
+    response = await request("GET /repos/{owner}/ {repo}/releases/assets/{assetId}", {
         owner: fpgaGit.owner,
         repo: fpgaGit.repo,
         assetId: assetId
