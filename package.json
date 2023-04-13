@@ -2,6 +2,9 @@
   "name": "brilliant-ar-studio",
   "displayName": "Brilliant AR Studio",
   "description": "Develop AR applications for Monocle within the Brilliant AR Studio.",
+  "repository": {
+    "url": "https://github.com/brilliantlabsAR/ar-studio-for-vscode"
+  },
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.76.0"
@@ -51,37 +54,17 @@
         "title": "Hello World"
       },
       {
+        "command": "brilliant-ar-studio.openDeviceFile",
+        "title": "Open Device file in editor"
+      },
+      {
         "command": "fileExplorer.openFile",
         "title": "openFile"
       },
+      
       {
         "command": "brilliant-ar-studio.connect",
         "title": "Connect"
-      },
-      {
-        "command": "memfs.workspaceInit",
-        "title": "Setup Workspace",
-        "category": "MemFS"
-      },
-      {
-        "command": "memfs.init",
-        "title": "Create Files",
-        "category": "MemFS"
-      },
-      {
-        "command": "memfs.reset",
-        "title": "Delete Files",
-        "category": "MemFS"
-      },
-      {
-        "command": "memfs.deleteFile",
-        "title": "Delete \"file.txt\"",
-        "category": "MemFS"
-      },
-      {
-        "command": "memfs.addFile",
-        "title": "Add \"file.txt\"",
-        "category": "MemFS"
       },
       {
         "command": "brilliant-ar-studio.runFile",
@@ -132,13 +115,19 @@
         "command": "brilliant-ar-studio.forkProject",
         "title": "Fork to Edit",
         "icon": "$(repo-forked)"
+      },
+      {
+        "command": "brilliant-ar-studio.copyProject",
+        "title": "Copy To Local",
+        "icon": "$(explorer-view-icon)"
       }
     ],
     "menus": {
+   
       "view/title": [
         {
           "command": "brilliant-ar-studio.refreshDeviceFiles",
-          "when": "view == fileExplorer",
+          "when": "view == fileExplorer && !monocle.sync",
           "group": "navigation@0"
         },
         {
@@ -174,8 +163,8 @@
       ],
       "view/item/context": [
         {
-          "command": "brilliant-ar-studio.deleteDeviceFile",
-          "when": "view == fileExplorer",
+          "command": "brilliant-ar-studio.copyProject",
+          "when": "view == projects",
           "group": "inline"
         },
         {

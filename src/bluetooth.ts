@@ -4,7 +4,6 @@ import { nordicDfuHandleControlResponse } from './nordicdfu.js';
 var util = require('util');
 let device:any = null;
 var bluetooth = require('./ble/index').webbluetooth;
-
 let nordicDfuControlCharacteristic:any = null;
 let nordicDfuPacketCharacteristic:any = null;
 const nordicDfuServiceUuid = 0xfe59;
@@ -56,6 +55,13 @@ export async function connect() {
     //     });
     // }
     // else {
+        setTimeout(()=>{
+            bluetooth.cancelRequest();
+            if(!isConnected()){
+                onDisconnect();
+            }
+
+        },10000);
         device = await bluetooth.requestDevice({
             filters: [
                 { services: [replDataServiceUuid] },

@@ -106,7 +106,21 @@ export async function activate(context: vscode.ExtensionContext) {
 	// let fileSubs = vscode.workspace.registerFileSystemProvider(myscheme, memFs, { isCaseSensitive: true });
 	// register content provider for scheme `references`
 	// vscode.commands.executeCommand('')
-	// register document link provider for scheme `references`
+	async function startSyncing(){
+		if(vscode.workspace.workspaceFolders){
+			let rootUri = vscode.workspace.workspaceFolders[0].uri;
+			const projectFiles = new vscode.RelativePattern(rootUri, monocleFolder+'/*.py');
+			let filesFound = await vscode.workspace.findFiles(projectFiles);
+			if(filesFound.length===0){
+				// let newPathPy = vscode.Uri.joinPath(rootUri,monocleFolder+'/main.py');
+				// let newPathReadMe = vscode.Uri.joinPath(rootUri,'./README.md');
+				initFiles(rootUri,vscode.workspace.workspaceFolders[0].name);
+			}
+			currentSyncPath = vscode.Uri.joinPath(rootUri,monocleFolder+"/");
+			vscode.commands.executeCommand('setContext', 'monocle.sync', true);
+		}
+		
+	}
 	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
 	const nodeDependenciesProvider = new DepNodeProvider("rootPath");
 	const projectProvider =  new ProjectProvider();
@@ -175,7 +189,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
 	
 		
-	const fsWatcher = vscode.workspace.createFileSystemWatcher("**");
+	const fsWatcher = vscode.workspace.createFileSystemWatcher("**",true,false,true);
 	
 	// vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse(myscheme+':/'), name: myscheme });
 	const alldisposables = vscode.Disposable.from(
@@ -195,26 +209,42 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 		  },
 		}),
-		fsWatcher.onDidCreate(async (e)=>{
-			if(currentSyncPath!==null && e.fsPath.includes(currentSyncPath.fsPath)){
-				let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-				memFs.addFile(e,devicePath);
-			}
+		vscode.workspace.onDidRenameFiles((e:vscode.FileRenameEvent)=>{
+			console.log(e);
+			e.files.forEach((e)=>{
+				if(currentSyncPath!==null &&  e.newUri.fsPath.includes(currentSyncPath.fsPath)){
+					let newDevicePath =  e.newUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+					let oldDevicePath =  e.oldUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+					
+					memFs.renameFile(oldDevicePath,newDevicePath);
+				}
+			});
+		}),
+		vscode.workspace.onDidCreateFiles((e:vscode.FileCreateEvent)=>{
+			e.files.forEach((e:vscode.Uri)=>{
+				if(currentSyncPath!==null && e.fsPath.includes(currentSyncPath.fsPath)){
+					let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+					memFs.addFile(e,devicePath);
+				}
+			});
+			
+		}),
+		vscode.workspace.onDidDeleteFiles((e:vscode.FileDeleteEvent)=>{
+			e.files.forEach((e:vscode.Uri)=>{
+				if(currentSyncPath!==null && e.fsPath.includes(currentSyncPath.fsPath)){
+					let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");;
+					memFs.deleteFile(devicePath);
+				}
+			});
+			
 		}),
 		fsWatcher.onDidChange((e)=>{
 			if(currentSyncPath!==null && e.path.includes(currentSyncPath.path)){
 				let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");;
-				memFs.updateFile(e,devicePath);
+				memFs.addFile(e,devicePath);
 			}
 		
 		}),
-		fsWatcher.onDidDelete((e)=>{
-			if(currentSyncPath!==null && e.fsPath.includes(currentSyncPath.fsPath)){
-				let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");;
-				memFs.deleteFile(devicePath);
-			}
-		}),
-	
 		vscode.window.createTreeView('snippetTemplates', {
 			treeDataProvider: new DepNodeProvider(rootPath),
 			dragAndDropController: new DepNodeProvider(rootPath)
@@ -229,10 +259,31 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('brilliant-ar-studio.refreshDeviceFiles', async (thiscontext) => {
 			memFs.refresh();
 		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.openDeviceFile', async (thiscontext) => {
+			if(vscode.workspace.workspaceFolders){
+				let rootUri = vscode.workspace.workspaceFolders[0].uri;
+				let localPath = vscode.Uri.joinPath(rootUri,monocleFolder,thiscontext?.path);
+				let doc = await vscode.workspace.openTextDocument(localPath);
+				await vscode.window.showTextDocument(doc);
+			}
+		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.fpgaUpdate', async (thiscontext) => {
-			vscode.commands.executeCommand('setContext', 'monocle.sync', false);
-			currentSyncPath = null;
-			await triggerFpgaUpdate();
+			let resp = await vscode.window.showQuickPick(["Update Custom firmware","Update from Brilliant Monocle"]);
+			if(!resp){return;}
+			if(resp==="Update Custom firmware"){
+				let binFile = await vscode.window.showOpenDialog({canSelectFiles:true,canSelectFolders:false,canSelectMany:false,filters:{bin: ["bin"]}});
+				if(binFile && binFile.length>0){
+					currentSyncPath = null;
+				vscode.commands.executeCommand('setContext', 'monocle.sync', false);
+				await triggerFpgaUpdate(binFile[0]);
+				}
+			}
+			if(resp==="Update from Brilliant Monocle"){
+				currentSyncPath = null;
+				vscode.commands.executeCommand('setContext', 'monocle.sync', false);
+				await triggerFpgaUpdate();
+			}
+			
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.syncStop', async (thiscontext) => {
 			currentSyncPath = null;
@@ -261,15 +312,25 @@ export async function activate(context: vscode.ExtensionContext) {
 			let ownerRepo = gitOper.getOwnerRepo(cloneurl);
 			// let ownerRepo = cloneurl.replace('https://github.com/','').replace('.git','').split('/');
 			let projectName = await vscode.window.showInputBox({title:"Project Name",placeHolder:ownerRepo.repo});
+			if(!projectName){return;}
 			let selectedPath = await vscode.window.showOpenDialog({canSelectFolders:true,canSelectFiles:false,canSelectMany:false,title:"Select project path"});
 			
-			if(projectName && selectedPath){
+			if(selectedPath){
 				let newPath = vscode.Uri.joinPath(selectedPath[0],projectName);
 				let newRepo = await gitOper.createFork(cloneurl,projectName);
 				if(newRepo){
 					cloneAndOpenRepo(newRepo.data.clone_url,newPath);
 				}
 			}
+		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.copyProject', async (thiscontext) => {
+			let localPath = await vscode.window.showOpenDialog({canSelectFiles:false,canSelectMany:false,canSelectFolders:true,title:"Select folder to open in local"});
+			if(localPath){
+				if(localPath && localPath.length>=0){
+					await gitOper.getArchiveZip(thiscontext.cloneurl,localPath[0]);
+				}
+			}
+			
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.publishMonocleApp',  (thiscontext) => {
 			const gitExtension1 = vscode.extensions.getExtension('vscode.git');
@@ -308,20 +369,12 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('brilliant-ar-studio.syncFiles', async (thiscontext) => {
 			// launch.json configuration
 			if(vscode.workspace.workspaceFolders){
-				let rootUri = vscode.workspace.workspaceFolders[0].uri;
-				const projectFiles = new vscode.RelativePattern(rootUri, monocleFolder+'/*.py');
-				let filesFound = await vscode.workspace.findFiles(projectFiles);
-				if(filesFound.length===0){
-					// let newPathPy = vscode.Uri.joinPath(rootUri,monocleFolder+'/main.py');
-					// let newPathReadMe = vscode.Uri.joinPath(rootUri,'./README.md');
-					initFiles(rootUri,vscode.workspace.workspaceFolders[0].name);
-				}
-				currentSyncPath = vscode.Uri.joinPath(rootUri,monocleFolder+"/");
-				vscode.commands.executeCommand('setContext', 'monocle.sync', true);
+				await startSyncing();
 				 
 			}else{
 				// let pickOptions = vscode.
 				// let newOpenexisting = 
+				// let choice = await vscode.window
 				let projectName = await vscode.window.showInputBox({title:"Enter Project Name",placeHolder:"MonocleApp"});
 				if(projectName && projectName.trim()!==''){
 					let selectedPath = await vscode.window.showOpenDialog({canSelectFolders:true,canSelectFiles:false,canSelectMany:false,title:"Select project path"});
@@ -343,10 +396,15 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.connect', async () => {
+			// navigator.bluetooth.requestDevice({"acceptAllDevices":true});
 			// The code you place here will be executed every time your command is executed
 			// Display a message box to the user
 			if(!isConnected()){
-				selectTerminal().then();
+				await vscode.commands.executeCommand('brilliant-ar-studio.syncFiles');
+				if(vscode.workspace.workspaceFolders){
+					await startSyncing();
+					selectTerminal().then();
+				}
 			}else{
 				disconnect();
 				// vscode.window.showWarningMessage("Monocle Disconnected");

@@ -1,6 +1,7 @@
 import { request } from "@octokit/request";
 import * as vscode from 'vscode';
-
+let JSZIP = require("jszip");
+// import fs from 'fs';
 const TOPIC = 'monocle-ar-project';
 export async function getRepoList(){
     let resp =  await request("GET /search/repositories?q={q}", {
@@ -44,10 +45,11 @@ console.log(term);
 		} else {
             let categories:Project[] = [];
             let repoList:any =   await getRepoList();
+			// console.log(repoList);
             if(repoList.data.items.length>0){
                 repoList.data.items.forEach((repo:any)=>{
 					let desc:string = repo.description?repo.full_name+" "+repo.description:repo.full_name;
-                    categories.push(new Project(repo.name,repo.owner.avatar_url,repo.clone_url,desc));
+                    categories.push(new Project(repo.name, repo.owner.avatar_url, repo.clone_url, desc));
                 });
             }
             
@@ -133,6 +135,20 @@ export class GitOperation {
 			headers: await this.getHeader()
 		  }).catch(this.onError);
 		  return resp;
+	}
+	async getArchiveZip(cloneurl:string,localPath:vscode.Uri){
+		let {owner,repo} = this.getOwnerRepo(cloneurl);
+		let resp:any = await request('GET /repos/{owner}/{repo}/zipball/{ref}', {
+			owner,
+			repo,
+			ref: 'master',
+			headers: await this.getHeader()
+		  });
+		//   localPath = vscode.Uri.joinPath(localPath,'test.zip');
+		  let zip = await JSZIP.loadAsync(resp.data);
+		  console.log(zip);
+		//   vscode.workspace.fs.writeFile(localPath,Buffer.from(resp.data));
+		//   console.log("file download",resp);
 	}
 	private async getHeader(){
 		if(!this.auth){

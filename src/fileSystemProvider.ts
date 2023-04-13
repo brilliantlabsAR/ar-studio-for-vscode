@@ -7,7 +7,7 @@
 import { file } from 'jszip';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {listFilesDevice,createDirectoryDevice,creatUpdateFileDevice, deletFilesDevice} from './repl';
+import {listFilesDevice,createDirectoryDevice,creatUpdateFileDevice, deletFilesDevice,renameFileDevice} from './repl';
 export class Snippet extends vscode.TreeItem {
 
 	constructor(
@@ -34,14 +34,16 @@ export class File extends vscode.TreeItem implements vscode.FileStat {
 	size: number;
 	name: string;
 	data?: Uint8Array;
-	
-	constructor(name: string,public readonly collapsibleState?: vscode.TreeItemCollapsibleState) {
+	path?:string = "";
+	constructor(name: string,path?:string,public readonly collapsibleState?: vscode.TreeItemCollapsibleState,public readonly command?: vscode.Command) {
 		super(name, collapsibleState||vscode.TreeItemCollapsibleState.None);
 		this.type = vscode.FileType.File;
 		this.ctime = Date.now();
 		this.mtime = Date.now();
 		this.size = 0;
 		this.name = name;
+		this.path = path;
+		this.command = {command:"brilliant-ar-studio.openDeviceFile",title:"Open In Editor",arguments:[{"path":this.path}]};
 	}
 }
 
@@ -51,24 +53,25 @@ export class Directory extends vscode.TreeItem implements vscode.FileStat {
 	ctime: number;
 	mtime: number;
 	size: number;
-
+	path?:string = '';
 	name: string;
 	entries: Map<string, File | Directory>;
 
-	constructor(name: string,public readonly collapsibleState?: vscode.TreeItemCollapsibleState) {
+	constructor(name: string, path?:string, public readonly collapsibleState?: vscode.TreeItemCollapsibleState) {
 		super(name, collapsibleState||vscode.TreeItemCollapsibleState.None);
 		this.type = vscode.FileType.Directory;
 		this.ctime = Date.now();
 		this.mtime = Date.now();
 		this.size = 0;
 		this.name = name;
+		this.path = path;
 		this.entries = new Map();
 	}
 }
 
 export type MonocleFile = File | Directory | ProjectEmptyTreeItem;
 
-export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.FileSystemProvider {
+export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile> {
 
 	root = new Directory('');
 	// --- manage file metadata
@@ -80,29 +83,7 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Fi
 		this._onDidChangeTreeData.fire();
 	}
 
-	
-	stat(uri: vscode.Uri): vscode.FileStat {
-		return this._lookup(uri, false);
-	}
 
-	readDirectory(uri: vscode.Uri): [string, vscode.FileType][] {
-		const entry = this._lookupAsDirectory(uri, false);
-		const result: [string, vscode.FileType][] = [];
-		for (const [name, child] of entry.entries) {
-			result.push([name, child.type]);
-		}
-		return result;
-	}
-
-	// --- manage file contents
-
-	readFile(uri: vscode.Uri): Uint8Array {
-		const data = this._lookupAsFile(uri, false).data;
-		if (data) {
-			return data;
-		}
-		throw vscode.FileSystemError.FileNotFound();
-	}
 	async addFile(uri:vscode.Uri,devicePath:string){
 		const basename = path.posix.basename(devicePath);
 		let file = await vscode.workspace.fs.stat(uri);
@@ -111,236 +92,69 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Fi
 			if(await createDirectoryDevice(devicePath)){
 				this.refresh();
 			}
-			// this.allFiles.push(new Directory(basename,vscode.TreeItemCollapsibleState.Collapsed));
 		}else if(file.type===vscode.FileType.File){
 			//  here needs to create file in monocle
 			if(await creatUpdateFileDevice(uri, devicePath)){
 				this.refresh();
 			}
-			
-			
-			// this.allFiles.push(new File(basename));
 		}
 	}
-	async updateFile(uri:vscode.Uri,devicePath:string){
-		const basename = path.posix.basename(devicePath);
-		let file = await vscode.workspace.fs.stat(uri);
-		if(file.type===vscode.FileType.Directory){
-			//  here needs to update directory in monocle
-			// if(await createDirectoryDevice(devicePath)){
-			// 	this.refresh();
-			// }
-			// this.allFiles.push(new Directory(basename,vscode.TreeItemCollapsibleState.Collapsed));
-		}else if(file.type===vscode.FileType.File){
-			//  here needs to update file in monocle
-			if(await creatUpdateFileDevice(uri, devicePath)){
-				this.refresh();
-			}
-			
-			// this.allFiles.push(new File(basename));
+	async renameFile (oldDevicePath:string,newDevicePath:string){
+		if(await renameFileDevice(oldDevicePath, newDevicePath)){
+			this.refresh();
 		}
 	}
+
 	async deleteFile(devicePath:string){
 		if(await deletFilesDevice(devicePath)){
 			this.refresh();
 		}
 	}
-	writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void {
-		const basename = path.posix.basename(uri.path);
-		const parent = this._lookupParentDirectory(uri);
-		let entry = parent.entries.get(basename);
-		if (entry instanceof Directory) {
-			throw vscode.FileSystemError.FileIsADirectory(uri);
-		}
-		if (!entry && !options.create) {
-			throw vscode.FileSystemError.FileNotFound(uri);
-		}
-		if (entry && options.create && !options.overwrite) {
-			throw vscode.FileSystemError.FileExists(uri);
-		}
-		if (!entry) {
-			entry = new File(basename);
-			parent.entries.set(basename, entry);
-			this._fireSoon({ type: vscode.FileChangeType.Created, uri });
-		}
-		entry.mtime = Date.now();
-		entry.size = content.byteLength;
-		entry.data = content;
 
-		this._fireSoon({ type: vscode.FileChangeType.Changed, uri });
-	}
 
-	// --- manage files/folders
-
-	rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean }): void {
-
-		if (!options.overwrite && this._lookup(newUri, true)) {
-			throw vscode.FileSystemError.FileExists(newUri);
-		}
-
-		const entry = this._lookup(oldUri, false);
-		const oldParent = this._lookupParentDirectory(oldUri);
-
-		const newParent = this._lookupParentDirectory(newUri);
-		const newName = path.posix.basename(newUri.path);
-
-		oldParent.entries.delete(entry.name);
-		entry.name = newName;
-		newParent.entries.set(newName, entry);
-
-		this._fireSoon(
-			{ type: vscode.FileChangeType.Deleted, uri: oldUri },
-			{ type: vscode.FileChangeType.Created, uri: newUri }
-		);
-	}
-
-	delete(uri: vscode.Uri): void {
-		const dirname = uri.with({ path: path.posix.dirname(uri.path) });
-		const basename = path.posix.basename(uri.path);
-		const parent = this._lookupAsDirectory(dirname, false);
-		if (!parent.entries.has(basename)) {
-			throw vscode.FileSystemError.FileNotFound(uri);
-		}
-		parent.entries.delete(basename);
-		parent.mtime = Date.now();
-		parent.size -= 1;
-		this._fireSoon({ type: vscode.FileChangeType.Changed, uri: dirname }, { uri, type: vscode.FileChangeType.Deleted });
-	}
-
-	createDirectory(uri: vscode.Uri): void {
-		const basename = path.posix.basename(uri.path);
-		const dirname = uri.with({ path: path.posix.dirname(uri.path) });
-		const parent = this._lookupAsDirectory(dirname, false);
-
-		const entry = new Directory(basename);
-		parent.entries.set(entry.name, entry);
-		parent.mtime = Date.now();
-		parent.size += 1;
-		this._fireSoon({ type: vscode.FileChangeType.Changed, uri: dirname }, { type: vscode.FileChangeType.Created, uri });
-	}
 
 	getTreeItem(element: MonocleFile): vscode.TreeItem {
-		// const treeItem = new vscode.TreeItem(element.name, element.type === vscode.FileType.Directory ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
-		// if (element.type === vscode.FileType.File) {
-		// 	// treeItem.command = { command: 'fileExplorer.openFile', title: "Open File", arguments: [element.uri], };
-		// 	treeItem.contextValue = 'file';
-		// }
 		return element;
 	}
+
 	async getChildren(element?: MonocleFile): Promise<MonocleFile[]> {
-		
+		let files:MonocleFile[]= [];
+		let rootPath = "";
 		if (element) {
 			if (element instanceof Directory) {
-				return [new File('inside.py')];
+				
+				let subDirectory = await listFilesDevice(element.path);
+				subDirectory.forEach((f:any)=>{
+					if(element.path){
+						rootPath = element.path+"/"+f.name;
+					}
+					if(f.file){
+						files.push(new File(f.name,rootPath,vscode.TreeItemCollapsibleState.None,));
+					}else{
+						files.push(new Directory(f.name,rootPath,vscode.TreeItemCollapsibleState.Collapsed));
+					}
+				});
+				return files;
 			}else{
 				return [element];
 			};
-			// return [new ProjectEmptyTreeItem()];
-			// const result: Entry[] = [];
-			// for (const [name, child] of element.entries) {
-			// 	result.push([name, child.type]);
-			// }
-			// return result;
-			// const children = await this.readDirectory(element.uri);
-			// return children.map(([name, type]) => ({ uri: vscode.Uri.file(path.join(element.uri.fsPath, name)), type }));
+			
 		}
-		let files:MonocleFile[]= [];
+		
 		
 		let topDirectory = await listFilesDevice();
+		
 		topDirectory.forEach((f:any)=>{
+			rootPath = f.name;
 			if(f.file){
-				files.push(new File(f.name));
+				files.push(new File(f.name,rootPath));
 			}else{
-				files.push(new Directory(f.name,vscode.TreeItemCollapsibleState.Collapsed));
+				files.push(new Directory(f.name,rootPath,vscode.TreeItemCollapsibleState.Collapsed));
 			}
 		});
 		return files;
-    //    fetch files from device
-	if(this.allFiles.length!==0){
-		// let files:Entry[]= [];
-		// this.allFiles.forEach(path=>{
-		// 	// let entry = this._lookupAsDirectory(vscode.Uri.parse(path),true);
-		// 	files.push(new File(path));
-		// });
-		return this.allFiles;
-	}
-	files.push(new Directory("testDir",vscode.TreeItemCollapsibleState.Collapsed));
-	files.push(new File("file.py"));
-	return files;
-	}
-	// --- lookup
-
-	private _lookup(uri: vscode.Uri, silent: false): MonocleFile;
-	private _lookup(uri: vscode.Uri, silent: boolean): MonocleFile | undefined;
-	private _lookup(uri: vscode.Uri, silent: boolean): MonocleFile | undefined {
-		const parts = uri.path.split('/');
-		let entry: MonocleFile = this.root;
-		for (const part of parts) {
-			if (!part) {
-				continue;
-			}
-			let child: MonocleFile | undefined;
-			if (entry instanceof Directory) {
-				child = entry.entries.get(part);
-			}
-			if (!child) {
-				if (!silent) {
-					throw vscode.FileSystemError.FileNotFound(uri);
-				} else {
-					return undefined;
-				}
-			}
-			entry = child;
-		}
-		return entry;
 	}
 
-	private _lookupAsDirectory(uri: vscode.Uri, silent: boolean): Directory {
-		const entry = this._lookup(uri, silent);
-		if (entry instanceof Directory) {
-			return entry;
-		}
-		throw vscode.FileSystemError.FileNotADirectory(uri);
-	}
-
-	private _lookupAsFile(uri: vscode.Uri, silent: boolean): File {
-		const entry = this._lookup(uri, silent);
-		if (entry instanceof File) {
-			return entry;
-		}
-		throw vscode.FileSystemError.FileIsADirectory(uri);
-	}
-
-	private _lookupParentDirectory(uri: vscode.Uri): Directory {
-		const dirname = uri.with({ path: path.posix.dirname(uri.path) });
-		return this._lookupAsDirectory(dirname, false);
-	}
-
-	// --- manage file events
-
-	private _emitter = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
-	private _bufferedEvents: vscode.FileChangeEvent[] = [];
-	private _fireSoonHandle?: NodeJS.Timer;
-
-	readonly onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this._emitter.event;
-
-	watch(_resource: vscode.Uri): vscode.Disposable {
-		// ignore, fires for all changes...
-		return new vscode.Disposable(() => { });
-	}
-
-	private _fireSoon(...events: vscode.FileChangeEvent[]): void {
-		this._bufferedEvents.push(...events);
-
-		if (this._fireSoonHandle) {
-			clearTimeout(this._fireSoonHandle);
-		}
-
-		this._fireSoonHandle = setTimeout(() => {
-			this._emitter.fire(this._bufferedEvents);
-			this._bufferedEvents.length = 0;
-		}, 5);
-	}
 }
 
 class ProjectEmptyTreeItem extends vscode.TreeItem implements vscode.FileStat {
