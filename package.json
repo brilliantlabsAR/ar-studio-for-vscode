@@ -61,7 +61,6 @@
         "command": "fileExplorer.openFile",
         "title": "openFile"
       },
-      
       {
         "command": "brilliant-ar-studio.connect",
         "title": "Connect"
@@ -123,7 +122,6 @@
       }
     ],
     "menus": {
-   
       "view/title": [
         {
           "command": "brilliant-ar-studio.refreshDeviceFiles",
@@ -222,6 +220,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
+    "@abandonware/noble": "^1.9.2-20",
     "@octokit/request": "^6.2.3",
     "jszip": "^3.10.1",
     "noble-winrt": "^0.1.1"

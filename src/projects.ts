@@ -147,6 +147,20 @@ export class GitOperation {
 		//   localPath = vscode.Uri.joinPath(localPath,'test.zip');
 		  let zip = await JSZIP.loadAsync(resp.data);
 		  console.log(zip);
+		  zip.forEach(async (fileName:any)=>{
+			let filepathname = fileName.split("/").slice(1).join("/");
+			if(!filepathname){return;};
+			let localPath_ = vscode.Uri.joinPath(localPath,filepathname);
+			if(zip.file(fileName)===null){
+				vscode.workspace.fs.createDirectory(localPath_);
+				return;
+			}
+			vscode.workspace.fs.writeFile(localPath_, Buffer.from(await zip.file(fileName).async('arraybuffer')));
+		  });
+		const workspaceFolder = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0;
+		const folderName = path.basename(localPath.path);
+		vscode.workspace.updateWorkspaceFolders(workspaceFolder, 0, { uri:localPath, name:folderName});
+		  
 		//   vscode.workspace.fs.writeFile(localPath,Buffer.from(resp.data));
 		//   console.log("file download",resp);
 	}
