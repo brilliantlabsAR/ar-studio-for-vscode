@@ -118,20 +118,24 @@ export async function ensureConnected() {
             }    
             // console.log(updateInfo);
             if (updateInfo !== "") {
+                let newFirmware = updateInfo?.includes('New firmware');
+                let newFpga = updateInfo?.includes('New FPGA');
                 let items:string[] =["Update Now","Later"] ;
                 const updateMsg = new vscode.MarkdownString(updateInfo);
-                vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
-                    if(op==="Update Now"){
-                        if(updateInfo?.includes('New firmware')){
-                         startFirmwareUpdate();
-                        }else if(updateInfo?.includes('New FPGA')){
-                            triggerFpgaUpdate();
+                if(newFirmware || newFpga){
+                    vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
+                        if(op==="Update Now"){
+                            if(newFirmware){
+                             startFirmwareUpdate();
+                            }else if(newFpga){
+                                triggerFpgaUpdate();
+                            }
                         }
-                    }
-                });
-                // infoText.innerHTML = updateInfo + " Click <a href='#' " +
-                //     "onclick='update();return false;'>" +
-                //     "here</a> to update.";
+                    });
+                }else{
+                    vscode.window.showInformationMessage(updateMsg.value);
+                }
+               
             }
         }
     }

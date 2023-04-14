@@ -84,8 +84,8 @@
       },
       {
         "command": "brilliant-ar-studio.syncFiles",
-        "title": "Start Developer Mode (continuous file sync)",
-        "icon": "$(code)"
+        "title": "Start auto run",
+        "icon": "$(play-circle)"
       },
       {
         "command": "brilliant-ar-studio.deleteDeviceFile",
@@ -94,8 +94,8 @@
       },
       {
         "command": "brilliant-ar-studio.syncStop",
-        "title": "Stop Developer Mode",
-        "icon": "$(stop)"
+        "title": "Stop auto run",
+        "icon": "$(debug-stop)"
       },
       {
         "command": "brilliant-ar-studio.fpgaUpdate",
@@ -135,25 +135,15 @@
           "when": "view == fileExplorer && !monocle.sync",
           "group": "navigation@0"
         },
-        {
-          "command": "brilliant-ar-studio.syncFiles",
-          "when": "view == fileExplorer && !monocle.sync",
-          "group": "navigation@1"
-        },
-        {
-          "command": "brilliant-ar-studio.syncStop",
-          "when": "view == fileExplorer && monocle.sync",
-          "group": "navigation@1"
-        },
        
         {
           "command": "brilliant-ar-studio.publishMonocleApp",
-          "when": "view == fileExplorer && workspaceFolderCount !=0 && !monocle.published",
+          "when": "view == projects && workspaceFolderCount !=0 && !monocle.published",
           "group": "navigation@3"
         },
         {
           "command": "brilliant-ar-studio.UnPublishMonocleApp",
-          "when": "view == fileExplorer && workspaceFolderCount !=0 && monocle.published==true",
+          "when": "view == projects && workspaceFolderCount !=0 && monocle.published==true",
           "group": "navigation@3"
         },
         {
@@ -176,8 +166,13 @@
       ],
       "editor/title": [
         {
-          "when": "resourceLangId == python && monocle.deviceConnected",
-          "command": "brilliant-ar-studio.runFile",
+          "when": "resourceLangId == python && monocle.deviceConnected && !monocle.sync",
+          "command": "brilliant-ar-studio.syncFiles",
+          "group": "navigation"
+        },
+        {
+          "when": "resourceLangId == python && monocle.deviceConnected && monocle.sync",
+          "command": "brilliant-ar-studio.syncStop",
           "group": "navigation"
         }
       ]

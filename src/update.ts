@@ -79,7 +79,7 @@ async function getUpdateInfo() {
         return  `New FPGA image ([${latestVersion}](${getTag.url}))  available, Do you want to update?`;
     }
 
-    return "Connected. Device is up to date";
+    return "";
 }
 let fpgaUpdateInProgress:any = false;
 export async function startFirmwareUpdate() {
