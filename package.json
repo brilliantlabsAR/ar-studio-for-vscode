@@ -30,14 +30,21 @@
       "brilliantsar": [
         {
           "id": "snippetTemplates",
-          "name": "Templates",
+          "name": "Code templates",
           "icon": "media/bulb.svg"
         },
         {
+          "id": "fpga",
+          "name": "FPGA",
+          "icon": "media/bulb.svg",
+          "when": "monocle.deviceConnected"
+        },
+        {
           "id": "projects",
-          "name": "Projects",
+          "name": "Community projects",
           "icon": "media/bulb.svg"
         }
+       
       ],
       "explorer": [
         {
@@ -138,11 +145,7 @@
           "when": "view == fileExplorer && monocle.sync",
           "group": "navigation@1"
         },
-        {
-          "command": "brilliant-ar-studio.fpgaUpdate",
-          "when": "view == fileExplorer",
-          "group": "navigation@2"
-        },
+       
         {
           "command": "brilliant-ar-studio.publishMonocleApp",
           "when": "view == fileExplorer && workspaceFolderCount !=0 && !monocle.published",

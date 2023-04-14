@@ -157,9 +157,9 @@ export class GitOperation {
 			}
 			vscode.workspace.fs.writeFile(localPath_, Buffer.from(await zip.file(fileName).async('arraybuffer')));
 		  });
-		const workspaceFolder = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0;
+		// const workspaceFolder = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0;
 		const folderName = path.basename(localPath.path);
-		vscode.workspace.updateWorkspaceFolders(workspaceFolder, 0, { uri:localPath, name:folderName});
+		vscode.workspace.updateWorkspaceFolders(0, null, { uri:localPath, name:folderName});
 		  
 		//   vscode.workspace.fs.writeFile(localPath,Buffer.from(resp.data));
 		//   console.log("file download",resp);

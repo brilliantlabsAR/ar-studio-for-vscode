@@ -13,7 +13,7 @@ import { spawn } from 'child_process';
 const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
 import { DeviceFs } from './fileSystemProvider';
-const monocleFolder = "monocleFiles";
+const monocleFolder = "device files";
 let statusBarItemBle:vscode.StatusBarItem;
 
 export const writeEmitter = new vscode.EventEmitter<string>();
@@ -21,6 +21,24 @@ const gitOper = new GitOperation();
 export const myscheme = "monocle";
 export var outputChannel:vscode.OutputChannel;
 
+class FpgaButton extends vscode.TreeItem {
+
+	constructor(
+	) {
+		super("FPGA Upload");
+
+		this.tooltip = `FPGA Upload`;
+		this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+		this.command = {
+			title: "Update FPGA",
+			tooltip: "Update FPGA from Brilliant AR Studio or Custom",
+			command: "brilliant-ar-studio.fpgaUpdate",
+		  };
+	}
+
+
+	contextValue = 'fpga';
+}
 const isPathExist = async (uri:vscode.Uri):Promise<boolean>=>{
 	let files = await vscode.workspace.findFiles(new vscode.RelativePattern(uri,''));
 return files.length!==0;
@@ -173,6 +191,15 @@ export async function activate(context: vscode.ExtensionContext) {
     // context.subscriptions.push(
     //     vscode.window.registerWebviewViewProvider("projects", thisProvider)
     // );
+	vscode.window.registerTreeDataProvider("fpga",{
+		getChildren(element?:vscode.TreeItem):vscode.TreeItem[]{
+			return [new FpgaButton];
+			
+		},
+		getTreeItem(element:vscode.TreeItem):vscode.TreeItem{
+			return element;
+		}
+	});
 	vscode.window.registerTreeDataProvider('snippetTemplates', nodeDependenciesProvider);
 	vscode.window.registerTreeDataProvider('projects',projectProvider);
 	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
