@@ -1,0 +1,47 @@
+{
+    "time(secs)": {
+        "prefix": "time",
+        "body": "\ntime.time(${1:secs})",
+        "description" : "Sets or gets the current system time in seconds. If secs is not provided, the current time is returned, otherwise the time is set according to the value of secs. secs should be referenced from midnight on the 1st of January 1970."
+    },
+    "now(epoch)": {
+        "prefix": "now",
+        "body": "\time.now(${1:epoch})",
+        "description" : "Returns a dictionary containing a human readable date and time. If no argument is provided, the current system time is used. If epoch is provided, that value will be used to generate the dictionary. The epoch should be referenced from midnight on the 1st of January 1970."
+    },
+    "zone(offset)": {
+        "prefix": "zone",
+        "body": "\ntime.zone(${1:offset})",
+        "description" : "Sets or gets the time zone offset from GMT as a string. If offset is provided, the timezone is set to the new value. offset must be provided as a string, eg “8:00”, or “-06:30”."
+    },
+    "mktime(dict)": {
+        "prefix": "mktime",
+        "body": "\time.mktime(${1:dict})",
+        "description" : "The inverse of now(). Converts a dictionary provided into an epoch timestamp. The returned epoch value will be referenced from midnight on the 1st of January 1970."
+    },
+    "ticks_add(ticks, delta)": {
+        "prefix": "ticks_add",
+        "body": "\ntime.ticks_add(${1:ticks} , ${2:delta})",
+        "description" : "Offsets a timestamp value by a given number. Can be positive or negative."
+    },
+    "ticks_diff(ticks1,ticks2)": {
+        "prefix": "ticks_diff",
+        "body": "\time.ticks_diff(${1:ticks1} , ${2:ticks2})",
+        "description" : "Returns the difference between two timestamps. i.e. ticks1 - ticks2, but takes into consideration if the numbers wrap around."
+    },
+    "sleep(secs)": {
+        "prefix": "sleep",
+        "body": "\ntime.sleep(${1:secs})",
+        "description" : "Sleep for a given number of seconds."
+    },
+    "sleep_ms(msecs)": {
+        "prefix": "sleep_ms",
+        "body": "\ntime.sleep_ms(${1:msecs})",
+        "description" : "Sleep for a given number of milliseconds."
+    },
+    "ticks_ms()": {
+        "prefix": "ticks_ms",
+        "body": "\ntime.ticks_ms()",
+        "description" : "Returns a timestamp in milliseconds since power on."
+    }
+}

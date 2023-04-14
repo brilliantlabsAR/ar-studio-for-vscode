@@ -1,17 +1,17 @@
 {
     "for": {
         "prefix": "for",
-        "body": "for ${1:item} in ${2:items}:\n\t${3:print($1)}$0",
+        "body": "\nfor ${1:item} in ${2:items}:\n\t${3:print($1)}$0",
         "description" : "Code snippet to create a for loop structure."
     },
     "while": {
         "prefix": "while",
-        "body": "while ${1:condition}:\n\t${2:print('inside loop')}$0",
+        "body": "\nwhile ${1:condition}:\n\t${2:print('inside loop')}$0",
         "description" : "Code snippet to create a while loop structure."
     },
     "for range": {
         "prefix": "for",
-        "body": "for ${1:item} in range(${2:10}):\n\t${3:print($1)}$0",
+        "body": "\nfor ${1:item} in range(${2:10}):\n\t${3:print($1)}$0",
         "description" : "Code snippet to create a for loop with a range."
     }
 }

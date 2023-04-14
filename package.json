@@ -208,6 +208,37 @@
       {
         "language": "python",
         "path": "./snippets/logic.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/device.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/bluetooth.json"
+      },
+
+
+
+      {
+        "language": "python",
+        "path": "./snippets/fpga.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/led.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/time.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/touch.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/update.json"
       }
     ]
   },

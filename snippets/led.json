@@ -1,0 +1,22 @@
+{
+    "on(color)": {
+        "prefix": "on",
+        "body": "\nled.on(color)",
+        "description" : "Illuminates an led. color can be either led.RED or led.GREEN."
+    },
+    "off(color)": {
+        "prefix": "off",
+        "body": "\ndevice.off(color)",
+        "description" : "Turns off an led. color can be either led.RED or led.GREEN. "
+    },
+    "RED": {
+        "prefix": "RED",
+        "body": "\nled.red",
+        "description" :"String constant which represents the red led."
+    },
+    "GREEN": {
+        "prefix": "GREEN",
+        "body": "\nled.green",
+        "description" :"String constant which represents the green led."
+    }     
+}

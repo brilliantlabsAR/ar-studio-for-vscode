@@ -67,7 +67,6 @@ export class Directory extends vscode.TreeItem implements vscode.FileStat {
 }
 
 export type MonocleFile = File | Directory | ProjectEmptyTreeItem;
-
 export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.FileSystemProvider {
 
 	root = new Directory('');

@@ -1,0 +1,12 @@
+{
+    "read(addr, n)": {
+        "prefix": "read",
+        "body": "\nfpga.read(${1:addr}, ${2:n})",
+        "description" : "Reads n number of bytes from the 16-bit address addr, and returns a bytes object."
+    },
+    "write(addr,bytes[])": {
+        "prefix": "reset",
+        "body": "\nfpga.write(${1:addr},${2:bytes})",
+        "description" : "Writes all bytes from a given bytes object bytes[] to the 16-bit address addr"
+    }
+}

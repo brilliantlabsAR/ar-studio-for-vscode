@@ -27,7 +27,7 @@ export async function nordicDfuSendControl(bytes:any) {
     outputChannel.appendLine('DFU control ⬆️: ' + bytes);
 
     transmitNordicDfuControlData(bytes);
-
+    
     // Return a promise which calls a function that'll eventually run when the
     // response handler calls the function associated with controlResponseCallback
     return new Promise(resolve => {
@@ -81,9 +81,9 @@ async function obtainFiles() {
         repo: micropythonGit.repo,
         assetId: assetId
     });
+
 // console.log(response);
     // https.get(response.data.browser_download_url, function(response) {
-      
     //     console.log(response);
     //     if (response.statusCode === 200) {
     
@@ -94,7 +94,6 @@ async function obtainFiles() {
     //         var file = fs.createWriteStream(targetPath);
     //         response.pipe(file);
     //     //   });
-    
     //     // } else {
     //     //   vscode.window.showErrorMessage(`Downloading ${fileURL} failed`);
     //     // }
@@ -103,12 +102,12 @@ async function obtainFiles() {
     //         console.log("Ended");
     //     //   vscode.window.showInformationMessage(`File "${filename}" downloaded successfully.`);
     //     });
-    
     //   }).on('error', function(e) {
     //     console.log(e);
     //   });
     //   return;
     // Annoyingly we have to fetch the data via a cors proxy
+
     let download = await fetch('https://api.brilliant.xyz/firmware?url=' + response.data.browser_download_url);
     let blob = await download.blob();
     let buffer = await blob.arrayBuffer();
@@ -216,6 +215,7 @@ async function transferFile(file:any, type:any) {
         await nordicDfuSendControl([0x04]);
     }
 }
+
 
 function crc32(r:any) {
     for (var a, o = [], c = 0; c < 256; c++) {

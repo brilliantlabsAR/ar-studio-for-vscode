@@ -26,12 +26,14 @@ const gitOper = new GitOperation();
 export const myscheme = "monocle";
 export var outputChannel: vscode.OutputChannel;
 
+
 const isPathExist = async (uri: vscode.Uri): Promise<boolean> => {
   let files = await vscode.workspace.findFiles(
     new vscode.RelativePattern(uri, "")
   );
   return files.length !== 0;
 };
+
 const initFiles = async (rootUri: vscode.Uri, projectName: string) => {
   let monocleUri = vscode.Uri.joinPath(rootUri, monocleFolder + "/main.py");
   let readmeUri = vscode.Uri.joinPath(rootUri, "./README.md");
@@ -41,6 +43,7 @@ const initFiles = async (rootUri: vscode.Uri, projectName: string) => {
       Buffer.from('print("Hello Monocle from ' + projectName + '!")')
     );
   }
+
   if (!(await isPathExist(readmeUri))) {
     vscode.workspace.fs.writeFile(
       readmeUri,
@@ -48,6 +51,7 @@ const initFiles = async (rootUri: vscode.Uri, projectName: string) => {
     );
   }
 };
+
 function getNonce() {
   let text = "";
   const possible =
@@ -57,6 +61,7 @@ function getNonce() {
   }
   return text;
 }
+
 export const updatePublishStatus = async () => {
   const gitExtension1 = vscode.extensions.getExtension("vscode.git");
   if (gitExtension1) {
@@ -237,6 +242,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
       },
     }),
+
     fsWatcher.onDidCreate(async (e) => {
       if (
         currentSyncPath !== null &&
@@ -248,6 +254,7 @@ export async function activate(context: vscode.ExtensionContext) {
         memFs.addFile(e, devicePath);
       }
     }),
+
     fsWatcher.onDidChange((e) => {
       if (currentSyncPath !== null && e.path.includes(currentSyncPath.path)) {
         let devicePath = e.fsPath
@@ -409,6 +416,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
       }
     ),
+
     vscode.commands.registerCommand(
       "brilliant-ar-studio.syncFiles",
       async (thiscontext) => {

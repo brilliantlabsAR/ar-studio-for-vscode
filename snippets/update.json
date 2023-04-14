@@ -1,0 +1,13 @@
+{
+    "micropython()": {
+        "prefix": "micropython",
+        "body": "\nupdate.micropython()",
+        "description" : "Puts the device into over-the-air device firmware update mode. The device will stay in DFU mode for 5 minutes or until an update is finished being performed. The device will then restart with an updated MicroPython firmware."
+    },
+    "Fpga": {
+        "prefix": "Fpga",
+        "body": "\nupdate.Fpga",
+        "description" : "Fpga contains three low level functions which are used to update the FPGA. Fpga.erase() erases the existing application, Fpga.write(bytes[]) sequentially writes in the new application, and Fpga.read(address, length) can be used to read back and verify the application. For details on how the FPGA application is updated,"
+    }
+   
+}

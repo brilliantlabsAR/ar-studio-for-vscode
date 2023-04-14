@@ -1,0 +1,24 @@
+{
+    "send(bytes[])": {
+        "prefix": "send",
+        "body": "\nsend(1:bytes)",
+        "description" : "Sends data from a bytes object bytes[] over Bluetooth using the raw data service. The length of bytes[] must be equal to or less than the value returned by the bluetooth.max_length() function."
+    },
+    "receive_callback(callback)": {
+        "prefix": "receive_callback",
+        "body": "\nbluetooth.receive_callback(1:callback)",
+        "description" : "Assigns a callback to receive data over the raw data service. callback must be a predefined function taking one argument. The value of the argument will be a bytes object bytes[] containing the received data. To unbind the callback, issue this function with callback set as None. If callback isn’t given when issuing this function, the currently set callback will be returned if it is set."
+    },
+    "connected()": {
+        "prefix": "connected",
+        "body": "\nbluetooth.connected()",
+        "description" : "Returns True if the raw data service is connected, otherwise returns False."
+        },
+    "max_length()": {
+        "prefix": "max_length",
+        "body": "\nbluetooth.max_length()",
+        "description" : "Returns the maximum data size the Bluetooth host allows for single transfers."
+
+    }
+   
+}

@@ -1,48 +1,48 @@
 {
     "if": {
         "prefix": "if",
-        "body": "if ${1:condition}:\n\t${2:pass}$0",
+        "body": "\nif ${1:condition}:\n\t${2:pass}$0",
         "description" : "Code snippet for the if statement."
     },
     "elif": {
         "prefix": "elif",
-        "body": "if ${1:condition1}:\n\t${2:pass}\nelif ${3:condition2}:\n\t${4:pass}$0",
+        "body": "\nif ${1:condition1}:\n\t${2:pass}\nelif ${3:condition2}:\n\t${4:pass}$0",
         "description" : "Code snippet for the elif statement."
     },
     "if else": {
         "prefix": "ifelse",
-        "body": "if ${1:condition}:\n\t${2:pass}\nelse:\n\t${3:pass}$0",
+        "body": "\nif ${1:condition}:\n\t${2:pass}\nelse:\n\t${3:pass}$0",
         "description" : "Code snippet for the if else statement."
     },
     "and": {
-        "prefix": "if",
-        "body": "${1:value1} and ${2:value2}$0",
+        "prefix": "and",
+        "body": "\n${1:value1} and ${2:value2}$0",
         "description" : "Code snippet for the and logic."
     },
     
      "or": {
         "prefix": "or",
-        "body": "${1:value1} or ${2:value2}$0",
+        "body": "\n${1:value1} or ${2:value2}$0",
         "description" : "Code snippet for the or logic."
     },
     "not": {
         "prefix": "not",
-        "body": "not ${1:value}$0",
+        "body": "\nnot ${1:value}$0",
         "description" : "Code snippet for the equal not logic."
     },
     "in": {
         "prefix": "in",
-        "body": "in ${1:list}$0",
+        "body": "\nin ${1:list}$0",
         "description" : "Code snippet for the equal in logic."
     },
     "equal": {
         "prefix": "==",
-        "body": "${1:value1} == ${2:value2}$0",
+        "body": "\n${1:value1} == ${2:value2}$0",
         "description" : "Code snippet for the equal (==) operator."
     },
     "not equal": {
         "prefix": "!=",
-        "body": "${1:value1} != ${2:value2}$0",
+        "body": "\n${1:value1} != ${2:value2}$0",
         "description" : "Code snippet for the not equal (!=) operator."
     }
    

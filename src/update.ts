@@ -12,14 +12,10 @@ export let fpgaGit:any = {};
 export async function checkForUpdates() {
     try {
         await replRawMode(true);
-
         // Short delay to throw away bluetooth data received upon connection
         await new Promise(r => setTimeout(r, 100));
-
         let message = await getUpdateInfo();
-
         await replRawMode(false);
-
         return Promise.resolve(message);
     }catch(error:any){
         outputChannel.appendLine(error);
@@ -53,10 +49,8 @@ async function getUpdateInfo() {
         repo: micropythonGit.repo
     });
     let latestVersion = getTag.data.tag_name;
-
     if (currentVersion !== latestVersion) {
         return `New firmware ([${latestVersion}](${getTag.url})) update available, Do you want to update?`;
-
     }
 
     // Check FPGA image
@@ -83,7 +77,6 @@ async function getUpdateInfo() {
 }
 let fpgaUpdateInProgress:any = false;
 export async function startFirmwareUpdate() {
-
     await replRawMode(true);
     await replSend("import display;" +
         "display.text('Updating firmware...',120,180,0xffffff);" +
@@ -95,7 +88,6 @@ export async function startFirmwareUpdate() {
     // try to connect after 1 sec
     await disconnect();
     await ensureConnected();
-    
 }
 
 export async function startFpgaUpdate(binPath?:vscode.Uri) {
@@ -129,11 +121,8 @@ async function updateFPGA(file:ArrayBuffer) {
 
     outputChannel.appendLine("Starting FPGA update");
     outputChannel.appendLine("Converting " + file.byteLength + " bytes of file to base64");
-    
     let asciiFile =Buffer.from(file).toString('base64');
-
     await replSend('import ubinascii, update, device, bluetooth');
-
     let response:any = await replSend('print(bluetooth.max_length())');
     const maxMtu = parseInt(response.match(/\d/g).join(''), 10);
 
@@ -148,7 +137,6 @@ async function updateFPGA(file:ArrayBuffer) {
             asciiFile.slice(chk * chunksize, (chk * chunksize) + chunksize)
             + "'))");
 
-       
         if (response && response.includes("Error")) {
             outputChannel.appendLine("Retrying this chunk");
             chk--;

@@ -171,7 +171,6 @@ export function replHandleResponse(string:string) {
         return;
     }
     writeEmitter.fire(string);
-
 }
 
 export async function sendFileUpdate(update:any){
@@ -221,6 +220,7 @@ async function exitRawReplInternal(){
     await replRawMode(false);
     internalOperation = false;
 }
+
 async function enterRawReplInternal(){
     if(replRawModeEnabled){
         await new Promise(r => {
@@ -279,6 +279,7 @@ export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
     }
     return false;
 }
+
 export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):Promise<boolean>{
     if(!isConnected()){return false;};
     let fileData = await vscode.workspace.fs.readFile(uri);
