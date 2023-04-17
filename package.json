@@ -2,6 +2,9 @@
   "name": "brilliant-ar-studio",
   "displayName": "Brilliant AR Studio",
   "description": "Develop AR applications for Monocle within the Brilliant AR Studio.",
+  "repository": {
+    "url": "https://github.com/brilliantlabsAR/ar-studio-for-vscode"
+  },
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.76.0"
@@ -27,14 +30,21 @@
       "brilliantsar": [
         {
           "id": "snippetTemplates",
-          "name": "Templates",
+          "name": "Code templates",
           "icon": "media/bulb.svg"
         },
         {
+          "id": "fpga",
+          "name": "FPGA",
+          "icon": "media/bulb.svg",
+          "when": "monocle.deviceConnected"
+        },
+        {
           "id": "projects",
-          "name": "Projects",
+          "name": "Community projects",
           "icon": "media/bulb.svg"
         }
+       
       ],
       "explorer": [
         {
@@ -51,37 +61,16 @@
         "title": "Hello World"
       },
       {
+        "command": "brilliant-ar-studio.openDeviceFile",
+        "title": "Open Device file in editor"
+      },
+      {
         "command": "fileExplorer.openFile",
         "title": "openFile"
       },
       {
         "command": "brilliant-ar-studio.connect",
         "title": "Connect"
-      },
-      {
-        "command": "memfs.workspaceInit",
-        "title": "Setup Workspace",
-        "category": "MemFS"
-      },
-      {
-        "command": "memfs.init",
-        "title": "Create Files",
-        "category": "MemFS"
-      },
-      {
-        "command": "memfs.reset",
-        "title": "Delete Files",
-        "category": "MemFS"
-      },
-      {
-        "command": "memfs.deleteFile",
-        "title": "Delete \"file.txt\"",
-        "category": "MemFS"
-      },
-      {
-        "command": "memfs.addFile",
-        "title": "Add \"file.txt\"",
-        "category": "MemFS"
       },
       {
         "command": "brilliant-ar-studio.runFile",
@@ -95,8 +84,8 @@
       },
       {
         "command": "brilliant-ar-studio.syncFiles",
-        "title": "Start Developer Mode (continuous file sync)",
-        "icon": "$(code)"
+        "title": "Start auto run",
+        "icon": "$(play-circle)"
       },
       {
         "command": "brilliant-ar-studio.deleteDeviceFile",
@@ -105,8 +94,8 @@
       },
       {
         "command": "brilliant-ar-studio.syncStop",
-        "title": "Stop Developer Mode",
-        "icon": "$(stop)"
+        "title": "Stop auto run",
+        "icon": "$(debug-stop)"
       },
       {
         "command": "brilliant-ar-studio.fpgaUpdate",
@@ -132,38 +121,29 @@
         "command": "brilliant-ar-studio.forkProject",
         "title": "Fork to Edit",
         "icon": "$(repo-forked)"
+      },
+      {
+        "command": "brilliant-ar-studio.copyProject",
+        "title": "Copy To Local",
+        "icon": "$(explorer-view-icon)"
       }
     ],
     "menus": {
       "view/title": [
         {
           "command": "brilliant-ar-studio.refreshDeviceFiles",
-          "when": "view == fileExplorer",
+          "when": "view == fileExplorer && !monocle.sync",
           "group": "navigation@0"
         },
-        {
-          "command": "brilliant-ar-studio.syncFiles",
-          "when": "view == fileExplorer && !monocle.sync",
-          "group": "navigation@1"
-        },
-        {
-          "command": "brilliant-ar-studio.syncStop",
-          "when": "view == fileExplorer && monocle.sync",
-          "group": "navigation@1"
-        },
-        {
-          "command": "brilliant-ar-studio.fpgaUpdate",
-          "when": "view == fileExplorer",
-          "group": "navigation@2"
-        },
+       
         {
           "command": "brilliant-ar-studio.publishMonocleApp",
-          "when": "view == fileExplorer && workspaceFolderCount !=0 && !monocle.published",
+          "when": "view == projects && workspaceFolderCount !=0 && !monocle.published",
           "group": "navigation@3"
         },
         {
           "command": "brilliant-ar-studio.UnPublishMonocleApp",
-          "when": "view == fileExplorer && workspaceFolderCount !=0 && monocle.published==true",
+          "when": "view == projects && workspaceFolderCount !=0 && monocle.published==true",
           "group": "navigation@3"
         },
         {
@@ -174,8 +154,8 @@
       ],
       "view/item/context": [
         {
-          "command": "brilliant-ar-studio.deleteDeviceFile",
-          "when": "view == fileExplorer",
+          "command": "brilliant-ar-studio.copyProject",
+          "when": "view == projects",
           "group": "inline"
         },
         {
@@ -186,8 +166,13 @@
       ],
       "editor/title": [
         {
-          "when": "resourceLangId == python && monocle.deviceConnected",
-          "command": "brilliant-ar-studio.runFile",
+          "when": "resourceLangId == python && monocle.deviceConnected && !monocle.sync",
+          "command": "brilliant-ar-studio.syncFiles",
+          "group": "navigation"
+        },
+        {
+          "when": "resourceLangId == python && monocle.deviceConnected && monocle.sync",
+          "command": "brilliant-ar-studio.syncStop",
           "group": "navigation"
         }
       ]
@@ -217,9 +202,6 @@
         "language": "python",
         "path": "./snippets/bluetooth.json"
       },
-
-
-
       {
         "language": "python",
         "path": "./snippets/fpga.json"
@@ -264,6 +246,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
+    "@abandonware/noble": "^1.9.2-20",
     "@octokit/request": "^6.2.3",
     "jszip": "^3.10.1",
     "noble-winrt": "^0.1.1"

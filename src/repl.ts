@@ -118,20 +118,24 @@ export async function ensureConnected() {
             }    
             // console.log(updateInfo);
             if (updateInfo !== "") {
+                let newFirmware = updateInfo?.includes('New firmware');
+                let newFpga = updateInfo?.includes('New FPGA');
                 let items:string[] =["Update Now","Later"] ;
                 const updateMsg = new vscode.MarkdownString(updateInfo);
-                vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
-                    if(op==="Update Now"){
-                        if(updateInfo?.includes('New firmware')){
-                         startFirmwareUpdate();
-                        }else if(updateInfo?.includes('New FPGA')){
-                            triggerFpgaUpdate();
+                if(newFirmware || newFpga){
+                    vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
+                        if(op==="Update Now"){
+                            if(newFirmware){
+                             startFirmwareUpdate();
+                            }else if(newFpga){
+                                triggerFpgaUpdate();
+                            }
                         }
-                    }
-                });
-                // infoText.innerHTML = updateInfo + " Click <a href='#' " +
-                //     "onclick='update();return false;'>" +
-                //     "here</a> to update.";
+                    });
+                }else{
+                    vscode.window.showInformationMessage(updateMsg.value);
+                }
+               
             }
         }
     }
@@ -245,11 +249,10 @@ export async function listFilesDevice(currentPath="/"):Promise<string[]>{
     let cmd = `import os,ujson;
 d="${currentPath}"
 l =[]
-l.append({"name":"main.py","file":True})
 if os.stat(d)[0] & 0x4000:
     for f in os.ilistdir(d):
         if f[0] not in ('.', '..'):
-            l.append({"name":f[0],"file":f[1] & 0x4000})
+            l.append({"name":f[0],"file":not f[1] & 0x4000})
 print(ujson.dumps(l))
 del(os,l,d)`;
     let response:any = await replSend(cmd);
@@ -287,14 +290,14 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
     await enterRawReplInternal();
 
     if(fileData.byteLength===0){
-         let response:any = await replSend("open('"+ devicePath +"', 'wb').write(b'')");
+         let response:any = await replSend("f = open('"+ devicePath +"', 'w');f.write('');f.close()");
         await exitRawReplInternal();
         if(response &&  !response.includes("Error")){return true;};
     }
     if(fileData.byteLength<1200){
         // if file size less write in one attempt
        
-        let response:any = await replSend("open('"+ devicePath +"', 'wb').write(b'''"+decoder.decode(fileData)+"''')");
+        let response:any = await replSend(`f=open('${devicePath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`);
         await exitRawReplInternal();
         if(response &&  !response.includes("Error")){return true;};
     }else{
@@ -302,6 +305,17 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
         return false;
     }
     
+    return false;
+}
+
+export async function renameFileDevice(oldDevicePath:string, newDevicePath:string):Promise<boolean>{
+    if(!isConnected){return false;};
+    await enterRawReplInternal();
+    let cmd = `import os;
+os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
+    let response:any = await replSend(cmd);
+    await exitRawReplInternal();
+    if(response &&  !response.includes("failed")){return true;};
     return false;
 }
 

@@ -38,7 +38,7 @@
         case 'android': 
             break;
         case 'darwin': 
-        // nobleble = "noble-mac";
+         nobleble = "@abandonware/noble";
             break;
         case 'freebsd':
             break;

@@ -1,13 +1,14 @@
 import { request } from "@octokit/request";
-import * as vscode from "vscode";
-
-const TOPIC = "monocle-ar-project";
-export async function getRepoList() {
-  let resp = await request("GET /search/repositories?q={q}", {
-    q: TOPIC + " in:topics",
-  }).catch((err: any) => console.log(err));
-  // console.log(resp);
-  return resp;
+import * as vscode from 'vscode';
+let JSZIP = require("jszip");
+// import fs from 'fs';
+const TOPIC = 'monocle-ar-project';
+export async function getRepoList(){
+    let resp =  await request("GET /search/repositories?q={q}", {
+        q: TOPIC+" in:topics",
+    }).catch((err:any)=>console.log(err));
+    // console.log(resp);
+    return resp;
 }
 
 export class ProjectProvider
@@ -47,6 +48,7 @@ export class ProjectProvider
     console.log(term);
   }
 
+<<<<<<< HEAD
   async getChildren(element?: Project): Promise<Project[]> {
     // return Promise.resolve(categories);
     if (element) {
@@ -64,6 +66,40 @@ export class ProjectProvider
           );
         });
       }
+=======
+	refresh(): void {
+		this._onDidChangeTreeData.fire();
+	}
+
+	getTreeItem(element: Project): vscode.TreeItem {
+		return element;
+	}
+	search(term:string){
+console.log(term);
+	}
+
+	
+	async getChildren(element?: Project): Promise<Project[]> {
+        // return Promise.resolve(categories);
+		if (element) {
+            return  [element];
+            
+		} else {
+            let categories:Project[] = [];
+            let repoList:any =   await getRepoList();
+			// console.log(repoList);
+            if(repoList.data.items.length>0){
+                repoList.data.items.forEach((repo:any)=>{
+					let desc:string = repo.description?repo.full_name+" "+repo.description:repo.full_name;
+                    categories.push(new Project(repo.name, repo.owner.avatar_url, repo.clone_url, desc));
+                });
+            }
+            
+            return categories;
+		}
+
+	}
+>>>>>>> 552ca173713c2b78446f02b1f6e8ea5bd86dcc35
 
       return categories;
     }
@@ -127,6 +163,7 @@ export class GitOperation {
       headers: await this.getHeader(),
     }).catch(this.onError);
 
+<<<<<<< HEAD
     if (resp?.data.names.includes(TOPIC)) {
       return true;
     } else {
@@ -160,6 +197,68 @@ export class GitOperation {
   onError(err: any) {
     vscode.window.showErrorMessage(String(err));
   }
+=======
+			if(resp?.data.names.includes(TOPIC)){
+				return true;
+			}else{
+				return false;
+			}
+		}
+	
+	async createFork(cloneurl:string,name:string) {
+		
+		let {owner,repo} = this.getOwnerRepo(cloneurl);
+		let resp:any = await request('POST /repos/{owner}/{repo}/forks', {
+			owner,
+			repo,
+			name,
+			default_branch_only: true,
+			headers: await this.getHeader()
+		  }).catch(this.onError);
+		  return resp;
+	}
+	async getArchiveZip(cloneurl:string,localPath:vscode.Uri){
+		let {owner,repo} = this.getOwnerRepo(cloneurl);
+		let resp:any = await request('GET /repos/{owner}/{repo}/zipball/{ref}', {
+			owner,
+			repo,
+			ref: 'master',
+			headers: await this.getHeader()
+		  });
+		//   localPath = vscode.Uri.joinPath(localPath,'test.zip');
+		  let zip = await JSZIP.loadAsync(resp.data);
+		  console.log(zip);
+		  zip.forEach(async (fileName:any)=>{
+			let filepathname = fileName.split("/").slice(1).join("/");
+			if(!filepathname){return;};
+			let localPath_ = vscode.Uri.joinPath(localPath,filepathname);
+			if(zip.file(fileName)===null){
+				vscode.workspace.fs.createDirectory(localPath_);
+				return;
+			}
+			vscode.workspace.fs.writeFile(localPath_, Buffer.from(await zip.file(fileName).async('arraybuffer')));
+		  });
+		// const workspaceFolder = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0;
+		const folderName = path.basename(localPath.path);
+		vscode.workspace.updateWorkspaceFolders(0, null, { uri:localPath, name:folderName});
+		  
+		//   vscode.workspace.fs.writeFile(localPath,Buffer.from(resp.data));
+		//   console.log("file download",resp);
+	}
+	private async getHeader(){
+		if(!this.auth){
+			await this.init();
+		}
+		if(!this.auth){return;}
+		return  {
+			authorization: "token "+ this.auth.accessToken,
+			  'X-GitHub-Api-Version': '2022-11-28'
+			};
+	}
+	onError(err:any){
+		vscode.window.showErrorMessage(String(err));
+	}
+>>>>>>> 552ca173713c2b78446f02b1f6e8ea5bd86dcc35
 }
 
 // import * as vscode from 'vscode';

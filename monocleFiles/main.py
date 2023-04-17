@@ -1,0 +1,1 @@
+print("Hello Monocle from ar-studio-for-vscode!")

@@ -63,21 +63,8 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
 
 	}
 
-	/**
-	 * Given the path to package.json, read all its dependencies and devDependencies.
-	 */
-	private getDepsInPackageJson(packageJsonPath: string): Snippet[] {
-		// const workspaceRoot = this.workspaceRoot;
-            let snippetsJson = "../../snippets/display.json";
-            console.log(JSON.stringify(snippets.display));
-            Object.keys(snippets).forEach(key=>{
 
-            });
-			const packageJson = JSON.parse(fs.readFileSync(snippetsJson, 'utf-8'));
-            console.log(JSON.stringify(packageJson));
-		
-			return [];
-	}
+
 }
 
 export class Snippet extends vscode.TreeItem {
