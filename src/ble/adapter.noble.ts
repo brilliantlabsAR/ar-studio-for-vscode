@@ -279,11 +279,9 @@
             discoverDescriptors: function(handle, descriptorUUIDs, completeFn, errorFn) {
                 var characteristicInfo = this.characteristicHandles[handle];
                 characteristicInfo.discoverDescriptors(checkForError(errorFn, function(descriptors) {
-
                     var discovered = [];
                     descriptors.forEach(function(descriptorInfo) {
                         var descUUID = helpers.getCanonicalUUID(descriptorInfo.uuid);
-
                         if (descriptorUUIDs.length === 0 || descriptorUUIDs.indexOf(descUUID) >= 0) {
                             var descHandle = characteristicInfo.uuid + "-" + descriptorInfo.uuid;
                             if (!this.descriptorHandles[descHandle]) this.descriptorHandles[descHandle] = descriptorInfo;
