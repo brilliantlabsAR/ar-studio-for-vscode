@@ -1,27 +1,27 @@
 {
     "callback(pad,callback)": {
         "prefix": "callback",
-        "body": "\ntouch.callback(${1:pad}, ${2:callback},)",
+        "body": "touch.callback(touch.${1|A,B,BOTH|}, ${2:callback})",
         "description" : "Attaches a callback handler to one or both of the touch pads. If pad is given as touch.BOTH, a single callback will be used to capture both touch events. Otherwise touch.A or touch.B can be used to assign separate callback functions if desired. callback should be a predefined function taking one argument. This argument will equal the pad which triggered the callback. To unassign a callback, issue touch.callback() with None in the callback argument. To view the currently assigned callback, issue touch.callback() without the callback argument."
     },
     "state(pad)": {
         "prefix": "reset",
-        "body": "\ntouch.state(${1:pad})",
+        "body": "touch.state(${1:pad})",
         "description" : "Returns the current touch state of the touch pads. If pad is not specified, either 'A', 'B', 'BOTH' or None will be returned depending on which pads are currently touched. If pad is specified, then True or False will be returned for the touch state of that pad."
     },
     "A": {
         "prefix": "A",
-        "body": "\ntouch.A",
+        "body": "touch.A",
         "description" :"String constant which represents Pad A."
     },
     "B": {
         "prefix": "B",
-        "body": "\ntouch.B",
+        "body": "touch.B",
         "description" :"String constant which represents Pad B."
     },
     "BOTH": {
-        "prefix": "git_repo",
-        "body": "\ntouch.BOTH",
+        "prefix": "BOTH",
+        "body": "touch.BOTH",
         "description" :"String constant which represents both pads."
     } 
 }

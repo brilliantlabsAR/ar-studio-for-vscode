@@ -1,52 +1,52 @@
 {
     "name": {
         "prefix": "monocle",
-        "body": "\ndevice.name",
+        "body": "device.name",
         "description" : "Device name is monocle"
     },
     "reset()": {
         "prefix": "reset",
-        "body": "\ndevice.reset()",
+        "body": "device.reset()",
         "description" : "Resets the device"
     },
     "version": {
         "prefix": "version",
-        "body": "\ndevice.version",
+        "body": "device.version",
         "description" :"Constant containing the firmware version as a 12 character string."
     },
     "git_tag": {
         "prefix": "git_tag",
-        "body": "\ndevice.git_tag",
+        "body": "device.git_tag",
         "description" :"Constant containing the build git tag as a 9 character string."
     },
     "git_repo": {
         "prefix": "git_repo",
-        "body": "\ndevice.git_repo",
+        "body": "device.git_repo",
         "description" :"Constant containing the project git repo as a string"
     },
     "battery_level()": {
         "prefix": "battery_level",
-        "body": "\ndevice.battery_level()",
+        "body": "device.battery_level()",
         "description" :"Returns the battery level percentage as an integer."
     },
     "reset_cause()": {
         "prefix": "reset_cause",
-        "body": "\ndevice.reset_cause()",
+        "body": "device.reset_cause()",
         "description" :"Returns the reason for the previous reset or startup state. These can be either:-'POWERED_ON' if the device was powered on normally- 'SOFTWARE_RESET' if device.reset() was called- 'CRASHED' if the device had crashed."
     },
     "prevent_sleep(enable)": {
         "prefix": "prevent_sleep",
-        "body": "\ndevice.prevent_sleep(${1:enable})",
+        "body": "device.prevent_sleep(${1:enable})",
         "description" :"Enables or disables sleeping of the device when put back into the charging case. Sleeping is enabled by default. If no argument is given. The currently set value is returned. WARNING: Running monocle for prolonged periods may result in display burn in, as well as reduced lifetime of components."
     },
     "force_sleep()": {
         "prefix": "force_sleep",
-        "body": "\ndevice.force_sleep()",
+        "body": "device.force_sleep()",
         "description" :"Puts the device to sleep. All hardware components are shut down, and Bluetooth is disconnected. Upon touching either of the touch pads, the device will wake up, and reset."
     },
     "storage(start,length)": {
         "prefix": "storage",
-        "body": "\ndevice.storage(${1:start}, ${2:length},)",
+        "body": "device.storage(${1:start}, ${2:length},)",
         "description" :"The Storage class is used internally for initializing and accessing the file system. This class shouldn’t be accessed, unless you want to reformat the internal storage."
     }
       

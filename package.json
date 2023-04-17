@@ -2,6 +2,7 @@
   "name": "brilliant-ar-studio",
   "displayName": "Brilliant AR Studio",
   "description": "Develop AR applications for Monocle within the Brilliant AR Studio.",
+  "publisher": "brilliantlabsAR",
   "repository": {
     "url": "https://github.com/brilliantlabsAR/ar-studio-for-vscode"
   },
@@ -21,7 +22,7 @@
       "activitybar": [
         {
           "id": "brilliantsar",
-          "title": "Brilliant AR",
+          "title": "Brilliant AR Studio",
           "icon": "media/bulb.svg"
         }
       ]
@@ -125,6 +126,11 @@
       {
         "command": "brilliant-ar-studio.copyProject",
         "title": "Brilliant AR Studio:Copy To Local",
+        "icon": "$(explorer-view-icon)"
+      },
+      {
+        "command": "brilliant-ar-studio.setDeviceLocalPath",
+        "title": "Brilliant AR Studio: Initialize new project folder",
         "icon": "$(explorer-view-icon)"
       }
     ],
