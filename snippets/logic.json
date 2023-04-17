@@ -16,13 +16,13 @@
     },
     "and": {
         "prefix": "and",
-        "body": "\n${1:value1} and ${2:value2}$0",
+        "body": "${1:value1} and ${2:value2}$0",
         "description" : "Code snippet for the and logic."
     },
     
      "or": {
         "prefix": "or",
-        "body": "\n${1:value1} or ${2:value2}$0",
+        "body": "${1:value1} or ${2:value2}$0",
         "description" : "Code snippet for the or logic."
     },
     "not": {
@@ -32,17 +32,17 @@
     },
     "in": {
         "prefix": "in",
-        "body": "\nin ${1:list}$0",
+        "body": "in ${1:list}$0",
         "description" : "Code snippet for the equal in logic."
     },
     "equal": {
         "prefix": "==",
-        "body": "\n${1:value1} == ${2:value2}$0",
+        "body": "${1:value1} == ${2:value2}$0",
         "description" : "Code snippet for the equal (==) operator."
     },
     "not equal": {
         "prefix": "!=",
-        "body": "\n${1:value1} != ${2:value2}$0",
+        "body": "${1:value1} != ${2:value2}$0",
         "description" : "Code snippet for the not equal (!=) operator."
     }
    

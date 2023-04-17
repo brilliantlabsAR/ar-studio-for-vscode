@@ -2,22 +2,22 @@
    
     "capture()": {
         "prefix": "capture",
-        "body": "\ncamera.capture()",
+        "body": "camera.capture()",
         "description": "Captures an image and returns it to a device over Bluetooth."
     },
     "overlay(enable)": {
         "prefix": "overlay",
-        "body": "\ncamera.overlay(${1|True,False|})",
+        "body": "camera.overlay(${1|True,False|})",
         "description": "Draws a single pixel of color color at the position x, y."
     },
     "output(x,y,format)": {
         "prefix": "output",
-        "body": "\ncamera.output(${1:640}, ${2:400}, ${3|camera.YUV,camera.RGB,camera.JPEG|})",
+        "body": "camera.output(${1:640}, ${2:400}, ${3|camera.YUV,camera.RGB,camera.JPEG|})",
         "description": "Set the output resolution and format. x and y represent the output resolution in pixels. format can be either RGB, 'YUV' or 'JPEG'. The default output settings are camera.output(640, 400, 'YUV')."
     },
     "zoom(multiplier)": {
         "prefix": "zoom",
-        "body": "\nzoom(${1|1,2,3,4,5,6,7,8|})",
+        "body": "camera.zoom(${1|1,2,3,4,5,6,7,8|})",
         "description": "Sets the zoom level of the camera. Multiplier can be any floating point number between 1 and 8."
     }
 }

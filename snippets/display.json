@@ -1,33 +1,49 @@
 {
    
     "fill(color)": {
-        "id":1,
+        
         "prefix": "fill",
-        "body": "\ndisplay.fill(${1:color})",
+        "body": "display.fill(${1:color})",
         "description": "Fills the entire display with a color. color should be a 24-bit RGB value such as 0xAABBCC."
     },
-    "pixel(x, y, color)": {
-        "id":2,
-        "prefix": "pixel",
-        "body": "\ndisplay.pixel(${1:x}, ${2:y}, ${3:color})",
-        "description": "Draws a single pixel of color color at the position x, y."
-    },
     "hline(x, y, width, color)": {
-        "id":3,
         "prefix": "hline",
-        "body": "\ndisplay.hline(${1:x}, ${2:y}, ${3:width}, ${4:color})",
+        "body": "display.hline(${1:x}, ${2:y}, ${3:width}, ${4:color})",
         "description": "Draws a horizontal line from the position x, y, with a given width and color."
     },
+    "line(x1, y1, x2, y2, color)": {
+        "prefix": "line",
+        "body": "display.line(${1:x1}, ${2:y1}, ${3:x2}, ${4:y2}, ${5:color})",
+        "description": "Draws a straight line from the position x1, y1, to the position x2, y2, with a given color."
+    },
     "vline(x, y, height, color)": {
-        "id":4,
         "prefix": "vline",
-        "body": "\ndisplay.vline(${1:x}, ${2:y}, ${3:height}, ${4:color})",
+        "body": "display.vline(${1:x}, ${2:y}, ${3:height}, ${4:color})",
         "description": "Draws a horizontal line from the position x, y, with a given height and color."
     },
+    "text(string,x,y,color)": {
+        "prefix": "text",
+        "body": "display.text(${1:string}, ${2:x}, ${3:y}, ${4:color})",
+        "description": "Draws text at the position x, y, with a given color."
+    },
+    "brightness(level)": {
+        "prefix": "brightness",
+        "body": "display.brightness(${1|1,2,3,4|})",
+        "description": "Sets the display’s brightness. level can be 0, 1, 2, 3, or 4."
+    },
+    "WIDTH": {
+        "prefix": "WIDTH",
+        "body": "display.WIDTH",
+        "description": "The display width in pixels. Equal to 640."
+    },
+    "HEIGHT": {
+        "prefix": "HEIGHT",
+        "body": "display.HEIGHT",
+        "description": "The display height in pixels. Equal to 400."
+    },
     "show()": {
-        "id":5,
         "prefix": "show",
-        "body": "\ndisplay.show()",
+        "body": "display.show()",
         "description": "Prints the populated frame buffer to the display. After this call, another series of drawing functions may be called and show() can be used to print the next frame. This also clears the display."
     }
 }
