@@ -29,7 +29,6 @@ export async function replRawMode(enable:boolean) {
 export async function replSend(string:string) {
 
     ensureConnected();
-
     // Strings will be thrown away if not connected
     if (!isConnected()) {
         return;
@@ -135,7 +134,6 @@ export async function ensureConnected() {
                 }else{
                     vscode.window.showInformationMessage(updateMsg.value);
                 }
-               
             }
         }
     }

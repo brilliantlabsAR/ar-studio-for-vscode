@@ -59,73 +59,73 @@
     "commands": [
       {
         "command": "brilliant-ar-studio.helloWorld",
-        "title": "Hello World"
+        "title": "Brilliant AR Studio: Hello World"
       },
       {
         "command": "brilliant-ar-studio.openDeviceFile",
-        "title": "Open Device file in editor"
+        "title": "Brilliant AR Studio:Open Device file in editor"
       },
       {
         "command": "fileExplorer.openFile",
-        "title": "openFile"
+        "title": "Brilliant AR Studio:openFile"
       },
       {
         "command": "brilliant-ar-studio.connect",
-        "title": "Connect"
+        "title": "Brilliant AR Studio:Connect"
       },
       {
         "command": "brilliant-ar-studio.runFile",
-        "title": "Run in Device",
+        "title": "Brilliant AR Studio:Run in Device",
         "icon": "$(play-circle)"
       },
       {
         "command": "brilliant-ar-studio.refreshDeviceFiles",
-        "title": "Refresh",
+        "title": "Brilliant AR Studio:Refresh",
         "icon": "$(refresh)"
       },
       {
         "command": "brilliant-ar-studio.syncFiles",
-        "title": "Start auto run",
+        "title": "Brilliant AR Studio:Start auto run",
         "icon": "$(play-circle)"
       },
       {
         "command": "brilliant-ar-studio.deleteDeviceFile",
-        "title": "Delete file from device",
+        "title": "Brilliant AR Studio:Delete file from device",
         "icon": "$(trash)"
       },
       {
         "command": "brilliant-ar-studio.syncStop",
-        "title": "Stop auto run",
+        "title": "Brilliant AR Studio:Stop auto run",
         "icon": "$(debug-stop)"
       },
       {
         "command": "brilliant-ar-studio.fpgaUpdate",
-        "title": "FPGA Update",
+        "title": "Brilliant AR Studio:FPGA Update",
         "icon": "$(cloud)"
       },
       {
         "command": "brilliant-ar-studio.getPublicApps",
-        "title": "Get public apps",
+        "title": "Brilliant AR Studio:Get public apps",
         "icon": "$(refresh)"
       },
       {
         "command": "brilliant-ar-studio.publishMonocleApp",
-        "title": "Publish app",
+        "title": "Brilliant AR Studio:Publish app",
         "icon": "$(cloud-upload)"
       },
       {
         "command": "brilliant-ar-studio.UnPublishMonocleApp",
-        "title": "Unpublish app",
+        "title": "Brilliant AR Studio:Unpublish app",
         "icon": "$(star-full)"
       },
       {
         "command": "brilliant-ar-studio.forkProject",
-        "title": "Fork to Edit",
+        "title": "Brilliant AR Studio:Fork to Edit",
         "icon": "$(repo-forked)"
       },
       {
         "command": "brilliant-ar-studio.copyProject",
-        "title": "Copy To Local",
+        "title": "Brilliant AR Studio:Copy To Local",
         "icon": "$(explorer-view-icon)"
       },
       {
