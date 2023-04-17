@@ -116,9 +116,7 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Fi
 			if(await creatUpdateFileDevice(uri, devicePath)){
 				this.refresh();
 			}
-			
-			
-			// this.allFiles.push(new File(basename));
+						// this.allFiles.push(new File(basename));
 		}
 	}
 	async updateFile(uri:vscode.Uri,devicePath:string){

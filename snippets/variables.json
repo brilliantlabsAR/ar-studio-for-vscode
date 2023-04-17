@@ -3,6 +3,5 @@
         "prefix": "if",
         "body": "\nif ${1:condition}:\n\t${2:pass}$0",
         "description" : "Code snippet for the if statement."
-    }
-   
+    } 
 }
