@@ -132,7 +132,8 @@ export async function activate(context: vscode.ExtensionContext) {
 			if(filesFound.length===0){
 				// let newPathPy = vscode.Uri.joinPath(rootUri,monocleFolder+'/main.py');
 				// let newPathReadMe = vscode.Uri.joinPath(rootUri,'./README.md');
-				initFiles(rootUri,vscode.workspace.workspaceFolders[0].name);
+				// initFiles(rootUri,vscode.workspace.workspaceFolders[0].name);
+				return;
 			}
 			currentSyncPath = vscode.Uri.joinPath(rootUri,monocleFolder+"/");
 			vscode.commands.executeCommand('setContext', 'monocle.sync', true);
@@ -142,24 +143,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
 	const nodeDependenciesProvider = new DepNodeProvider("rootPath");
 	const projectProvider =  new ProjectProvider();
-	
-	// const projectTree = vscode.window.createTreeView('projects',{treeDataProvider:projectProvider});
-	// projectTree.onDidChangeVisibility(() => {
-	// 	if (projectTree.visible) {
-	// 	  const disposable = vscode.commands.registerCommand('myTree.search', async () => {
-	// 		const searchTerm = await vscode.window.showInputBox({ prompt: 'Search' });
-	// 		if (searchTerm) {
-	// 		  const items = await projectProvider.search(searchTerm);
-	// 		//   projectProvider.dataProvider = new ProjectProvider(items);
-	// 		}
-	// 	  });
-	// 	//   projectTree.message = { text: 'Search: "Ctrl+Shift+F"' };
-	// 	//   projectTree.onDidDispose(() => disposable.dispose());
-	// 	} else {
-	// 		projectTree.message = undefined;
-	// 	}
-	//   });
-	
+
 	const thisProvider={
         resolveWebviewView:function(thisWebview:any, thisWebviewContext:any, thisToken:any){
             thisWebview.webview.options={enableScripts:true};
@@ -316,6 +300,28 @@ export async function activate(context: vscode.ExtensionContext) {
 			currentSyncPath = null;
 			vscode.commands.executeCommand('setContext', 'monocle.sync', false);
 		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.setDeviceLocalPath', async (thiscontext) => {
+			currentSyncPath = null;
+			vscode.commands.executeCommand('setContext', 'monocle.sync', false);
+			let projectName = await vscode.window.showInputBox({title:"Enter Project Name",placeHolder:"MonocleApp"});
+			if(projectName && projectName.trim()!==''){
+				let selectedPath = await vscode.window.showOpenDialog({canSelectFolders:true,canSelectFiles:false,canSelectMany:false,title:"Select project path"});
+				if(selectedPath && projectName){
+					let workspacePath = vscode.Uri.joinPath(selectedPath[0],projectName);
+					if((await vscode.workspace.findFiles(new vscode.RelativePattern(workspacePath,''))).length===0){
+						await vscode.workspace.fs.createDirectory(workspacePath);
+						await initFiles(workspacePath,projectName);
+						// vscode.workspace.
+						vscode.commands.executeCommand('vscode.openFolder', workspacePath);
+						// vscode.workspace.updateWorkspaceFolders(0,null,{uri:workspacePath,name:projectName});
+					
+					}else{
+						vscode.window.showErrorMessage("Directory exist, open if you want to use existing directory");
+					}
+				}
+				
+			}
+		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.getPublicApps',  (thiscontext) => {
 			 projectProvider.refresh();
 	   
@@ -373,7 +379,9 @@ export async function activate(context: vscode.ExtensionContext) {
 				let monocleFilesUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,monocleFolder+"/*.py");
 				if(! isPathExist(monocleFilesUri)){
 					// initialized folder
-					initFiles(vscode.workspace.workspaceFolders[0].uri,vscode.workspace.workspaceFolders[0].name);
+					vscode.window.showWarningMessage("No project setup")
+					return;
+					// initFiles(vscode.workspace.workspaceFolders[0].uri,vscode.workspace.workspaceFolders[0].name);
 				}
 				if(git.repositories && git.repositories.length===0){
 					git.init(vscode.workspace.workspaceFolders[0].uri);
@@ -427,9 +435,11 @@ export async function activate(context: vscode.ExtensionContext) {
 			// The code you place here will be executed every time your command is executed
 			// Display a message box to the user
 			if(!isConnected()){
-				await vscode.commands.executeCommand('brilliant-ar-studio.syncFiles');
+				// await vscode.commands.executeCommand('brilliant-ar-studio.syncFiles');
 				if(vscode.workspace.workspaceFolders){
 					await startSyncing();
+					selectTerminal().then();
+				}else{
 					selectTerminal().then();
 				}
 			}else{
