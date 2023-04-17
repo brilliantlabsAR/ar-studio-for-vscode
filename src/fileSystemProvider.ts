@@ -21,8 +21,6 @@ export class Snippet extends vscode.TreeItem {
 		this.tooltip = `${this.description}`;
 		this.description = this.description;
 	}
-
-
 	contextValue = 'category';
 }
 
@@ -83,7 +81,6 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile> {
 		this._onDidChangeTreeData.fire();
 	}
 
-
 	async addFile(uri:vscode.Uri,devicePath:string){
 		const basename = path.posix.basename(devicePath);
 		let file = await vscode.workspace.fs.stat(uri);
@@ -110,8 +107,6 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile> {
 			this.refresh();
 		}
 	}
-
-
 
 	getTreeItem(element: MonocleFile): vscode.TreeItem {
 		return element;

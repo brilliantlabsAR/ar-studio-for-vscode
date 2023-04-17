@@ -12,8 +12,6 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
 
 	private dragDataEmitter = new vscode.EventEmitter<any>();
   public readonly onDragData = this.dragDataEmitter.event;
-
-
 	constructor(private workspaceRoot: string | undefined) {
 	}
 
@@ -25,7 +23,6 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
 
    returnData(){
 	return this.dropMimeTypes;
-
    }
 
 	refresh(): void {
@@ -36,7 +33,6 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
 		return element;
 	}
 
-	
 	getChildren(element?: Snippet): Thenable<Snippet[]> {
         // return Promise.resolve(categories);
 		if (element) {
@@ -60,11 +56,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
             });
             return Promise.resolve(categories);
 		}
-
 	}
-
-
-
 }
 
 export class Snippet extends vscode.TreeItem {
