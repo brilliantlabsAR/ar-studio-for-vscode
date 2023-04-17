@@ -452,7 +452,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(alldisposables);
 	context.subscriptions.push(statusBarItemBle);
 	// context.subscriptions.push(fileSubs);
-	console.log('Congratulations, your extension "brilliant-ar-studio" is now active!');
 
 	// new FileExplorer(context);
 
