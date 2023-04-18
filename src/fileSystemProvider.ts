@@ -7,22 +7,8 @@
 import { file } from 'jszip';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {listFilesDevice,createDirectoryDevice,creatUpdateFileDevice, deletFilesDevice,renameFileDevice} from './repl';
-export class Snippet extends vscode.TreeItem {
+import {listFilesDevice,createDirectoryDevice,creatUpdateFileDevice, deletFilesDevice,renameFileDevice, readFileDevice} from './repl';
 
-	constructor(
-		public readonly label: string,
-		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-		public readonly description?: string,
-		public readonly command?: vscode.Command
-	) {
-		super(label, collapsibleState);
-
-		this.tooltip = `${this.description}`;
-		this.description = this.description;
-	}
-	contextValue = 'category';
-}
 
 export class File extends vscode.TreeItem implements vscode.FileStat {
 
@@ -69,7 +55,7 @@ export class Directory extends vscode.TreeItem implements vscode.FileStat {
 
 export type MonocleFile = File | Directory | ProjectEmptyTreeItem;
 
-export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile> {
+export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.TextDocumentContentProvider {
 
 	root = new Directory('');
 	// --- manage file metadata
@@ -101,13 +87,26 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile> {
 			this.refresh();
 		}
 	}
+	async readFile (devicePath:string){
+		let data = await readFileDevice(devicePath);
+		return data;
+		
+	}
 
 	async deleteFile(devicePath:string){
 		if(await deletFilesDevice(devicePath)){
 			this.refresh();
 		}
 	}
-
+	async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+		// simply invoke cowsay, use uri-path as text
+		let data = await this.readFile(uri.path);
+		if(typeof data === 'string'){
+			return data;
+		}else{
+			throw Error("Couldn't read file");
+		}
+	}
 	getTreeItem(element: MonocleFile): vscode.TreeItem {
 		return element;
 	}
@@ -172,4 +171,16 @@ class ProjectEmptyTreeItem extends vscode.TreeItem implements vscode.FileStat {
 	  this.name = "Select";
 	}
   }
+
+//   class DeviceContentProvider implements vscode.TextDocumentContentProvider {
+
+// 	// emitter and its event
+// 	onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
+// 	onDidChange = this.onDidChangeEmitter.event;
+
+// 	provideTextDocumentContent(uri: vscode.Uri): string {
+// 		// simply invoke cowsay, use uri-path as text
+// 		return cowsay.say({ text: uri.path });
+// 	}
+// };
   

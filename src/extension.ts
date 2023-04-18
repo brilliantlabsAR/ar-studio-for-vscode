@@ -267,6 +267,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					sendFileUpdate(fileData);
 				}
 		}),
+		vscode.workspace.registerTextDocumentContentProvider(myscheme, memFs),
 		vscode.commands.registerCommand('brilliant-ar-studio.refreshDeviceFiles', async (thiscontext) => {
 			memFs.refresh();
 		}),
@@ -274,6 +275,15 @@ export async function activate(context: vscode.ExtensionContext) {
 			if(vscode.workspace.workspaceFolders){
 				let rootUri = vscode.workspace.workspaceFolders[0].uri;
 				let localPath = vscode.Uri.joinPath(rootUri,monocleFolder,thiscontext?.path);
+				let doc = await vscode.workspace.openTextDocument(localPath);
+				await vscode.window.showTextDocument(doc);
+			}else{
+				let localPath = vscode.Uri.parse(myscheme+':' + thiscontext?.path);
+				// let doc = await vscode.workspace.openTextDocument(uri); // calls back into the provider
+				// await vscode.window.showTextDocument(doc, { preview: false });
+				// let rootUri = vscode.workspace.;
+				// let data  = await memFs.readFile(thiscontext?.path);
+				// console.log(data);
 				let doc = await vscode.workspace.openTextDocument(localPath);
 				await vscode.window.showTextDocument(doc);
 			}

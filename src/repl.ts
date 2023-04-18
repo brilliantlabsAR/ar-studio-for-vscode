@@ -317,6 +317,17 @@ os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
     return false;
 }
 
+export async function readFileDevice(devicePath:string):Promise<boolean|string>{
+    if(!isConnected){return false;};
+    await enterRawReplInternal();
+    let cmd = `f=open('${devicePath}');print(f.read());f.close();del(f)`;
+    let response:any = await replSend(cmd);
+    await exitRawReplInternal();
+    if(response &&  !response.includes("failed")){return response.slice(response.indexOf('OK')+2,response.indexOf('\r\n\x04'));};
+    return false;
+}
+
+
 export async function deletFilesDevice(devicePath:string):Promise<boolean>{
     if(!isConnected){return false;};
     await enterRawReplInternal();
