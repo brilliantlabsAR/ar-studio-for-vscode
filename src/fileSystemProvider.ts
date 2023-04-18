@@ -87,9 +87,14 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 			this.refresh();
 		}
 	}
-	async readFile (devicePath:string){
+	async readFile (devicePath:string):Promise<string>{
 		let data = await readFileDevice(devicePath);
-		return data;
+		if(typeof data ==='string'){
+			return data;
+		}else{
+			throw Error("Couldn't read file");
+		}
+		
 		
 	}
 

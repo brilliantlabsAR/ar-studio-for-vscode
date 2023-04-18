@@ -2,6 +2,8 @@
 // Import the module and reference it with the alias vscode in your code below
 
 import * as vscode from 'vscode';
+import * as fs from 'fs'; // In NodeJS: 'const fs = require('fs')'
+
 import { isConnected,disconnect } from './bluetooth';
 import {ensureConnected,replSend,sendFileUpdate,triggerFpgaUpdate} from './repl';
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
@@ -40,6 +42,8 @@ class FpgaButton extends vscode.TreeItem {
 	contextValue = 'fpga';
 }
 const isPathExist = async (uri:vscode.Uri):Promise<boolean>=>{
+	let exist = fs.existsSync(uri.fsPath);
+	return exist;
 	let files = await vscode.workspace.findFiles(new vscode.RelativePattern(uri,''));
 return files.length!==0;
 };
@@ -274,19 +278,27 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('brilliant-ar-studio.openDeviceFile', async (thiscontext) => {
 			if(vscode.workspace.workspaceFolders){
 				let rootUri = vscode.workspace.workspaceFolders[0].uri;
-				let localPath = vscode.Uri.joinPath(rootUri,monocleFolder,thiscontext?.path);
-				let doc = await vscode.workspace.openTextDocument(localPath);
-				await vscode.window.showTextDocument(doc);
-			}else{
-				let localPath = vscode.Uri.parse(myscheme+':' + thiscontext?.path);
-				// let doc = await vscode.workspace.openTextDocument(uri); // calls back into the provider
-				// await vscode.window.showTextDocument(doc, { preview: false });
-				// let rootUri = vscode.workspace.;
-				// let data  = await memFs.readFile(thiscontext?.path);
-				// console.log(data);
-				let doc = await vscode.workspace.openTextDocument(localPath);
-				await vscode.window.showTextDocument(doc);
+				let projectPath = vscode.Uri.joinPath(rootUri,monocleFolder);
+				if(await isPathExist(projectPath)){
+					let localPath = vscode.Uri.joinPath(rootUri,monocleFolder,thiscontext?.path);
+					if(await isPathExist(localPath)){
+						let doc = await vscode.workspace.openTextDocument(localPath);
+						await vscode.window.showTextDocument(doc);
+						return;
+					}else{
+						vscode.workspace.fs.writeFile(localPath,Buffer.from(await memFs.readFile(thiscontext?.path)));
+						let doc = await vscode.workspace.openTextDocument(localPath);
+						await vscode.window.showTextDocument(doc);
+						return;
+					}
+				}else{
+					vscode.window.showWarningMessage("Project not Initialized");
+				}
 			}
+			let localPath = vscode.Uri.parse(myscheme+':' + thiscontext?.path);
+			let doc = await vscode.workspace.openTextDocument(localPath);
+			await vscode.window.showTextDocument(doc);
+			
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.fpgaUpdate', async (thiscontext) => {
 			let resp = await vscode.window.showQuickPick(["Update Custom firmware","Update from Brilliant Monocle"]);
