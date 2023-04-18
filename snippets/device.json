@@ -36,7 +36,7 @@
     },
     "prevent_sleep(enable)": {
         "prefix": "prevent_sleep",
-        "body": "device.prevent_sleep(${1:enable})",
+        "body": "device.prevent_sleep(${1|False,True|})",
         "description" :"Enables or disables sleeping of the device when put back into the charging case. Sleeping is enabled by default. If no argument is given. The currently set value is returned. WARNING: Running monocle for prolonged periods may result in display burn in, as well as reduced lifetime of components."
     },
     "force_sleep()": {

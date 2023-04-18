@@ -181,7 +181,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // );
 	vscode.window.registerTreeDataProvider("fpga",{
 		getChildren(element?:vscode.TreeItem):vscode.TreeItem[]{
-			return [new FpgaButton];
+			return [];
 			
 		},
 		getTreeItem(element:vscode.TreeItem):vscode.TreeItem{
@@ -401,7 +401,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				let monocleFilesUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,monocleFolder+"/*.py");
 				if(! isPathExist(monocleFilesUri)){
 					// initialized folder
-					vscode.window.showWarningMessage("No project setup")
+					vscode.window.showWarningMessage("No project setup");
 					return;
 					// initFiles(vscode.workspace.workspaceFolders[0].uri,vscode.workspace.workspaceFolders[0].name);
 				}
@@ -464,10 +464,13 @@ export async function activate(context: vscode.ExtensionContext) {
 				}else{
 					selectTerminal().then();
 				}
-			}else{
-				disconnect();
-				// vscode.window.showWarningMessage("Monocle Disconnected");
 			}
+			
+		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.disconnect', async () => {
+			
+			disconnect();
+			vscode.commands.executeCommand('brilliant-ar-studio.syncStop');
 			
 		}),
 	);
@@ -491,9 +494,11 @@ export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
 	if(status==="connected"){
 		// statusBarItemBle.color = "#13f81a";
 		statusBarItemBle.tooltip = "Connected";
+		statusBarItemBle.command = "brilliant-ar-studio.disconnect";
 		statusBarItemBle.backgroundColor = "";
 		statusBarItemBle.text = msg;
 	}else if(status==="progress"){
+		statusBarItemBle.command = "";
 		statusBarItemBle.text = "$(sync~spin) "+msg;
 		statusBarItemBle.backgroundColor = bgColorWarning;
 		statusBarItemBle.tooltip = "Connecting";

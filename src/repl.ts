@@ -135,6 +135,7 @@ export async function ensureConnected() {
                     vscode.window.showInformationMessage(updateMsg.value);
                 }
             }
+            await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh')
         }
     }
 
@@ -224,26 +225,30 @@ async function exitRawReplInternal(){
 }
 
 async function enterRawReplInternal(){
-    if(replRawModeEnabled){
+    if (!isConnected()) {
+        return false;
+    }
+    if(replRawModeEnabled || internalOperation){
         await new Promise(r => {
             let interval = setInterval(()=>{
-                if(!replRawModeEnabled){
+                if(!replRawModeEnabled && !internalOperation){
                     setTimeout(()=>{
                         r("");
-                    },1000);
+                    },100);
                     clearInterval(interval);
                 }
-            },1000);
+            },100);
         });
     }
     internalOperation = true;
     await replRawMode(true);
     await new Promise(r => setTimeout(r, 100));
+    return true;
 }
 
 export async function listFilesDevice(currentPath="/"):Promise<string[]>{
 
-    await enterRawReplInternal();
+    if(!await enterRawReplInternal()){return[];};
     let cmd = `import os,ujson;
 d="${currentPath}"
 l =[]
@@ -270,9 +275,9 @@ del(os,l,d)`;
 }
 
 export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
-    if(!isConnected()){return false;};
-    
-    await enterRawReplInternal();
+   
+    if(!await enterRawReplInternal()){return false;};
+
     let response:any = await replSend("import os;os.mkdir('"+ devicePath +"');del(os)");
     await exitRawReplInternal();
     if(response && !response.includes("Error")){
@@ -282,10 +287,11 @@ export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
 }
 
 export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):Promise<boolean>{
-    if(!isConnected()){return false;};
+    
+    if(!await enterRawReplInternal()){return false;};
+
     let fileData = await vscode.workspace.fs.readFile(uri);
 
-    await enterRawReplInternal();
 
     if(fileData.byteLength===0){
          let response:any = await replSend("f = open('"+ devicePath +"', 'w');f.write('');f.close()");
@@ -307,30 +313,33 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
 }
 
 export async function renameFileDevice(oldDevicePath:string, newDevicePath:string):Promise<boolean>{
-    if(!isConnected){return false;};
-    await enterRawReplInternal();
+    
+    if(!await enterRawReplInternal()){return false;};
+
     let cmd = `import os;
 os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
     let response:any = await replSend(cmd);
     await exitRawReplInternal();
-    if(response &&  !response.includes("failed")){return true;};
+    if(response &&  !response.includes("Error")){return true;};
     return false;
 }
 
 export async function readFileDevice(devicePath:string):Promise<boolean|string>{
-    if(!isConnected){return false;};
-    await enterRawReplInternal();
+   
+    if(!await enterRawReplInternal()){return false;};
+
     let cmd = `f=open('${devicePath}');print(f.read());f.close();del(f)`;
     let response:any = await replSend(cmd);
     await exitRawReplInternal();
-    if(response &&  !response.includes("failed")){return response.slice(response.indexOf('OK')+2,response.indexOf('\r\n\x04'));};
+    if(response &&  !response.includes("Error")){return response.slice(response.indexOf('OK')+2,response.indexOf('\r\n\x04'));};
     return false;
 }
 
 
 export async function deletFilesDevice(devicePath:string):Promise<boolean>{
-    if(!isConnected){return false;};
-    await enterRawReplInternal();
+
+    if(!await enterRawReplInternal()){return false;};
+
     let cmd = `import os;
 def rm(d):
     try:

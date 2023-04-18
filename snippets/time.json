@@ -6,7 +6,7 @@
     },
     "now(epoch)": {
         "prefix": "now",
-        "body": "\time.now(${1:epoch})",
+        "body": "time.now(${1:epoch})",
         "description" : "Returns a dictionary containing a human readable date and time. If no argument is provided, the current system time is used. If epoch is provided, that value will be used to generate the dictionary. The epoch should be referenced from midnight on the 1st of January 1970."
     },
     "zone(offset)": {
@@ -16,7 +16,7 @@
     },
     "mktime(dict)": {
         "prefix": "mktime",
-        "body": "\time.mktime(${1:dict})",
+        "body": "time.mktime(${1:dict})",
         "description" : "The inverse of now(). Converts a dictionary provided into an epoch timestamp. The returned epoch value will be referenced from midnight on the 1st of January 1970."
     },
     "ticks_add(ticks, delta)": {

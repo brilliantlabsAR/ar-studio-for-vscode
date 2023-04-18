@@ -52,7 +52,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
             let categories:Snippet[] = [];
             // console.log(JSON.stringify(snippets.display));
             Object.keys(snippets).forEach(key=>{
-                categories.push(new Snippet(key,vscode.TreeItemCollapsibleState.Collapsed));
+                categories.push(new Snippet(key,vscode.TreeItemCollapsibleState.Collapsed,key));
             });
             return Promise.resolve(categories);
 		}

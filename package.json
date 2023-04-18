@@ -37,8 +37,8 @@
         {
           "id": "fpga",
           "name": "FPGA",
-          "icon": "media/bulb.svg",
-          "when": "monocle.deviceConnected"
+          "icon": "media/bulb.svg"
+         
         },
         {
           "id": "projects",
@@ -50,12 +50,22 @@
       "explorer": [
         {
           "id": "fileExplorer",
-          "name": "Device Files",
-          "icon": "media/bulb.svg",
-          "when": "monocle.deviceConnected"
+          "name": "Brilliant AR Studio: Device Files",
+          "icon": "media/bulb.svg"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "fpga",
+        "contents": "[Update FPGA](command:brilliant-ar-studio.fpgaUpdate)"
+      },
+      {
+        "view": "fileExplorer",
+        "contents": "[Connect](command:brilliant-ar-studio.connect)",
+        "when": "!monocle.deviceConnected"
+      }
+    ],
     "commands": [
       {
         "command": "brilliant-ar-studio.openDeviceFile",
@@ -64,6 +74,10 @@
       {
         "command": "fileExplorer.openFile",
         "title": "Brilliant AR Studio: openFile"
+      },
+      {
+        "command": "brilliant-ar-studio.disconnect",
+        "title": "Brilliant AR Studio: Disconnect"
       },
       {
         "command": "brilliant-ar-studio.connect",
@@ -126,7 +140,7 @@
       },
       {
         "command": "brilliant-ar-studio.setDeviceLocalPath",
-        "title": "Brilliant AR Studio:  Initialize new project folder",
+        "title": "Brilliant AR Studio: Initialize new project folder",
         "icon": "$(explorer-view-icon)"
       }
     ],
