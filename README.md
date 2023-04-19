@@ -11,14 +11,13 @@ edit device files
 
 ## Requirements
 
-currently running only on windows 
-for mac /linux we are working on 
+currently running working on windows and mac
+for linux we are working on 
 if you have any idea you can give a pr to this extension repository
 
 ## Known Issues
 
-not working on mac/linux
-file operation over device might break
+not working on linux
 
 ## Release Notes
 non published version

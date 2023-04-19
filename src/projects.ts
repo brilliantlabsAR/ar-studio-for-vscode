@@ -144,7 +144,6 @@ export class GitOperation {
 			ref: 'master',
 			headers: await this.getHeader()
 		  });
-		//   localPath = vscode.Uri.joinPath(localPath,'test.zip');
 		  let zip = await JSZIP.loadAsync(resp.data);
 		  console.log(zip);
 		  zip.forEach(async (fileName:any)=>{
@@ -157,12 +156,8 @@ export class GitOperation {
 			}
 			vscode.workspace.fs.writeFile(localPath_, Buffer.from(await zip.file(fileName).async('arraybuffer')));
 		  });
-		// const workspaceFolder = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0;
 		const folderName = path.basename(localPath.path);
 		vscode.workspace.updateWorkspaceFolders(0, null, { uri:localPath, name:folderName});
-		  
-		//   vscode.workspace.fs.writeFile(localPath,Buffer.from(resp.data));
-		//   console.log("file download",resp);
 	}
 	private async getHeader(){
 		if(!this.auth){
@@ -198,30 +193,4 @@ export function cloneAndOpenRepo(repoUrl:string,uri:vscode.Uri): void {
   });
 }
 
-
-// import { TreeDataProvider, TreeItem, TreeView } from 'vscode';
-
-// class MyTreeDataProvider implements TreeDataProvider<MyTreeItem> {
-//   // implementation of the TreeDataProvider interface
-// }
-
-// const treeDataProvider = new MyTreeDataProvider();
-// const treeView = vscode.window.createTreeView('myTree', { treeDataProvider });
-	
-// // add a search bar to the tree view
-// treeView.onDidChangeVisibility(() => {
-//   if (treeView.visible) {
-//     const disposable = commands.registerCommand('myTree.search', async () => {
-//       const searchTerm = await window.showInputBox({ prompt: 'Search' });
-//       if (searchTerm) {
-//         const items = await treeDataProvider.search(searchTerm);
-//         // treeView.dataProvider = new MyTreeDataProvider(items);
-//       }
-//     });
-//     // treeView.message = { text: 'Search: "Ctrl+Shift+F"' };
-//     // treeView.onDidDispose(() => disposable.dispose());
-//   } else {
-//     // treeView.message = undefined;
-//   }
-// });
 

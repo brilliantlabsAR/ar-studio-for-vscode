@@ -7,14 +7,11 @@ import * as fs from 'fs'; // In NodeJS: 'const fs = require('fs')'
 import { isConnected,disconnect } from './bluetooth';
 import {ensureConnected,replSend,sendFileUpdate,triggerFpgaUpdate} from './repl';
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
-import { DepNodeProvider } from './snippets/provider';
-// import * as vscode from 'vscode';
-import * as path from 'path';
-import { spawn } from 'child_process';
-// import { FileExplorer } from './fileExplorer';
+import { SnippetProvider } from './snippets/provider';
+
 const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
-import { DeviceFs } from './fileSystemProvider';
+import { DeviceFs, MonocleFile } from './fileSystemProvider';
 const monocleFolder = "device files";
 let statusBarItemBle:vscode.StatusBarItem;
 
@@ -22,6 +19,8 @@ export const writeEmitter = new vscode.EventEmitter<string>();
 const gitOper = new GitOperation();
 export const myscheme = "monocle";
 export var outputChannel:vscode.OutputChannel;
+
+export var deviceTreeProvider:vscode.TreeView<MonocleFile>;
 
 class FpgaButton extends vscode.TreeItem {
 
@@ -124,7 +123,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	var currentSyncPath:vscode.Uri|null = null;
 
 	const memFs = new DeviceFs();
-	context.subscriptions.push(vscode.window.createTreeView('fileExplorer', { treeDataProvider:memFs }));
+	deviceTreeProvider = vscode.window.createTreeView('fileExplorer', { treeDataProvider:memFs });
 	// let fileSubs = vscode.workspace.registerFileSystemProvider(myscheme, memFs, { isCaseSensitive: true });
 	// register content provider for scheme `references`
 	// vscode.commands.executeCommand('')
@@ -145,7 +144,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		
 	}
 	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
-	const nodeDependenciesProvider = new DepNodeProvider("rootPath");
+	const snippetprovider = new SnippetProvider();
 	const projectProvider =  new ProjectProvider();
 
 	const thisProvider={
@@ -188,7 +187,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			return element;
 		}
 	});
-	vscode.window.registerTreeDataProvider('snippetTemplates', nodeDependenciesProvider);
+	vscode.window.registerTreeDataProvider('snippetTemplates', snippetprovider);
 	vscode.window.registerTreeDataProvider('projects',projectProvider);
 	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
 	outputChannel.clear();
@@ -256,13 +255,13 @@ export async function activate(context: vscode.ExtensionContext) {
 		fsWatcher.onDidChange((e)=>{
 			if(currentSyncPath!==null && e.path.includes(currentSyncPath.path)){
 				let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");;
-				memFs.addFile(e,devicePath);
+				memFs.updateFile(e,devicePath);
 			}
 		
 		}),
 		vscode.window.createTreeView('snippetTemplates', {
-			treeDataProvider: new DepNodeProvider(rootPath),
-			dragAndDropController: new DepNodeProvider(rootPath)
+			treeDataProvider: new SnippetProvider(),
+			dragAndDropController: new SnippetProvider()
 		}),
 
 		vscode.commands.registerCommand('brilliant-ar-studio.runFile', async (thiscontext) => {
@@ -301,22 +300,26 @@ export async function activate(context: vscode.ExtensionContext) {
 			
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.fpgaUpdate', async (thiscontext) => {
-			let resp = await vscode.window.showQuickPick(["Update Custom firmware","Update from Brilliant Monocle"]);
-			if(!resp){return;}
-			if(resp==="Update Custom firmware"){
-				let binFile = await vscode.window.showOpenDialog({canSelectFiles:true,canSelectFolders:false,canSelectMany:false,filters:{bin: ["bin"]}});
-				if(binFile && binFile.length>0){
-					currentSyncPath = null;
-				vscode.commands.executeCommand('setContext', 'monocle.sync', false);
-				await triggerFpgaUpdate(binFile[0]);
-				}
+			if(!isConnected()){
+				await vscode.window.showWarningMessage('Device not connected');
+				return;
 			}
-			if(resp==="Update from Brilliant Monocle"){
-				currentSyncPath = null;
-				vscode.commands.executeCommand('setContext', 'monocle.sync', false);
-				await triggerFpgaUpdate();
-			}
+			currentSyncPath = null;
+			vscode.commands.executeCommand('setContext', 'monocle.sync', false);
+			await triggerFpgaUpdate();
 			
+		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.fpgaUpdateCustom', async (thiscontext) => {
+			if(!isConnected()){
+				await vscode.window.showWarningMessage('Device not connected');
+				return;
+			}
+			let binFile = await vscode.window.showOpenDialog({canSelectFiles:true,canSelectFolders:false,canSelectMany:false,filters:{bin: ["bin"]}});
+			if(binFile && binFile.length>0){
+				currentSyncPath = null;
+			vscode.commands.executeCommand('setContext', 'monocle.sync', false);
+			await triggerFpgaUpdate(binFile[0]);
+			}
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.syncStop', async (thiscontext) => {
 			currentSyncPath = null;
@@ -498,7 +501,7 @@ export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
 		statusBarItemBle.backgroundColor = "";
 		statusBarItemBle.text = msg;
 	}else if(status==="progress"){
-		statusBarItemBle.command = "";
+		statusBarItemBle.command = undefined;
 		statusBarItemBle.text = "$(sync~spin) "+msg;
 		statusBarItemBle.backgroundColor = bgColorWarning;
 		statusBarItemBle.tooltip = "Connecting";
@@ -507,7 +510,7 @@ export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
 		// statusBarItemBle.color = "#D90404";
 		statusBarItemBle.backgroundColor =  bgColorWarning;
 		statusBarItemBle.text = "$(cloud-download) Updating "+msg+"%";
-		statusBarItemBle.command = "";
+		statusBarItemBle.command = undefined;
 	
 	}else{
 		statusBarItemBle.tooltip = "Disconncted";

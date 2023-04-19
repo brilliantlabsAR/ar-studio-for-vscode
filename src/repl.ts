@@ -121,21 +121,22 @@ export async function ensureConnected() {
                 let newFpga = updateInfo?.includes('New FPGA');
                 let items:string[] =["Update Now","Later"] ;
                 const updateMsg = new vscode.MarkdownString(updateInfo);
-                if(newFirmware || newFpga){
+                vscode.commands.executeCommand('setContext', 'monocle.fpgaAvailable', newFpga);
+                if(newFirmware){
                     vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
                         if(op==="Update Now"){
-                            if(newFirmware){
+                            // if(newFirmware){
                              startFirmwareUpdate();
-                            }else if(newFpga){
-                                triggerFpgaUpdate();
-                            }
+                            // }else if(newFpga){
+                                // triggerFpgaUpdate();
+                            // }
                         }
                     });
                 }else{
                     vscode.window.showInformationMessage(updateMsg.value);
                 }
             }
-            await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh')
+            await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
         }
     }
 
@@ -291,7 +292,6 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
     if(!await enterRawReplInternal()){return false;};
 
     let fileData = await vscode.workspace.fs.readFile(uri);
-
 
     if(fileData.byteLength===0){
          let response:any = await replSend("f = open('"+ devicePath +"', 'w');f.write('');f.close()");
