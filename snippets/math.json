@@ -1,0 +1,191 @@
+{
+  "acos(x)": {
+    "prefix": "acos",
+    "body": "math.acos(${1:x})",
+    "description": "Return the inverse cosine of x."
+  },
+  "acosh(x)": {
+    "prefix": "acosh",
+    "body": "math.acosh(${1:x})",
+    "description": "Return the inverse hyperbolic cosine of x"
+  },
+  "asin(x)": {
+    "prefix": "asin",
+    "body": "math.asin(${1:x})",
+    "description": "Return the inverse sine of x."
+  },
+  "asinh(x)": {
+    "prefix": "asinh",
+    "body": "math.asinh(${1:x})",
+    "description": "Return the inverse hyperbolic sine of x."
+  },
+  "atan(x)": {
+    "prefix": "atan",
+    "body": "math.atan(${1:x})",
+    "description": "Return the inverse tangent of x."
+  },
+  "atan2(y, x)": {
+    "prefix": "atan2",
+    "body": "math.atan2(${1:y},${2:x})",
+    "description": "Return the principal value of the inverse tangent of y/x."
+  },
+
+  "ceil(x)": {
+    "prefix": "ceil",
+    "body": "math.ceil(${1:x})",
+    "description": "Return an integer, being x rounded towards positive infinity."
+  },
+  "copysign(x,y)": {
+    "prefix": "copysign",
+    "body": "math.copysign(${1:x},${2:y})",
+    "description": "Return x with the sign of y."
+  },
+  "cos(x)": {
+    "prefix": "cos",
+    "body": "math.asin(${1:x})",
+    "description": "Return the cosine of x"
+  },
+  "cosh(x)": {
+    "prefix": "cosh",
+    "body": "math.cosh(${1:x})",
+    "description": "Return the hyperbolic cosine of x"
+  },
+  "degrees(x)": {
+    "prefix": "degrees",
+    "body": "math.degrees(${1:x})",
+    "description": "Return radians x converted to degrees."
+  },
+  "erf(x)": {
+    "prefix": "erf",
+    "body": "math.erf(${1:x})",
+    "description": "Return the error function of x."
+  },
+
+  "erfc(x)": {
+    "prefix": "erfc",
+    "body": "math.erfc(${1:x})",
+    "description": "Return the complementary error function of x."
+  },
+  "exp(x)": {
+    "prefix": "exp",
+    "body": "math.exp(${1:x})",
+    "description": "Return the exponential of x."
+  },
+  "expm1(x)": {
+    "prefix": "expm1",
+    "body": "math.expm1(${1:x})",
+    "description": "Return radians x converted to degrees."
+  },
+  "fabs(x)": {
+    "prefix": "fabs",
+    "body": "math.fabs(${1:x})",
+    "description": "Return the absolute value of x."
+  },
+
+  "floor(x)": {
+    "prefix": "floor",
+    "body": "math.floor(${1:x})",
+    "description": "Return an integer, being x rounded towards negative infinity."
+  },
+  "fmod(x,y)": {
+    "prefix": "fmod",
+    "body": "math.fmod(${1:x},${2:y})",
+    "description": "Return the remainder of x/y."
+  },
+  "frexp(x)": {
+    "prefix": "frexp",
+    "body": "math.frexp(${1:x})",
+    "description": "Decomposes a floating-point number into its mantissa and exponent. The returned value is the tuple (m, e) such that x == m * 2**e exactly. If x == 0 then the function returns (0.0, 0), otherwise the relation 0.5 <= abs(m) < 1 holds."
+  },
+  "gamma(x)": {
+    "prefix": "gamma",
+    "body": "math.gamma(${1:x})",
+    "description": "Return the gamma function of x."
+  },
+
+  "isfinite(x)": {
+    "prefix": "isfinite",
+    "body": "math.isfinite(${1:x})",
+    "description": "Return True if x is finite."
+  },
+  "isinf(x)": {
+    "prefix": "fmod",
+    "body": "math.fmod(${1:x})",
+    "description": "Return True if x is infinite."
+  },
+  "isnan(x)": {
+    "prefix": "isnan",
+    "body": "math.isnan(${1:x})",
+    "description": "Return True if x is not-a-number"
+  },
+  "ldexp(x,exp)": {
+    "prefix": "gamma",
+    "body": "math.gamma(${1:x},${2:exp})",
+    "description": "Return x * (2**exp)."
+  },
+  "lgamma(x)": {
+    "prefix": "lgamma",
+    "body": "math.lgamma(${1:x})",
+    "description": "Return the natural logarithm of the gamma function of x."
+  },
+  "log(x)": {
+    "prefix": "log",
+    "body": "math.log(${1:x})",
+    "description": "Return the natural logarithm of x."
+  },
+  "log10(x)": {
+    "prefix": "log10",
+    "body": "math.log10(${1:x})",
+    "description": "Return the base-10 logarithm of x"
+  },
+  "log2(x)": {
+    "prefix": "log2",
+    "body": "math.log2(${1:x})",
+    "description": "Return the base-2 logarithm of x"
+  },
+  "modf(x)": {
+    "prefix": "modf",
+    "body": "math.modf(${1:x})",
+    "description": "Return a tuple of two floats, being the fractional and integral parts of x. Both return values have the same sign as x"
+  },
+  "pow(x,y)": {
+    "prefix": "pow",
+    "body": "math.pow(${1:x},${2:y})",
+    "description": "Returns x to the power of y."
+  },
+  "radians(x)": {
+    "prefix": "radians",
+    "body": "math.radians(${1:x})",
+    "description": "Return degrees x converted to radians."
+  },
+  "sin(x)": {
+    "prefix": "sin",
+    "body": "math.sin(${1:x})",
+    "description": "Return the sine of x."
+  },
+  "sinh(x)": {
+    "prefix": "sinh",
+    "body": "math.sinh(${1:x})",
+    "description": "Return the hyperbolic sine of x."
+  },
+  "sqrt(x)": {
+    "prefix": "sqrt",
+    "body": "math.sqrt(${1:x})",
+    "description": "Return the square root of x."
+  },
+  "tan(x)": {
+    "prefix": "tan",
+    "body": "math.tan(${1:x})",
+    "description": "Return the tangent of x."
+  },
+  "tanh(x)": {
+    "prefix": "tanh",
+    "body": "math.tanh(${1:x})",
+    "description": "Return the hyperbolic tangent of x"
+  },
+  "trunc(x)": {
+    "prefix": "trunc",
+    "body": "math.trunc(${1:x})",
+    "description": "Return an integer, being x rounded towards 0"
+  }
+}

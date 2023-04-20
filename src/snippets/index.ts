@@ -1,15 +1,25 @@
 export const snippets:any= {
-    Logic: require('../../snippets/logic.json'),
-    Loops: require('../../snippets/loops.json'),
-    Display: require('../../snippets/display.json'),
+    bluetooth:require('../../snippets/bluetooth.json'),
     Camera: require('../../snippets/camera.json'),
     device:require('../../snippets/device.json'),
-
-    varibles:require('../../snippets/variables.json'),
+    Display: require('../../snippets/display.json'),
     fpga: require('../../snippets/fpga.json'),
-    time: require('../../snippets/time.json'),
+    gc:require('../../snippets/gc.json'),
     led: require('../../snippets/led.json'),
+    Logic: require('../../snippets/logic.json'),
+    Loops: require('../../snippets/loops.json'),
+    math: require('../../snippets/math.json'),
+    time: require('../../snippets/time.json'),
     touch: require('../../snippets/touch.json'),
+    uasyncio: require('../../snippets/uasyncio.json'),
+    uhashlib: require('../../snippets/uhashlib.json'),
+    ujson: require('../../snippets/ujson.json'),
     update:require('../../snippets/update.json'),
-    bluetooth:require('../../snippets/bluetooth.json')
+    urandom: require('../../snippets/urandom.json'),
+    ure:require('../../snippets/ure.json'),
+    uselect:require('../../snippets/uselect.json'),
+    ustruct:require('../../snippets/ustruct.json'),
+    varibles:require('../../snippets/variables.json'),
+
+
 };

@@ -339,6 +339,7 @@
             });
         }.bind(this));
     };
+    
     BluetoothRemoteGATTService.prototype.getCharacteristics = function(characteristicUUID) {
         return new Promise(function(resolve, reject) {
             if (!this.device.gatt.connected) return reject("getCharacteristics error: device not connected");
