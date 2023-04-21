@@ -1,38 +1,36 @@
 # Brilliant AR Studio
 
-Build and test your Monocle apps with ease!
+Build and test your Monocle AR apps with ease using MicroPython! 🐍
+
+Check out the full documentation the [docs pages 📚](https://docs.brilliantmonocle.com), or [contribute 🧑‍💻](https://github.com/brilliantlabsAR/ar-studio-for-vscode) to make this extension even better!
 
 ## Features
 
 Loading and saving Python files to your device:
 
-![Animation of loading and saving files to Monocle]()
+![Animation of loading and saving files to Monocle](./media/vscode-ext-upload-file.gif)
 
 Access the on-device REPL:
 
-![Animation of the Monocle REPL]()
+![Animation of the Monocle REPL](./media/vscode-ext-repl.gif)
 
-Easily browse through the APIs:
+Easily browse the various MicroPython modules:
 
-![Animation of drag and drop editor]()
+![Animation of drag and drop editor](./media/vscode-ext-api-drag-drop.gif)
 
 Update your FPGA binaries:
 
-![Image of the FPGA update buttons]()
+![Image of the FPGA update buttons](./media/vscode-ext-custom-fpga.gif)
 
-Browse community projects, and publish your own:
+Browse community projects, or publish your own:
 
-![Animation of user projects]()
+![Animation of user projects](./media/vscode-ext-custom-projects.gif)
 
 ## Requirements
 
 - Windows or MacOS
-- Bluetooth hardware correctly installed on your OS.
+- Bluetooth hardware correctly installed on your system.
 
 ## Known Issues
 
 - Bluetooth not yet working on Linux.
-
-## Full documentation
-
-To see everything Monocle can do, as well as the complete Python docs, visit our [docs pages](https://docs.brilliantmonocle.com).
