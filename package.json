@@ -2,7 +2,7 @@
   "name": "brilliant-ar-studio",
   "displayName": "Brilliant AR Studio",
   "description": "Develop AR applications for Monocle within the Brilliant AR Studio.",
-  "publisher": "brilliantlabsAR",
+  "publisher": "brilliantlabs",
   "repository": {
     "url": "https://github.com/brilliantlabsAR/ar-studio-for-vscode"
   },
