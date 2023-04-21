@@ -1,0 +1,28 @@
+{
+    "sha256([data])": {
+        "prefix": "sha256",
+        "body": "hashlib.sha256(${1:[data]})",
+        "description" : "Create an SHA256 hasher object and optionally feed data into it."
+    },
+    "sha1([data])": {
+        "prefix": "sha1",
+        "body": "hashlib.sha1(${1:[data]})",
+        "description" : "Create an SHA1 hasher object and optionally feed data into it."
+    },
+
+    "md5([data])": {
+        "prefix": "md5",
+        "body": "hashlib.md5(${1:[data]})",
+        "description" : "Create an MD5 hasher object and optionally feed data into it."
+    },
+    "update(data)": {
+        "prefix": "update",
+        "body": "hash.update(data)",
+        "description" : "Feed more binary data into hash."
+    },
+    "hexdigest()": {
+        "prefix": "hexdigest",
+        "body": "hash.hexdigest()",
+        "description" : "This method is NOT implemented. Use binascii.hexlify(hash.digest()) to achieve a similar effect."
+    }
+}

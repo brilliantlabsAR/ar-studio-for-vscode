@@ -226,11 +226,7 @@
     "snippets": [
       {
         "language": "python",
-        "path": "./snippets/display.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/loops.json"
+        "path": "./snippets/bluetooth.json"
       },
       {
         "language": "python",
@@ -238,35 +234,84 @@
       },
       {
         "language": "python",
-        "path": "./snippets/logic.json"
-      },
-      {
-        "language": "python",
         "path": "./snippets/device.json"
       },
       {
         "language": "python",
-        "path": "./snippets/bluetooth.json"
+        "path": "./snippets/display.json"
       },
+         
       {
         "language": "python",
         "path": "./snippets/fpga.json"
       },
       {
         "language": "python",
+        "path": "./snippets/gc.json"
+      },
+    
+      {
+        "language": "python",
         "path": "./snippets/led.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/logic.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/loops.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/math.json"
       },
       {
         "language": "python",
         "path": "./snippets/time.json"
       },
+
       {
         "language": "python",
         "path": "./snippets/touch.json"
       },
       {
         "language": "python",
+        "path": "./snippets/usyncio.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/uhashlib.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/ujson.json"
+      },
+      {
+        "language": "python",
         "path": "./snippets/update.json"
+      },
+
+
+      {
+        "language": "python",
+        "path": "./snippets/urandom.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/ure.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/uselect.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/ustruct.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/variables.json"
       }
     ]
   },

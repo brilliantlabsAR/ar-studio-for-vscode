@@ -1,0 +1,22 @@
+{
+  "calcsize(fmt)": {
+    "prefix": "calcsize",
+    "body": "struct.calcsize(${1:fmt})",
+    "description": "Return the number of bytes needed to store the given fmt."
+  },
+  "pack(fmt, v1, v2,v3,...)": {
+    "prefix": "pack",
+    "body": "struct.pack(${1:fmt},${2:v1},${3:v2},${2:v3},...)",
+    "description": "Pack the values v1, v2, … according to the format string fmt. The return value is a bytes object encoding the values."
+  },
+  "pack_into(fmt, buffer, offset, v1, v2, ...)": {
+    "prefix": "pack_into",
+    "body": "struct.pack_into(${1:fmt},${2:buffer},${3:offset},${2:v1},${2:v2}...)",
+    "description": "Pack the values v1, v2, … according to the format string fmt into a buffer starting at offset. offset may be negative to count from the end of buffer."
+  },
+  "unpack_from(fmt, data, offset)": {
+    "prefix": "unpack_from",
+    "body": "struct.unpack_from(${1:fmt},${2:data},${3:offset})",
+    "description": "Unpack from the data according to the format string fmt. The return value is a tuple of the unpacked values."
+  }
+}

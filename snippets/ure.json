@@ -1,0 +1,50 @@
+{
+    "compile(regex_str,[flags])": {
+      "prefix": "calcsize",
+      "body": "re.compile(${1:regex_str}, ${2:[flags]})",
+      "description": "Compile regular expression, return regex object."
+    },
+    "match(regex_str, string)": {
+      "prefix": "match",
+      "body": "re.match(${1:regex_str},${2:string})",
+      "description": "Compile regex_str and match against string. Match always happens from starting position in a string."
+    },
+    "search(regex_str, string)": {
+      "prefix": "search",
+      "body": "sre.search(${1:regex_str}, ${2:string})",
+      "description": "Compile regex_str and search it in a string. Unlike match, this will search string for first position which matches regex (which still may be 0 if regex is anchored)."
+    },
+    "sub(regex_str, replace, string, count,flags)": {
+      "prefix": "sub",
+      "body": "re.sub(${1:regex_str}, ${2:replace}, ${3:string}, ${4:count}, ${5:flags})",
+      "description": "Unpack from the data according to the format string fmt. The return value is a tuple of the unpacked values."
+    },
+    "group(index)": {
+        "prefix": "group",
+        "body": "match.group(${1:index})",
+        "description": "Return matching (sub)string. index is 0 for entire match, 1 and above for each capturing group. Only numeric groups are supported."
+      },
+      "groups()": {
+        "prefix": "groups",
+        "body": "match.groups()",
+        "description": "Return a tuple containing all the substrings of the groups of the match."
+      },
+      "start([index])": {
+        "prefix": "start",
+        "body": "match.start(${[index]})",
+        "description": ""
+      },
+      
+      "end([index])": {
+        "prefix": "end",
+        "body": "match.end(${[index]})",
+        "description": "Return the index in the original string of the start or end of the substring group that was matched. index defaults to the entire group, otherwise it will select a group."
+      },
+      "span([index])": {
+        "prefix": "espannd",
+        "body": "match.span(${[index]})",
+        "description": "Returns the 2-tuple (match.start(index), match.end(index))."
+      }
+  }
+  
+  
