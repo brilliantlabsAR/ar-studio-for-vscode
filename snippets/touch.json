@@ -6,7 +6,7 @@
     },
     "state(pad)": {
         "prefix": "reset",
-        "body": "touch.state(${1:pad})",
+        "body": "touch.state(touch.${1|A,B,BOTH|}, ${2:callback})",
         "description" : "Returns the current touch state of the touch pads. If pad is not specified, either 'A', 'B', 'BOTH' or None will be returned depending on which pads are currently touched. If pad is specified, then True or False will be returned for the touch state of that pad."
     },
     "A": {

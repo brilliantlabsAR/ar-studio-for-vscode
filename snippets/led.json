@@ -1,12 +1,12 @@
 {
     "on(color)": {
         "prefix": "on",
-        "body": "led.on({$1:color})",
+        "body": "led.on(led.${1|GREEN,RED|})",
         "description" : "Illuminates an led. color can be either led.RED or led.GREEN."
     },
     "off(color)": {
         "prefix": "off",
-        "body": "device.off(color)",
+        "body": "device.off(led.${1|GREEN,RED|}))",
         "description" : "Turns off an led. color can be either led.RED or led.GREEN. "
     },
     "RED": {
