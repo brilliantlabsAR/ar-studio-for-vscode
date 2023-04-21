@@ -64,7 +64,7 @@ export async function replSend(string:string) {
         };
         setTimeout(() => {
             resolve(null);
-        }, 3000);
+        }, 10000);
     });
 }
 
@@ -132,7 +132,8 @@ export async function ensureConnected() {
                             // }
                         }
                     });
-                }else{
+                }
+                if(!newFpga || !newFirmware){
                     vscode.window.showInformationMessage(updateMsg.value);
                 }
             }
@@ -298,10 +299,33 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
         await exitRawReplInternal();
         if(response &&  !response.includes("Error")){return true;};
     }
-    if(fileData.byteLength<1200){
+    if(fileData.byteLength<=128){
         // if file size less write in one attempt
-       
+        // attempt to write larger file
+        // let asciiFile =Buffer.from(fileData).toString('base64');
+        // await replSend('import ubinascii, bluetooth');
+        // let response:any = await replSend(`f=open('${devicePath}', 'w');print(bluetooth.max_length())`);
+        // const maxMtu = parseInt(response.match(/\d/g).join(''), 10);
+        // let chunksize = (Math.floor(Math.floor((maxMtu - 100) / 3) / 4) * 4 * 3);
+        // let chunks = Math.ceil(asciiFile.length / chunksize);
+        // outputChannel.appendLine("Chunk size = " + chunksize + ". Total chunks = " + chunks);
+
+        // for (let chk = 0; chk < chunks; chk++) {
+        //     response = await replSend("f.write(ubinascii.a2b_base64('" +
+        //         asciiFile.slice(chk * chunksize, (chk * chunksize) + chunksize)
+        //         + "'))");
+    
+        //     if (response && response.includes("Error")) {
+        //         outputChannel.appendLine("Retrying this chunk");
+        //         chk--;
+        //     }else if(response===null){
+        //         return  Promise.reject("Not responding");
+        //     }
+        //     await replSend("f.close();f = open('"+devicePath+"','a')");
+        // }
+        // response = await replSend("f.close();del(f,ubinascii,bluetooth)");
         let response:any = await replSend(`f=open('${devicePath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`);
+        
         await exitRawReplInternal();
         if(response &&  !response.includes("Error")){return true;};
     }else{

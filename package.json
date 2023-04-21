@@ -23,7 +23,7 @@
         {
           "id": "brilliantsar",
           "title": "Brilliant AR Studio",
-          "icon": "media/bulb.svg"
+          "icon": "media/Monocle_Icon.svg"
         }
       ]
     },
@@ -32,18 +32,18 @@
         {
           "id": "snippetTemplates",
           "name": "Code templates",
-          "icon": "media/bulb.svg"
+          "icon": "media/Monocle_Icon.svg"
         },
         {
           "id": "fpga",
           "name": "FPGA",
-          "icon": "media/bulb.svg"
+          "icon": "media/Monocle_Icon.svg"
          
         },
         {
           "id": "projects",
           "name": "Community projects",
-          "icon": "media/bulb.svg"
+          "icon": "media/Monocle_Icon.svg"
         }
        
       ],
@@ -51,7 +51,7 @@
         {
           "id": "fileExplorer",
           "name": "Brilliant AR Studio: Device Files",
-          "icon": "media/bulb.svg"
+          "icon": "media/Monocle_Icon.svg"
         }
       ]
     },

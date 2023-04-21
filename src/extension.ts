@@ -456,9 +456,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.connect', async () => {
-			// navigator.bluetooth.requestDevice({"acceptAllDevices":true});
-			// The code you place here will be executed every time your command is executed
-			// Display a message box to the user
 			if(!isConnected()){
 				// await vscode.commands.executeCommand('brilliant-ar-studio.syncFiles');
 				if(vscode.workspace.workspaceFolders){
