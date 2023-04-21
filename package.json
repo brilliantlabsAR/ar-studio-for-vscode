@@ -167,6 +167,30 @@
         "title": "Brilliant AR Studio: In Progress",
         "icon": "$(sync~spin)",
         "enablement": "false"
+      },
+      {
+        "command": "brilliant-ar-studio.uploadFilesToDevice",
+        "title": "Brilliant AR Studio: Upload File To Device",
+        "icon": "$(save)",
+        "enablement":"monocle.deviceConnected"
+      },
+      {
+        "command": "brilliant-ar-studio.createDirectoryOnDevice",
+        "title": "Brilliant AR Studio: Create Directory",
+        "icon": "$(plus)",
+        "enablement":"monocle.deviceConnected"
+      },
+      {
+        "command": "brilliant-ar-studio.createFileOnDevice",
+        "title": "Brilliant AR Studio: Create File",
+        "icon": "$(plus)",
+        "enablement":"monocle.deviceConnected"
+      },
+      {
+        "command": "brilliant-ar-studio.deleteOnDevice",
+        "title": "Brilliant AR Studio: Delete",
+        "icon": "$(trash)",
+        "enablement":"monocle.deviceConnected"
       }
     ],
     "menus": {
@@ -208,6 +232,21 @@
           "command": "brilliant-ar-studio.stopProgress",
           "when": "view == fileExplorer && monocle.fileInProgess",
           "group": "inline"
+        },
+        {
+          "command": "brilliant-ar-studio.createDirectoryOnDevice",
+          "when": "view == fileExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "brilliant-ar-studio.createFileOnDevice",
+          "when": "view == fileExplorer",
+          "group": "navigation@0"
+        },
+        {
+          "command": "brilliant-ar-studio.deleteOnDevice",
+          "when": "view == fileExplorer",
+          "group": "navigation@2"
         }
       ],
       "editor/title": [
@@ -220,6 +259,12 @@
           "when": "resourceLangId == python && monocle.deviceConnected && monocle.sync",
           "command": "brilliant-ar-studio.syncStop",
           "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "brilliant-ar-studio.uploadFilesToDevice",
+          "group": "navigation@0"
         }
       ]
     },
@@ -277,10 +322,6 @@
       },
       {
         "language": "python",
-        "path": "./snippets/usyncio.json"
-      },
-      {
-        "language": "python",
         "path": "./snippets/uhashlib.json"
       },
       {
@@ -308,10 +349,6 @@
       {
         "language": "python",
         "path": "./snippets/ustruct.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/variables.json"
       }
     ]
   },

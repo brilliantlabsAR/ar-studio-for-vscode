@@ -11,7 +11,7 @@ export const snippets:any= {
     math: require('../../snippets/math.json'),
     time: require('../../snippets/time.json'),
     touch: require('../../snippets/touch.json'),
-    uasyncio: require('../../snippets/uasyncio.json'),
+    // uasyncio: require('../../snippets/uasyncio.json'),
     uhashlib: require('../../snippets/uhashlib.json'),
     ujson: require('../../snippets/ujson.json'),
     // update:require('../../snippets/update.json'),

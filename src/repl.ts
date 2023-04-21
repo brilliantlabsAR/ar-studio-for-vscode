@@ -329,6 +329,7 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
         await exitRawReplInternal();
         if(response &&  !response.includes("Error")){return true;};
     }else{
+        await exitRawReplInternal();
         vscode.window.showInformationMessage('Please keep files smaller. Meanwhile we are wroking to allow larger files');
         return false;
     }

@@ -26,7 +26,7 @@
       },
       "randrange(start, stop,[step])": {
         "prefix": "randrange",
-        "body": "random.randrange(${1:start}, ${2:stop},${3:[step]})",
+        "body": "random.randrange(${1:start}, ${2:stop},${3:step})",
         "description": "eturns a random integer from the range [start, stop) in steps of step. For instance, calling randrange(1, 10, 2) will return odd numbers between 1 and 9 inclusive"
       },
       "randrange(start, stop)": {
@@ -37,12 +37,12 @@
       
       "seed(n)": {
         "prefix": "seed",
-        "body": "random.seed(${n})",
+        "body": "random.seed(${1:n})",
         "description": "Initialise the random number generator module with the seed n which should be an integer. When no argument (or None) is passed in it will (if supported by the port) initialise the PRNG with a true random number (usually a hardware generated random number)."
       },
       "choice(sequence)": {
         "prefix": "choice",
-        "body": "random.choice(${sequence})",
+        "body": "random.choice(${1:sequence})",
         "description": "Chooses and returns one item at random from sequence (tuple, list or any object that supports the subscript operation)."
       }
   }
