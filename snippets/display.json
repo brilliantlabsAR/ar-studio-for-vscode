@@ -1,7 +1,7 @@
 {
   "Text(string, x, y, color, justify)": {
     "prefix": "Text",
-    "body": "display.Text(${1:string}, {2:x}, {3:y}, {4:color}, {5:justify|TOP_LEFT,MIDDLE_LEFT,BOTTOM_LEFT,TOP_CENTER,BOTTOM_CENTER,TOP_RIGHT,MIDDLE_CENTER,MIDDLE_RIGHT,BOTTOM_RIGHT|})",
+    "body": "display.Text(${1:string}, ${2:x}, ${3:y}, ${4:color}, justify=${5:|TOP_LEFT,MIDDLE_LEFT,BOTTOM_LEFT,TOP_CENTER,BOTTOM_CENTER,TOP_RIGHT,MIDDLE_CENTER,MIDDLE_RIGHT,BOTTOM_RIGHT|})",
     "description": "Creates a text object at the coordinate x, y which can be passed to display.show(). string can be any string, and color can be any color from the available color palette. If the justify parameter is given, the text will be justified accordingly from the x, y coordinate."
   },
   "Rectangle(x1, y1, x2, y2, color)": {
@@ -24,7 +24,7 @@
     "body": "display.Polyline([${1:x1}, ${2:y1}, ${3:x2},${4:y2}], ${4:color}],${5:color},thickness=${6:1})",
     "description": "Similar to the Polygon object, Polyline creates a shape based on a list of coordinates. Unlike Polygon, Polyline does not need to be a closed shape. color can be any color from the available color palette, and thickness can optionally be provided to override the default line thickness in pixels."
   },
-  "show(object_1,object_2)": {
+  "show(object_1,object_2...)": {
     "prefix": "show",
     "body": "display.show(${1:object_1},${2:object_2})",
     "description": "Prints to the display. The passed arguments can be any number of Text, Line, Rectangle, Polygon, or Polyline objects, or any number of lists containing such objects. Objects are layered front to back, i.e. object_1 is shown on top of object_n."
