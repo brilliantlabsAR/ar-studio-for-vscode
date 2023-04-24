@@ -55,10 +55,6 @@
     "body": "display.brightness(${1:level})",
     "description": "Sets the display’s brightness. level can be 0 (dimmest), 1, 2, 3, or 4 (brightest). Level 3 is the default."
   },
-
-
-
-
   "CLEAR": {
     "prefix": "CLEAR",
     "body": "display.CLEAR",
@@ -79,8 +75,6 @@
     "body": "display.BLUE",
     "description": "If using the default color palette, this constant indexes the color #2a4bd7. Note, color indexes may be overridden by the user."
   },
-  
-
   "CYAN": {
     "prefix": "CYAN",
     "body": "display.CYAN",
@@ -94,11 +88,107 @@
   "YELLOW": {
     "prefix": "YELLOW",
     "body": "display.YELLOW",
-    "description": "If using the default color palette, this constant indexes the color #1d6914. Note, color indexes may be overridden by the user."
+    "description": "If using the default color palette, this constant indexes the color #ffee33. Note, color indexes may be overridden by the user."
   },
-  "BLUE": {
-    "prefix": "BLUE",
-    "body": "display.BLUE",
-    "description": "If using the default color palette, this constant indexes the color #2a4bd7. Note, color indexes may be overridden by the user."
+  "WHITE": {
+    "prefix": "WHITE",
+    "body": "display.WHITE",
+    "description": "If using the default color palette, this constant indexes the color #ffffff. Note, color indexes may be overridden by the user."
+  },
+  "GRAY1": {
+    "prefix": "GRAY1",
+    "body": "display.GRAY1",
+    "description": "If using the default color palette, this constant indexes the color #1c1c1c. Note, color indexes may be overridden by the user."
+  },
+  "GRAY2": {
+    "prefix": "GRAY2",
+    "body": "display.GRAY2",
+    "description": "If using the default color palette, this constant indexes the color #383838. Note, color indexes may be overridden by the user."
+  },
+  "GRAY3": {
+    "prefix": "GRAY3",
+    "body": "display.GRAY3",
+    "description": "If using the default color palette, this constant indexes the color #555555. Note, color indexes may be overridden by the user."
+  },
+  "GRAY4": {
+    "prefix": "GRAY4",
+    "body": "display.GRAY4",
+    "description": "If using the default color palette, this constant indexes the color #717171. Note, color indexes may be overridden by the user."
+  },
+
+  "GRAY5": {
+    "prefix": "GRAY5",
+    "body": "display.GRAY5",
+    "description": "If using the default color palette, this constant indexes the color #8d8d8d. Note, color indexes may be overridden by the user."
+  },
+  "GRAY6": {
+    "prefix": "GRAY6",
+    "body": "display.GRAY6",
+    "description": "If using the default color palette, this constant indexes the color #aaaaaa. Note, color indexes may be overridden by the user."
+  },
+  "GRAY7": {
+    "prefix": "GRAY7",
+    "body": "display.GRAY7",
+    "description": "If using the default color palette, this constant indexes the color #c6c6c6. Note, color indexes may be overridden by the user."
+  },
+  "GRAY8": {
+    "prefix": "GRAY8",
+    "body": "display.GRAY8",
+    "description": "If using the default color palette, this constant indexes the color #e2e2e2. Note, color indexes may be overridden by the user."
+  },
+  "TOP_LEFT": {
+    "prefix": "TOP_LEFT",
+    "body": "display.TOP_LEFT",
+    "description": "Justifies a text object on its x, y coordinate to the top left."
+  },
+  "MIDDLE_LEFT": {
+    "prefix": "MIDDLE_LEFT",
+    "body": "display.MIDDLE_LEFT",
+    "description": "Justifies a text object on its x, y coordinate to the middle left"
+  },
+  "BOTTOM_LEFT": {
+    "prefix": "BOTTOM_LEFT",
+    "body": "display.BOTTOM_LEFT",
+    "description": "Justifies a text object on its x, y coordinate to the bottom left."
+  },
+  "TOP_CENTER": {
+    "prefix": "TOP_CENTER",
+    "body": "display.TOP_CENTER",
+    "description": "Justifies a text object on its x, y coordinate to the top center."
+  },
+  "BOTTOM_CENTER": {
+    "prefix": "BOTTOM_CENTER",
+    "body": "display.BOTTOM_CENTER",
+    "description": "Justifies a text object on its x, y coordinate to the middle cente."
+  },
+  "TOP_RIGHT": {
+    "prefix": "TOP_RIGHT",
+    "body": "display.TOP_RIGHT",
+    "description": "Justifies a text object on its x, y coordinate to the bottom center."
+  },
+  "MIDDLE_CENTER": {
+    "prefix": "MIDDLE_CENTER",
+    "body": "display.MIDDLE_CENTER",
+    "description": "Justifies a text object on its x, y coordinate to the top right."
+  },
+  "MIDDLE_RIGHT": {
+    "prefix": "MIDDLE_RIGHT",
+    "body": "display.MIDDLE_RIGHT",
+    "description": "Justifies a text object on its x, y coordinate to the middle right."
+  },
+  "BOTTOM_RIGHT": {
+    "prefix": "BOTTOM_RIGHT",
+    "body": "display.BOTTOM_RIGHT",
+    "description": "Justifies a text object on its x, y coordinate to the bottom right."
+  },
+  "WIDTH": {
+    "prefix": "WIDTH",
+    "body": "display.WIDTH",
+    "description": "The display width in pixels. Equal to 640."
+  },
+  "HEIGHT": {
+    "prefix": "HEIGHT",
+    "body": "display.MIDDLE_CENTER",
+    "description": "Justifies a text object on its x, y coordinate to the top right."
   }
 }
