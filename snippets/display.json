@@ -54,5 +54,51 @@
     "prefix": "brightness",
     "body": "display.brightness(${1:level})",
     "description": "Sets the display’s brightness. level can be 0 (dimmest), 1, 2, 3, or 4 (brightest). Level 3 is the default."
+  },
+
+
+
+
+  "CLEAR": {
+    "prefix": "CLEAR",
+    "body": "display.CLEAR",
+    "description": "If using the default color palette, this constant indexes the color #000000. Note, color indexes may be overridden by the user."
+  },
+  "RED": {
+    "prefix": "RED",
+    "body": "display.RED",
+    "description": "If using the default color palette, this constant indexes the color #ad2323. Note, color indexes may be overridden by the user."
+  },
+  "GREEN": {
+    "prefix": "GREEN",
+    "body": "display.GREEN",
+    "description": "If using the default color palette, this constant indexes the color #1d6914. Note, color indexes may be overridden by the user."
+  },
+  "BLUE": {
+    "prefix": "BLUE",
+    "body": "display.BLUE",
+    "description": "If using the default color palette, this constant indexes the color #2a4bd7. Note, color indexes may be overridden by the user."
+  },
+  
+
+  "CYAN": {
+    "prefix": "CYAN",
+    "body": "display.CYAN",
+    "description": "If using the default color palette, this constant indexes the color #29d0d0. Note, color indexes may be overridden by the user."
+  },
+  "MAGENTA": {
+    "prefix": "MAGENTA",
+    "body": "display.MAGENTA",
+    "description": "If using the default color palette, this constant indexes the color #8126c0. Note, color indexes may be overridden by the user."
+  },
+  "YELLOW": {
+    "prefix": "YELLOW",
+    "body": "display.YELLOW",
+    "description": "If using the default color palette, this constant indexes the color #1d6914. Note, color indexes may be overridden by the user."
+  },
+  "BLUE": {
+    "prefix": "BLUE",
+    "body": "display.BLUE",
+    "description": "If using the default color palette, this constant indexes the color #2a4bd7. Note, color indexes may be overridden by the user."
   }
 }
