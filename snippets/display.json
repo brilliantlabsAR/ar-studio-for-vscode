@@ -1,49 +1,58 @@
 {
-   
-    "fill(color)": {
-        
-        "prefix": "fill",
-        "body": "display.fill(${1:color})",
-        "description": "Fills the entire display with a color. color should be a 24-bit RGB value such as 0xAABBCC."
-    },
-    "hline(x, y, width, color)": {
-        "prefix": "hline",
-        "body": "display.hline(${1:x}, ${2:y}, ${3:width}, ${4:color})",
-        "description": "Draws a horizontal line from the position x, y, with a given width and color."
-    },
-    "line(x1, y1, x2, y2, color)": {
-        "prefix": "line",
-        "body": "display.line(${1:x1}, ${2:y1}, ${3:x2}, ${4:y2}, ${5:color})",
-        "description": "Draws a straight line from the position x1, y1, to the position x2, y2, with a given color."
-    },
-    "vline(x, y, height, color)": {
-        "prefix": "vline",
-        "body": "display.vline(${1:x}, ${2:y}, ${3:height}, ${4:color})",
-        "description": "Draws a horizontal line from the position x, y, with a given height and color."
-    },
-    "text(string,x,y,color)": {
-        "prefix": "text",
-        "body": "display.text(${1:string}, ${2:x}, ${3:y}, ${4:color})",
-        "description": "Draws text at the position x, y, with a given color."
-    },
-    "brightness(level)": {
-        "prefix": "brightness",
-        "body": "display.brightness(${1|1,2,3,4|})",
-        "description": "Sets the display’s brightness. level can be 0, 1, 2, 3, or 4."
-    },
-    "WIDTH": {
-        "prefix": "WIDTH",
-        "body": "display.WIDTH",
-        "description": "The display width in pixels. Equal to 640."
-    },
-    "HEIGHT": {
-        "prefix": "HEIGHT",
-        "body": "display.HEIGHT",
-        "description": "The display height in pixels. Equal to 400."
-    },
-    "show()": {
-        "prefix": "show",
-        "body": "display.show()",
-        "description": "Prints the populated frame buffer to the display. After this call, another series of drawing functions may be called and show() can be used to print the next frame. This also clears the display."
-    }
+  "Text(string, x, y, color, justify)": {
+    "prefix": "Text",
+    "body": "display.Text(${1:string}, {2:x}, {3:y}, {4:color}, {5:justify|TOP_LEFT,MIDDLE_LEFT,BOTTOM_LEFT,TOP_CENTER,BOTTOM_CENTER,TOP_RIGHT,MIDDLE_CENTER,MIDDLE_RIGHT,BOTTOM_RIGHT|})",
+    "description": "Creates a text object at the coordinate x, y which can be passed to display.show(). string can be any string, and color can be any color from the available color palette. If the justify parameter is given, the text will be justified accordingly from the x, y coordinate."
+  },
+  "Rectangle(x1, y1, x2, y2, color)": {
+    "prefix": "Rectangle",
+    "body": "display.Rectangle(${1:x1}, ${2:y1}, ${3:x2}, ${4:y2},${5:color})",
+    "description": "Creates a rectangle object which can be passed to display.show(). x1, y1 and x2, y2 define each corner of the rectangle. color can be any color from the available color palette."
+  },
+  "Line(x1, y1, x2, y2, color, thickness=1)": {
+    "prefix": "Line",
+    "body": "display.Line(${1:x1}, ${2:y1}, ${3:x2}, ${4:y2}, ${5:color},thickness=${6:1})",
+    "description": "Creates a line object from x1, y1 to x2, y2 which can be passed to display.show(). color can be any color from the available color palette, and thickness can optionally be provided to override the default line thickness in pixels."
+  },
+  "Polygon([x1, y1, ... xn, yn], color)": {
+    "prefix": "Polygon",
+    "body": "display.Polygon([${1:x1}, ${2:y1},${3:x2},${4:y2}], ${5:color})",
+    "description": "Creates a polygon object which can be passed to display.show(). The first parameter should be a list of coordinates, and color can be any color from the available color palette. Polygons are always closed shapes, therefore if the last coordinate does not close the shape, it will be closed automatically."
+  },
+  "Polyline([x1,y1,...xn,yn],color,thickness=1)": {
+    "prefix": "Polyline",
+    "body": "display.Polyline([${1:x1}, ${2:y1}, ${3:x2},${4:y2}], ${4:color}],${5:color},thickness=${6:1})",
+    "description": "Similar to the Polygon object, Polyline creates a shape based on a list of coordinates. Unlike Polygon, Polyline does not need to be a closed shape. color can be any color from the available color palette, and thickness can optionally be provided to override the default line thickness in pixels."
+  },
+  "show(object_1,object_2)": {
+    "prefix": "show",
+    "body": "display.show(${1:object_1},${2:object_2})",
+    "description": "Prints to the display. The passed arguments can be any number of Text, Line, Rectangle, Polygon, or Polyline objects, or any number of lists containing such objects. Objects are layered front to back, i.e. object_1 is shown on top of object_n."
+  },
+
+  "move(x, y)": {
+    "prefix": "move",
+    "body": "display.move(${1:x}, ${2:y})",
+    "description": "move() can be called as a class method on any printable object to translate its position. x and y will move the object relative to its current position."
+  },
+  "move([objects], x, y)": {
+    "prefix": "move",
+    "body": "display.move([${1:objects}], ${2:x}, ${3:y})",
+    "description": "Additionally, move() can be called as a standard function to move a list of objects together. This is useful for grouping printable objects together and moving them as layers."
+  },
+  "color(color)": {
+    "prefix": "color",
+    "body": "display.color(${1:color})",
+    "description": "color() can be called as a class method on any printable object to change its color. color can be any color from the available color palette."
+  },
+  "color([objects], color)": {
+    "prefix": "color",
+    "body": "display.color([${1:objects}], ${2:color})",
+    "description": "Additionally, color() can be called as a standard function to change the color on a whole list of objects. color can be any color from the available color palette."
+  },
+  "brightness(level)": {
+    "prefix": "brightness",
+    "body": "display.brightness(${1:level})",
+    "description": "Sets the display’s brightness. level can be 0 (dimmest), 1, 2, 3, or 4 (brightest). Level 3 is the default."
+  }
 }
