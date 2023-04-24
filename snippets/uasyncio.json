@@ -97,11 +97,6 @@
         "body": "Stream.get_extra_info(${1:v})",
         "description" : "Start a TCP server on the given host and port. The callback will be called with incoming, accepted connections, and be passed 2 arguments: reader and writer streams for the connection.Returns a Server object."
     },
-
-
-
-
-
     "close()": {
         "prefix": "close",
         "body": "Stream.close()",

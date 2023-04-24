@@ -64,7 +64,7 @@ export async function replSend(string:string) {
         };
         setTimeout(() => {
             resolve(null);
-        }, 3000);
+        }, 10000);
     });
 }
 
@@ -121,20 +121,23 @@ export async function ensureConnected() {
                 let newFpga = updateInfo?.includes('New FPGA');
                 let items:string[] =["Update Now","Later"] ;
                 const updateMsg = new vscode.MarkdownString(updateInfo);
-                if(newFirmware || newFpga){
+                vscode.commands.executeCommand('setContext', 'monocle.fpgaAvailable', newFpga);
+                if(newFirmware){
                     vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
                         if(op==="Update Now"){
-                            if(newFirmware){
+                            // if(newFirmware){
                              startFirmwareUpdate();
-                            }else if(newFpga){
-                                triggerFpgaUpdate();
-                            }
+                            // }else if(newFpga){
+                                // triggerFpgaUpdate();
+                            // }
                         }
                     });
-                }else{
+                }
+                if(!newFpga || !newFirmware){
                     vscode.window.showInformationMessage(updateMsg.value);
                 }
             }
+            await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
         }
     }
 
@@ -224,26 +227,30 @@ async function exitRawReplInternal(){
 }
 
 async function enterRawReplInternal(){
-    if(replRawModeEnabled){
+    if (!isConnected()) {
+        return false;
+    }
+    if(replRawModeEnabled || internalOperation){
         await new Promise(r => {
             let interval = setInterval(()=>{
-                if(!replRawModeEnabled){
+                if(!replRawModeEnabled && !internalOperation){
                     setTimeout(()=>{
                         r("");
-                    },1000);
+                    },100);
                     clearInterval(interval);
                 }
-            },1000);
+            },100);
         });
     }
     internalOperation = true;
     await replRawMode(true);
     await new Promise(r => setTimeout(r, 100));
+    return true;
 }
 
 export async function listFilesDevice(currentPath="/"):Promise<string[]>{
 
-    await enterRawReplInternal();
+    if(!await enterRawReplInternal()){return[];};
     let cmd = `import os,ujson;
 d="${currentPath}"
 l =[]
@@ -270,9 +277,9 @@ del(os,l,d)`;
 }
 
 export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
-    if(!isConnected()){return false;};
-    
-    await enterRawReplInternal();
+   
+    if(!await enterRawReplInternal()){return false;};
+
     let response:any = await replSend("import os;os.mkdir('"+ devicePath +"');del(os)");
     await exitRawReplInternal();
     if(response && !response.includes("Error")){
@@ -282,23 +289,47 @@ export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
 }
 
 export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):Promise<boolean>{
-    if(!isConnected()){return false;};
-    let fileData = await vscode.workspace.fs.readFile(uri);
+    
+    if(!await enterRawReplInternal()){return false;};
 
-    await enterRawReplInternal();
+    let fileData = await vscode.workspace.fs.readFile(uri);
 
     if(fileData.byteLength===0){
          let response:any = await replSend("f = open('"+ devicePath +"', 'w');f.write('');f.close()");
         await exitRawReplInternal();
         if(response &&  !response.includes("Error")){return true;};
     }
-    if(fileData.byteLength<1200){
+    if(fileData.byteLength<=128){
         // if file size less write in one attempt
-       
+        // attempt to write larger file
+        // let asciiFile =Buffer.from(fileData).toString('base64');
+        // await replSend('import ubinascii, bluetooth');
+        // let response:any = await replSend(`f=open('${devicePath}', 'w');print(bluetooth.max_length())`);
+        // const maxMtu = parseInt(response.match(/\d/g).join(''), 10);
+        // let chunksize = (Math.floor(Math.floor((maxMtu - 100) / 3) / 4) * 4 * 3);
+        // let chunks = Math.ceil(asciiFile.length / chunksize);
+        // outputChannel.appendLine("Chunk size = " + chunksize + ". Total chunks = " + chunks);
+
+        // for (let chk = 0; chk < chunks; chk++) {
+        //     response = await replSend("f.write(ubinascii.a2b_base64('" +
+        //         asciiFile.slice(chk * chunksize, (chk * chunksize) + chunksize)
+        //         + "'))");
+    
+        //     if (response && response.includes("Error")) {
+        //         outputChannel.appendLine("Retrying this chunk");
+        //         chk--;
+        //     }else if(response===null){
+        //         return  Promise.reject("Not responding");
+        //     }
+        //     await replSend("f.close();f = open('"+devicePath+"','a')");
+        // }
+        // response = await replSend("f.close();del(f,ubinascii,bluetooth)");
         let response:any = await replSend(`f=open('${devicePath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`);
+        
         await exitRawReplInternal();
         if(response &&  !response.includes("Error")){return true;};
     }else{
+        await exitRawReplInternal();
         vscode.window.showInformationMessage('Please keep files smaller. Meanwhile we are wroking to allow larger files');
         return false;
     }
@@ -307,19 +338,33 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
 }
 
 export async function renameFileDevice(oldDevicePath:string, newDevicePath:string):Promise<boolean>{
-    if(!isConnected){return false;};
-    await enterRawReplInternal();
+    
+    if(!await enterRawReplInternal()){return false;};
+
     let cmd = `import os;
 os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
     let response:any = await replSend(cmd);
     await exitRawReplInternal();
-    if(response &&  !response.includes("failed")){return true;};
+    if(response &&  !response.includes("Error")){return true;};
     return false;
 }
 
+export async function readFileDevice(devicePath:string):Promise<boolean|string>{
+   
+    if(!await enterRawReplInternal()){return false;};
+
+    let cmd = `f=open('${devicePath}');print(f.read());f.close();del(f)`;
+    let response:any = await replSend(cmd);
+    await exitRawReplInternal();
+    if(response &&  !response.includes("Error")){return response.slice(response.indexOf('OK')+2,response.indexOf('\r\n\x04'));};
+    return false;
+}
+
+
 export async function deletFilesDevice(devicePath:string):Promise<boolean>{
-    if(!isConnected){return false;};
-    await enterRawReplInternal();
+
+    if(!await enterRawReplInternal()){return false;};
+
     let cmd = `import os;
 def rm(d):
     try:

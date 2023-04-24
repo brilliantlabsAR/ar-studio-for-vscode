@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {snippets} from '.';
-export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode.TreeDragAndDropController<Snippet> {
+export class SnippetProvider implements vscode.TreeDataProvider<Snippet>, vscode.TreeDragAndDropController<Snippet> {
 
     dropMimeTypes = [];
 	dragMimeTypes = ['application/vnd.code.tree.snippettemplates'];
@@ -12,8 +12,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
 
 	private dragDataEmitter = new vscode.EventEmitter<any>();
   public readonly onDragData = this.dragDataEmitter.event;
-	constructor(private workspaceRoot: string | undefined) {
-	}
+
 
     //  for drag 
     public async handleDrag(source: Snippet[], treeDataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): Promise<void> {
@@ -52,7 +51,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Snippet>, vscode
             let categories:Snippet[] = [];
             // console.log(JSON.stringify(snippets.display));
             Object.keys(snippets).forEach(key=>{
-                categories.push(new Snippet(key,vscode.TreeItemCollapsibleState.Collapsed));
+                categories.push(new Snippet(key,vscode.TreeItemCollapsibleState.Collapsed,key));
             });
             return Promise.resolve(categories);
 		}
@@ -76,5 +75,5 @@ export class Snippet extends vscode.TreeItem {
 	}
 
 
-	contextValue = 'category';
+	contextValue = 'snippet';
 }

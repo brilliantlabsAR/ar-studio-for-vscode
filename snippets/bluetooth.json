@@ -1,7 +1,7 @@
 {
     "send(bytes[])": {
         "prefix": "send",
-        "body": "bluetooth.send({$1:bytes})",
+        "body": "bluetooth.send(${1:bytes})",
         "description" : "Sends data from a bytes object bytes[] over Bluetooth using the raw data service. The length of bytes[] must be equal to or less than the value returned by the bluetooth.max_length() function."
     },
     "receive_callback(callback)": {

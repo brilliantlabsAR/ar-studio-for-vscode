@@ -1,7 +1,7 @@
 {
     "enable()": {
         "prefix": "enable",
-        "body": "gc.enable()¶",
+        "body": "gc.enable()",
         "description" : "Enable automatic garbage collection."
     },
     "disable()": {

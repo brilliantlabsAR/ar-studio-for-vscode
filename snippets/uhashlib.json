@@ -19,10 +19,5 @@
         "prefix": "update",
         "body": "hash.update(data)",
         "description" : "Feed more binary data into hash."
-    },
-    "hexdigest()": {
-        "prefix": "hexdigest",
-        "body": "hash.hexdigest()",
-        "description" : "This method is NOT implemented. Use binascii.hexlify(hash.digest()) to achieve a similar effect."
     }
 }
