@@ -72,7 +72,6 @@ async function getUpdateInfo() {
     if (!response.includes(latestVersion)) {
         return  `New FPGA image ([${latestVersion}](${getTag.url}))  available, Do you want to update?`;
     }
-
     return "";
 }
 let fpgaUpdateInProgress:any = false;

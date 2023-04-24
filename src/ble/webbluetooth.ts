@@ -211,6 +211,7 @@
             }, wrapReject(reject, "requestDevice error"));
         });
     }
+    
     function cancelRequest() {
         return new Promise(function(resolve, reject) {
             if (scanner) {
@@ -531,7 +532,6 @@
     // BluetoothRemoteGATTDescriptor Object
     var BluetoothRemoteGATTDescriptor = function(properties) {
         this._handle = null;
-
         this.characteristic = null;
         this.uuid = null;
         this.value = null;
