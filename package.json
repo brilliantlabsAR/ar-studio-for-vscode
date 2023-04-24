@@ -6,6 +6,7 @@
   "repository": {
     "url": "https://github.com/brilliantlabsAR/ar-studio-for-vscode"
   },
+  "icon": "media/brilliant.png",
   "version": "1.0.1",
   "engines": {
     "vscode": "^1.76.0"
