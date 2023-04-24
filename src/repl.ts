@@ -11,6 +11,7 @@ let rawReplResponseCallback:any;
 let fileWriteStart = false;
 let internalOperation = false;
 const decoder = new util.TextDecoder('utf-8');
+const RESET_CMD = '\x03\x04';
 export async function replRawMode(enable:boolean) {
 
     if (enable === true) {
@@ -82,7 +83,8 @@ export async function ensureConnected() {
             // infoText.innerHTML = "Starting firmware update..";
             updateStatusBarItem("connected","$(cloud-download) Updating");
             await startNordicDFU()
-                .catch(() => {
+                .catch((error) => {
+                    console.log(error);
                     disconnect();
                     throw Error("Bluetooth error. Reconnect or check console for details");
                 });
@@ -199,6 +201,7 @@ export async function sendFileUpdate(update:any){
   
 }
 export function onDisconnect() {
+    
     vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', false);
     updateStatusBarItem("disconnected");
 	writeEmitter.fire("Disconnected \r\n");
@@ -299,7 +302,7 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
         await exitRawReplInternal();
         if(response &&  !response.includes("Error")){return true;};
     }
-    if(fileData.byteLength<=128){
+    if(fileData.byteLength<=1200){
         // if file size less write in one attempt
         // attempt to write larger file
         // let asciiFile =Buffer.from(fileData).toString('base64');
@@ -325,7 +328,7 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
         // }
         // response = await replSend("f.close();del(f,ubinascii,bluetooth)");
         let response:any = await replSend(`f=open('${devicePath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`);
-        
+        await replSend(RESET_CMD);
         await exitRawReplInternal();
         if(response &&  !response.includes("Error")){return true;};
     }else{
@@ -344,6 +347,7 @@ export async function renameFileDevice(oldDevicePath:string, newDevicePath:strin
     let cmd = `import os;
 os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
     let response:any = await replSend(cmd);
+    await replSend(RESET_CMD);
     await exitRawReplInternal();
     if(response &&  !response.includes("Error")){return true;};
     return false;
@@ -379,6 +383,7 @@ def rm(d):
         print("rm of '%s' failed" % d,e)
 rm('${devicePath}'); del(os);del(rm)`;
     let response:any = await replSend(cmd);
+    await replSend(RESET_CMD);
     await exitRawReplInternal();
     if(response &&  !response.includes("failed")){return true;};
     return false;

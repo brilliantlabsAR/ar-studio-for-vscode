@@ -6,4 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
-- Initial release
+- 0.0.1
+
+### added
+
+- extension icon
+
+## [1.0.1] - 2023-04-21

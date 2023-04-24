@@ -63,7 +63,7 @@ async function getUpdateInfo() {
     latestVersion = getTag.data.tag_name;
 
     response = await replSend("import fpga;" +
-        "print('v'+(lambda:''.join('%02x' % i for i in fpga.read(2,3)))());" +
+        "print(fpga.read(2,12));" +
         "del(fpga)");
     if (response.includes("Error")) {
         return "Could not detect the FPGA image, check manually. ";
@@ -164,12 +164,12 @@ async function downloadLatestFpgaImage() {
 
     let assetId;
     response.data.assets.forEach((item:any, index:number) => {
-        if (item.content_type === 'application/macbinary') {
+        if (item.name.includes('.bin')) {
             assetId = item.id;
         }
     });
 
-    response = await request("GET /repos/{owner}/ {repo}/releases/assets/{assetId}", {
+    response = await request("GET /repos/{owner}/{repo}/releases/assets/{assetId}", {
         owner: fpgaGit.owner,
         repo: fpgaGit.repo,
         assetId: assetId

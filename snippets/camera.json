@@ -5,11 +5,6 @@
         "body": "camera.capture()",
         "description": "Captures an image and returns it to a device over Bluetooth."
     },
-    "overlay(enable)": {
-        "prefix": "overlay",
-        "body": "camera.overlay(${1|True,False|})",
-        "description": "Draws a single pixel of color color at the position x, y."
-    },
     "output(x,y,format)": {
         "prefix": "output",
         "body": "camera.output(${1:640}, ${2:400}, ${3|camera.YUV,camera.RGB,camera.JPEG|})",
