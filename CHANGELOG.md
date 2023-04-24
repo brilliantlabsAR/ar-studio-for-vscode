@@ -13,3 +13,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - extension icon
 
 ## [1.0.1] - 2023-04-21
+
+### fixed
+
+- extension icon
+- fpga update issue fixed
+
+## [1.0.1] - 2023-04-21
