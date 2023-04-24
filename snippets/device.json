@@ -1,7 +1,7 @@
 {
-    "name": {
+    "NAME": {
         "prefix": "monocle",
-        "body": "device.name",
+        "body": "device.NAME",
         "description" : "Device name is monocle"
     },
     "reset()": {
@@ -9,19 +9,19 @@
         "body": "device.reset()",
         "description" : "Resets the device"
     },
-    "version": {
-        "prefix": "version",
-        "body": "device.version",
+    "VERSION": {
+        "prefix": "VERSION",
+        "body": "device.VERSION",
         "description" :"Constant containing the firmware version as a 12 character string."
     },
-    "git_tag": {
-        "prefix": "git_tag",
-        "body": "device.git_tag",
+    "GIT_TAG": {
+        "prefix": "GIT_TAG",
+        "body": "device.GIT_TAG",
         "description" :"Constant containing the build git tag as a 9 character string."
     },
-    "git_repo": {
-        "prefix": "git_repo",
-        "body": "device.git_repo",
+    "GIT_REPO": {
+        "prefix": "GIT_REPO",
+        "body": "device.GIT_REPO",
         "description" :"Constant containing the project git repo as a string"
     },
     "battery_level()": {
