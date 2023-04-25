@@ -29,7 +29,6 @@
     "body": "display.show(${1:object_1},${2:object_2})",
     "description": "Prints to the display. The passed arguments can be any number of Text, Line, Rectangle, Polygon, or Polyline objects, or any number of lists containing such objects. Objects are layered front to back, i.e. object_1 is shown on top of object_n."
   },
-
   "move(x, y)": {
     "prefix": "move",
     "body": "display.move(${1:x}, ${2:y})",
@@ -115,7 +114,6 @@
     "body": "display.GRAY4",
     "description": "If using the default color palette, this constant indexes the color #717171. Note, color indexes may be overridden by the user."
   },
-
   "GRAY5": {
     "prefix": "GRAY5",
     "body": "display.GRAY5",
