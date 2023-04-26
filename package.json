@@ -7,7 +7,7 @@
     "url": "https://github.com/brilliantlabsAR/ar-studio-for-vscode"
   },
   "icon": "media/brilliant.png",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "engines": {
     "vscode": "^1.76.0"
   },
@@ -39,14 +39,12 @@
           "id": "fpga",
           "name": "FPGA",
           "icon": "media/Monocle_Icon.svg"
-         
         },
         {
           "id": "projects",
           "name": "Community projects",
           "icon": "media/Monocle_Icon.svg"
         }
-       
       ],
       "explorer": [
         {
@@ -76,28 +74,28 @@
       {
         "command": "brilliant-ar-studio.openDeviceFile",
         "title": "Brilliant AR Studio: Open Device file in editor",
-        "enablement":"monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected"
       },
       {
         "command": "fileExplorer.openFile",
         "title": "Brilliant AR Studio: openFile",
-        "enablement":"monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.disconnect",
         "title": "Brilliant AR Studio: Disconnect",
-        "enablement":"monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.connect",
         "title": "Brilliant AR Studio: Connect",
-        "enablement":"!monocle.deviceConnected"
+        "enablement": "!monocle.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.runFile",
         "title": "Brilliant AR Studio: Run in Device",
         "icon": "$(play-circle)",
-        "enablement":"monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.refreshDeviceFiles",
@@ -108,7 +106,7 @@
         "command": "brilliant-ar-studio.syncFiles",
         "title": "Brilliant AR Studio: Start auto run",
         "icon": "$(play-circle)",
-        "enablement":"monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.deleteDeviceFile",
@@ -124,13 +122,13 @@
         "command": "brilliant-ar-studio.fpgaUpdate",
         "title": "Brilliant AR Studio: FPGA Update",
         "icon": "$(cloud)",
-        "enablement":"monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.fpgaUpdateCustom",
         "title": "Brilliant AR Studio: Custom FPGA Update",
         "icon": "$(cloud)",
-        "enablement":"monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.getPublicApps",
@@ -161,7 +159,6 @@
         "command": "brilliant-ar-studio.setDeviceLocalPath",
         "title": "Brilliant AR Studio: Initialize new project folder",
         "icon": "$(explorer-view-icon)"
-        
       },
       {
         "command": "brilliant-ar-studio.stopProgress",
@@ -173,9 +170,8 @@
         "command": "brilliant-ar-studio.uploadFilesToDevice",
         "title": "Brilliant AR Studio: Upload File To Device",
         "icon": "$(save)",
-        "enablement":"monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected"
       }
-      
     ],
     "menus": {
       "view/title": [
@@ -184,7 +180,6 @@
           "when": "view == fileExplorer && monocle.deviceConnected",
           "group": "navigation@0"
         },
-       
         {
           "command": "brilliant-ar-studio.publishMonocleApp",
           "when": "view == projects && workspaceFolderCount !=0 && !monocle.published",
@@ -254,7 +249,6 @@
         "language": "python",
         "path": "./snippets/display.json"
       },
-         
       {
         "language": "python",
         "path": "./snippets/fpga.json"
@@ -263,7 +257,6 @@
         "language": "python",
         "path": "./snippets/gc.json"
       },
-    
       {
         "language": "python",
         "path": "./snippets/led.json"
@@ -284,7 +277,6 @@
         "language": "python",
         "path": "./snippets/time.json"
       },
-
       {
         "language": "python",
         "path": "./snippets/touch.json"
@@ -301,8 +293,6 @@
         "language": "python",
         "path": "./snippets/update.json"
       },
-
-
       {
         "language": "python",
         "path": "./snippets/urandom.json"
