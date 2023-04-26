@@ -309,33 +309,35 @@ export async function activate(context: vscode.ExtensionContext) {
 			await triggerFpgaUpdate();
 			
 		}),
-		vscode.commands.registerCommand('brilliant-ar-studio.createDirectoryOnDevice', async (thiscontext) => {
-			console.log(thiscontext);
-			// TODO create directroy on device and local
+		// vscode.commands.registerCommand('brilliant-ar-studio.createDirectoryOnDevice', async (thiscontext) => {
+		// 	console.log(thiscontext);
+		// 	// TODO create directroy on device and local
 			
-		}),
-		vscode.commands.registerCommand('brilliant-ar-studio.createFileOnDevice', async (thiscontext) => {
-			// TODO create file on device and local
-			console.log(thiscontext);
+		// }),
+		// vscode.commands.registerCommand('brilliant-ar-studio.createFileOnDevice', async (thiscontext) => {
+		// 	// TODO create file on device and local
+		// 	console.log(thiscontext);
 			
-		}),
-		vscode.commands.registerCommand('brilliant-ar-studio.deleteOnDevice', async (thiscontext) => {
-			// TODO delete file on device and local
+		// }),
+		// vscode.commands.registerCommand('brilliant-ar-studio.deleteOnDevice', async (thiscontext) => {
+		// 	// TODO delete file on device and local
 			
-			console.log(thiscontext);
+		// 	console.log(thiscontext);
 			
-		}),
+		// }),
 		vscode.commands.registerCommand('brilliant-ar-studio.uploadFilesToDevice', async (e:vscode.Uri) => {
-			console.log(e);
 			if(vscode.workspace.workspaceFolders){
 				let rootUri = vscode.workspace.workspaceFolders[0].uri;
-				let projectPath = vscode.Uri.joinPath(rootUri,monocleFolder+"/");
+				let projectPath = vscode.Uri.joinPath(rootUri,monocleFolder);
 	
 				if(projectPath!==null && e.path.includes(projectPath.path)){
 					let devicePath = e.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
 					if((await vscode.workspace.fs.stat(e)).type===vscode.FileType.File){
-						await memFs.updateFile(e,devicePath);
+						await memFs.updateFile(e, devicePath);
 						memFs.refresh();
+					}else if((await vscode.workspace.fs.stat(e)).type===vscode.FileType.Directory){
+						let files = await vscode.workspace.findFiles(new vscode.RelativePattern(e,'**'));
+						memFs.updateFileBulk(files,devicePath);
 					}
 				}
 			}
@@ -480,7 +482,7 @@ export async function activate(context: vscode.ExtensionContext) {
 							// vscode.workspace.updateWorkspaceFolders(0,null,{uri:workspacePath,name:projectName});
 						
 						}else{
-							vscode.window.showErrorMessage("Directory exist, open if you want to use existing directory")
+							vscode.window.showErrorMessage("Directory exist, open if you want to use existing directory");
 						}
 					}
 					
@@ -542,7 +544,7 @@ export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
 		statusBarItemBle.command = undefined;
 	
 	}else{
-		statusBarItemBle.tooltip = "Disconncted";
+		statusBarItemBle.tooltip = "Disconnected";
 		// statusBarItemBle.color = "#D90404";
 		statusBarItemBle.backgroundColor =  bgColorError;
 		statusBarItemBle.text = "$(debug-disconnect) "+msg;

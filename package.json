@@ -174,25 +174,8 @@
         "title": "Brilliant AR Studio: Upload File To Device",
         "icon": "$(save)",
         "enablement":"monocle.deviceConnected"
-      },
-      {
-        "command": "brilliant-ar-studio.createDirectoryOnDevice",
-        "title": "Brilliant AR Studio: Create Directory",
-        "icon": "$(plus)",
-        "enablement":"monocle.deviceConnected"
-      },
-      {
-        "command": "brilliant-ar-studio.createFileOnDevice",
-        "title": "Brilliant AR Studio: Create File",
-        "icon": "$(plus)",
-        "enablement":"monocle.deviceConnected"
-      },
-      {
-        "command": "brilliant-ar-studio.deleteOnDevice",
-        "title": "Brilliant AR Studio: Delete",
-        "icon": "$(trash)",
-        "enablement":"monocle.deviceConnected"
       }
+      
     ],
     "menus": {
       "view/title": [
@@ -233,21 +216,6 @@
           "command": "brilliant-ar-studio.stopProgress",
           "when": "view == fileExplorer && monocle.fileInProgess",
           "group": "inline"
-        },
-        {
-          "command": "brilliant-ar-studio.createDirectoryOnDevice",
-          "when": "view == fileExplorer",
-          "group": "navigation@1"
-        },
-        {
-          "command": "brilliant-ar-studio.createFileOnDevice",
-          "when": "view == fileExplorer",
-          "group": "navigation@0"
-        },
-        {
-          "command": "brilliant-ar-studio.deleteOnDevice",
-          "when": "view == fileExplorer",
-          "group": "navigation@2"
         }
       ],
       "editor/title": [

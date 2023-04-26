@@ -7,7 +7,15 @@
 import { file } from 'jszip';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {listFilesDevice,createDirectoryDevice,creatUpdateFileDevice, deletFilesDevice,renameFileDevice, readFileDevice} from './repl';
+import {
+	listFilesDevice,
+	createDirectoryDevice,
+	creatUpdateFileDevice, 
+	deletFilesDevice,
+	renameFileDevice, 
+	readFileDevice,
+	uploadFileBulkDevice
+} from './repl';
 import {deviceTreeProvider} from './extension';
 
 export class File extends vscode.TreeItem implements vscode.FileStat {
@@ -117,6 +125,11 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 			deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: false });
 		}
 		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess', false);
+	}
+	async updateFileBulk(files:vscode.Uri[],devicePath:string){
+		if(await uploadFileBulkDevice(files,devicePath)){
+			this.refresh();
+		};
 	}
 	async renameFile (oldDevicePath:string,newDevicePath:string){
 		let thisTreeItem = this.data.get(oldDevicePath);
