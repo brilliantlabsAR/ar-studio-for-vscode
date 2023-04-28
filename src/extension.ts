@@ -265,10 +265,14 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 
 		vscode.commands.registerCommand('brilliant-ar-studio.runFile', async (thiscontext) => {
-			let fileData = await vscode.workspace.fs.readFile(vscode.Uri.parse(thiscontext.path));
+			let editor =  vscode.window.activeTextEditor;
+			if(editor){
+				let fileData = await vscode.workspace.fs.readFile(editor.document.uri);
 				if(fileData.byteLength!==0){
 					sendFileUpdate(fileData);
 				}
+			}
+			
 		}),
 		vscode.workspace.registerTextDocumentContentProvider(myscheme, memFs),
 		vscode.commands.registerCommand('brilliant-ar-studio.refreshDeviceFiles', async (thiscontext) => {

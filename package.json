@@ -220,6 +220,11 @@
       ],
       "editor/title": [
         {
+          "when": "resourceLangId == python && monocle.deviceConnected",
+          "command": "brilliant-ar-studio.runFile",
+          "group": "navigation@0"
+        },
+        {
           "when": "resourceLangId == python && monocle.deviceConnected && !monocle.sync",
           "command": "brilliant-ar-studio.syncFiles",
           "group": "navigation"
