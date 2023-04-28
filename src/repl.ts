@@ -4,6 +4,7 @@ import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus } fr
 import { startNordicDFU } from './nordicdfu'; 
 import * as vscode from 'vscode';
 import { resolve } from 'path';
+import { time, timeEnd } from 'console';
 let util = require('util');
 let cursorPosition = 0;
 let replRawModeEnabled = false;
@@ -34,8 +35,9 @@ export async function replRawMode(enable:boolean) {
     }
 
      outputChannel.appendLine("Leaving raw REPL mode");
-    replRawModeEnabled = false;
     await replSend('\x02');
+    replRawModeEnabled = false;
+    
 
 }
 
@@ -77,7 +79,7 @@ export async function replSend(string:string) {
         };
         setTimeout(() => {
             resolve(null);
-        }, 10000);
+        }, 5000);
     });
 }
 
@@ -124,7 +126,7 @@ export async function ensureConnected() {
             }
             
             let updateInfo = await checkForUpdates();
-            
+            await replSend('\x02');
             if(!initializedWorkspace){
                 // setupWorkSpace();
                 // initializedWorkspace = true;
@@ -251,15 +253,15 @@ async function enterRawReplInternal(){
                 if(!replRawModeEnabled && !internalOperation){
                     setTimeout(()=>{
                         r("");
-                    },100);
+                    },10);
                     clearInterval(interval);
                 }
-            },100);
+            },10);
         });
     }
     internalOperation = true;
     await replRawMode(true);
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 10));
     return true;
 }
 
@@ -276,7 +278,9 @@ if os.stat(d)[0] & 0x4000:
 print(ujson.dumps(l))
 del(os,l,d)`;
     let response:any = await replSend(cmd);
+
     await exitRawReplInternal();
+
     if(response){
         try{
             let strList = response.slice(response.indexOf('OK')+2,response.indexOf('\r\n\x04'));

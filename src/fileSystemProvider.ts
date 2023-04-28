@@ -200,8 +200,8 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 		let rootPath = "";
 		if (element) {
 			if (element instanceof Directory) {
-				
 				let subDirectory = await listFilesDevice(element.path);
+				
 				subDirectory.forEach((f:any)=>{
 					if(element.path){
 						rootPath = element.path+"/"+f.name;
@@ -212,6 +212,7 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 					files.push(entry);
 					this.data.set(rootPath,entry);
 				});
+				
 				return files;
 			}else{
 				return [element];
