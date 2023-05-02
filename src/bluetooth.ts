@@ -59,6 +59,7 @@ export async function connect() {
             bluetooth.cancelRequest();
             if(!isConnected()){
                 onDisconnect();
+                console.log("couldn't find device");
             }
 
         },10000);

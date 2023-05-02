@@ -67,6 +67,13 @@ function getNonce() {
 export const updatePublishStatus = async ()=>{
 	const gitExtension1 = vscode.extensions.getExtension('vscode.git');
 	if(gitExtension1){
+		if(vscode.workspace.workspaceFolders){
+			let monocleFilesUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,monocleFolder);
+			if(! isPathExist(monocleFilesUri)){
+				vscode.window.showErrorMessage('Empty project');
+				return;
+			};
+		}
 		const git = gitExtension1.exports.getAPI(1);
 		if(git && git.repositories.length>0 && git.repositories[0].repository.remotes.length>0){
 			let pushUrl = git.repositories[0].repository.remotes[0].pushUrl;
@@ -393,14 +400,23 @@ export async function activate(context: vscode.ExtensionContext) {
 			const gitExtension1 = vscode.extensions.getExtension('vscode.git');
 			if(gitExtension1){
 				const git = gitExtension1.exports.getAPI(1);
-				if(git.repositories && git.repositories.length>0 && git.repositories[0].repository.remotes.length>0){
-					let pushUrl = git.repositories[0].repository.remotes[0].pushUrl;
-					gitOper.publishProject(pushUrl,true);
-					vscode.commands.executeCommand('setContext', 'monocle.published', false);
-					projectProvider.refresh();
-				}else{
-					vscode.window.showErrorMessage('Not set remote repository');
+				if(vscode.workspace.workspaceFolders){
+					let monocleFilesUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,monocleFolder);
+					if(! isPathExist(monocleFilesUri)){
+						vscode.window.showErrorMessage('Project not set');
+						return;
+					};
+	
+					if(git.repositories && git.repositories.length>0 && git.repositories[0].repository.remotes.length>0){
+						let pushUrl = git.repositories[0].repository.remotes[0].pushUrl;
+						gitOper.publishProject(pushUrl,true);
+						vscode.commands.executeCommand('setContext', 'monocle.published', false);
+						projectProvider.refresh();
+					}else{
+						vscode.window.showErrorMessage('Not set remote repository');
+					}
 				}
+				
 			}
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.forkProject',  async (thiscontext) => {
@@ -439,7 +455,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					vscode.window.showErrorMessage('Worspace not set');
 					return;
 				}
-				let monocleFilesUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,monocleFolder+"/*.py");
+				let monocleFilesUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,monocleFolder);
 				if(! isPathExist(monocleFilesUri)){
 					// initialized folder
 					vscode.window.showWarningMessage("No project setup");
