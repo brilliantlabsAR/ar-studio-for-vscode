@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs'; // In NodeJS: 'const fs = require('fs')'
 
 import { isConnected,disconnect } from './bluetooth';
-import {ensureConnected,replSend,sendFileUpdate,triggerFpgaUpdate} from './repl';
+import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate} from './repl';
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
 import { SnippetProvider } from './snippets/provider';
 
@@ -92,7 +92,7 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 	if(allTerminals.length>0){
 		
 	return new Promise(async(resolve,reject)=>{
-		allTerminals[0].show();
+		// allTerminals[0].show();
 		await ensureConnected();
 		resolve(allTerminals[0]);
 		
@@ -104,7 +104,7 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 		close: () => { /* noop*/ },
 		handleInput: (data: string) => {
 			// console.log(data);
-			replSend(data);
+			terminalHandleInput(data);
 
 		}
 	};
@@ -514,10 +514,8 @@ export async function activate(context: vscode.ExtensionContext) {
 				// await vscode.commands.executeCommand('brilliant-ar-studio.syncFiles');
 				if(vscode.workspace.workspaceFolders){
 					await startSyncing();
-					selectTerminal().then();
-				}else{
-					selectTerminal().then();
 				}
+				selectTerminal().then();
 			}
 			
 		}),

@@ -119,18 +119,15 @@ export async function ensureConnected() {
             vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', true);
                 // writeEmitter.fire("Connected\r\n");
                 updateStatusBarItem("connected");
-            let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
-            if(allTerminals.length>0){
-                allTerminals[0].show();
-                vscode.commands.executeCommand('workbench.action.terminal.clear');
-            }
+           
             
             let updateInfo = await checkForUpdates();
-            await replSend('\x02');
+           
             if(!initializedWorkspace){
                 // setupWorkSpace();
                 // initializedWorkspace = true;
-            }    
+            }
+           
             // console.log(updateInfo);
             if (updateInfo !== "") {
                 let newFirmware = updateInfo?.includes('New firmware');
@@ -155,6 +152,13 @@ export async function ensureConnected() {
                 }
             }
             await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
+            let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
+            if(allTerminals.length>0){
+                allTerminals[0].show();
+                vscode.commands.executeCommand('workbench.action.terminal.clear');
+                
+            }  
+            await replSend('\x02'); 
         }
     }
 
@@ -460,4 +464,20 @@ rm('${devicePath}'); del(os);del(rm)`;
     await exitRawReplInternal();
     if(response &&  !response.includes("failed")){return true;};
     return false;
+}
+
+export async function terminalHandleInput(data:string){
+    if(replRawModeEnabled || internalOperation){
+        await new Promise(r => {
+            let interval = setInterval(()=>{
+                if(!replRawModeEnabled && !internalOperation){
+                    setTimeout(()=>{
+                        r("");
+                    },10);
+                    clearInterval(interval);
+                }
+            },10);
+        });
+    }
+    replSend(data);
 }
