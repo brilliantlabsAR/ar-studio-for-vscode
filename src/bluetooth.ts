@@ -30,7 +30,7 @@ let replDataTxInProgress = false;
 let rawDataTxInProgress = false;
 
 // Web-Bluetooth doesn't have any MTU API, so we just set it to something reasonable
-const max_mtu:any = 100;
+const maxmtu:any = 100;
 
 export function isConnected() {
 
@@ -47,17 +47,11 @@ export async function connect() {
         return Promise.reject("This browser doesn't support WebBluetooth. " +
             "Make sure you're on Chrome Desktop/Android or BlueFy iOS.")
     }
-    // // Bluefy on ios currently doesn't allow multiple filters
-    // if (/iPhone|iPad/.test(navigator.userAgent)) {
-    //     device = await navigator.bluetooth.requestDevice({
-    //         acceptAllDevices: true
-    //     });
-    // }
-    // else {
         setTimeout(()=>{
             bluetooth.cancelRequest();
             if(!isConnected()){
                 onDisconnect();
+                console.log("couldn't find device");
             }
 
         },10000);
@@ -150,7 +144,7 @@ async function transmitReplData() {
 
     replDataTxInProgress = true;
 
-    const payload = replDataTxQueue.slice(0, max_mtu);
+    const payload = replDataTxQueue.slice(0, maxmtu);
 
     await replRxCharacteristic.writeValueWithoutResponse(new Uint8Array(payload))
         .then(() => {

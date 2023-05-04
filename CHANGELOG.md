@@ -12,4 +12,23 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - extension icon
 
-## [1.0.1] - 2023-04-21
+## [1.0.2] - 2023-04-21
+
+### fixed
+
+- extension icon
+- fpga update issue fixed
+
+## [1.0.2] - 2023-04-21
+
+### added
+
+- directory upload to device
+
+## [1.0.3] -
+
+### fixed
+
+- REPL, file operation speed inrease by 10x
+
+## [1.0.3] -

@@ -1,13 +1,14 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
-
-import { file } from 'jszip';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {listFilesDevice,createDirectoryDevice,creatUpdateFileDevice, deletFilesDevice,renameFileDevice, readFileDevice} from './repl';
+import {
+	listFilesDevice,
+	createDirectoryDevice,
+	creatUpdateFileDevice, 
+	deleteFilesDevice,
+	renameFileDevice, 
+	readFileDevice,
+	uploadFileBulkDevice
+} from './repl';
 import {deviceTreeProvider} from './extension';
 
 export class File extends vscode.TreeItem implements vscode.FileStat {
@@ -118,6 +119,11 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 		}
 		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess', false);
 	}
+	async updateFileBulk(files:vscode.Uri[],devicePath:string){
+		if(await uploadFileBulkDevice(files,devicePath)){
+			this.refresh();
+		};
+	}
 	async renameFile (oldDevicePath:string,newDevicePath:string){
 		let thisTreeItem = this.data.get(oldDevicePath);
 		if(thisTreeItem){
@@ -150,7 +156,7 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 			deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: true });
 		}
 		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess',true);
-		if(await deletFilesDevice(devicePath)){
+		if(await deleteFilesDevice(devicePath)){
 			this.data.delete(devicePath);
 			this.refresh();
 		}
@@ -187,8 +193,8 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 		let rootPath = "";
 		if (element) {
 			if (element instanceof Directory) {
-				
 				let subDirectory = await listFilesDevice(element.path);
+				
 				subDirectory.forEach((f:any)=>{
 					if(element.path){
 						rootPath = element.path+"/"+f.name;
@@ -199,6 +205,7 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 					files.push(entry);
 					this.data.set(rootPath,entry);
 				});
+				
 				return files;
 			}else{
 				return [element];
@@ -221,37 +228,3 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 	}
 
 }
-
-class ProjectEmptyTreeItem extends vscode.TreeItem implements vscode.FileStat {
-	type: vscode.FileType;
-	ctime: 0;
-	mtime:0;
-	size: 0;
-	name :string;
-	constructor() {
-	  super("SELECT WORKSPACE", vscode.TreeItemCollapsibleState.None);
-	  this.command = {
-		title: "Select Workspace",
-		tooltip: "Add Workspace to be synced with device",
-		command: "brilliant-ar-studio.selectWorkspace",
-	  };
-	  this.type = vscode.FileType.Unknown;
-	  this.ctime = 0;
-	  this.mtime = 0;
-	  this.size = 0;
-	  this.name = "Select";
-	}
-  }
-
-//   class DeviceContentProvider implements vscode.TextDocumentContentProvider {
-
-// 	// emitter and its event
-// 	onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
-// 	onDidChange = this.onDidChangeEmitter.event;
-
-// 	provideTextDocumentContent(uri: vscode.Uri): string {
-// 		// simply invoke cowsay, use uri-path as text
-// 		return cowsay.say({ text: uri.path });
-// 	}
-// };
-  

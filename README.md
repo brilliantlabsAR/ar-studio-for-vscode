@@ -2,7 +2,7 @@
 
 Build and test your Monocle AR apps with ease using MicroPython! 🐍
 
-Check out the full documentation the [docs pages 📚](https://docs.brilliantmonocle.com), or [contribute 🧑‍💻](https://github.com/brilliantlabsAR/ar-studio-for-vscode) to make this extension even better!
+Check out the full documentation the [docs pages 📚](https://docs.brilliant.xyz), or [contribute 🧑‍💻](https://github.com/brilliantlabsAR/ar-studio-for-vscode) to make this extension even better!
 
 ## Features
 
