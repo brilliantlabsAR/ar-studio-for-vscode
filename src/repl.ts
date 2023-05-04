@@ -14,7 +14,7 @@ let fileWriteStart = false;
 let internalOperation = false;
 const decoder = new util.TextDecoder('utf-8');
 const RESET_CMD = '\x03\x04';
-const FILE_WRITE_MAX = 128;
+const FILE_WRITE_MAX = 1000000;
 let DIR_MAKE_CMD = `import os
 def md(p):
     c=""
@@ -215,6 +215,7 @@ export async function sendFileUpdate(update:any){
             writeEmitter.fire("\r\n"+textToEcho);
         }
     }
+    replRawModeEnabled = false;
     await replRawMode(false);
     fileWriteStart  = false;
   

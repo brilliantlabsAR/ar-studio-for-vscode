@@ -32,3 +32,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - REPL, file operation speed inrease by 10x
 
 ## [1.0.3] -
+
+### fixed
+
+- REPL, file size limit increased
+
+## [1.5.0] -
