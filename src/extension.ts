@@ -471,7 +471,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		// for UI webview
 		vscode.commands.registerCommand("brilliant-ar-studio.openUIEditor", () => {
-			UIEditorPanel.render();
+			UIEditorPanel.render(context.extensionUri);
 		})
 	);
 	context.subscriptions.push(alldisposables);
