@@ -8,7 +8,7 @@ import { isConnected,disconnect } from './bluetooth';
 import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate} from './repl';
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
 import { SnippetProvider } from './snippets/provider';
-
+import { UIEditorPanel } from "./UIEditorPanel";
 const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
 import { DeviceFs, MonocleFile } from './fileSystemProvider';
@@ -468,6 +468,11 @@ export async function activate(context: vscode.ExtensionContext) {
 			vscode.commands.executeCommand('brilliant-ar-studio.syncStop');
 			
 		}),
+
+		// for UI webview
+		vscode.commands.registerCommand("brilliant-ar-studio.openUIEditor", () => {
+			UIEditorPanel.render();
+		})
 	);
 	context.subscriptions.push(alldisposables);
 	context.subscriptions.push(statusBarItemBle);
