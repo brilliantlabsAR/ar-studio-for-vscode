@@ -82,30 +82,6 @@ async function obtainFiles() {
         assetId: assetId
     });
 
-// console.log(response);
-    // https.get(response.data.browser_download_url, function(response) {
-    //     console.log(response);
-    //     if (response.statusCode === 200) {
-    
-    //     //   mkdirp(dest, function(err) { 
-    //     //     if (err) {
-    //     //       throw err;
-    //     //     }
-    //         var file = fs.createWriteStream(targetPath);
-    //         response.pipe(file);
-    //     //   });
-    //     // } else {
-    //     //   vscode.window.showErrorMessage(`Downloading ${fileURL} failed`);
-    //     // }
-    //     }
-    //     response.on("end", function(){
-    //         console.log("Ended");
-    //     //   vscode.window.showInformationMessage(`File "${filename}" downloaded successfully.`);
-    //     });
-    //   }).on('error', function(e) {
-    //     console.log(e);
-    //   });
-    //   return;
     // Annoyingly we have to fetch the data via a cors proxy
 
     let download = await fetch('https://api.brilliant.xyz/firmware?url=' + response.data.browser_download_url);

@@ -156,8 +156,9 @@ export class GitOperation {
 			}
 			vscode.workspace.fs.writeFile(localPath_, Buffer.from(await zip.file(fileName).async('arraybuffer')));
 		  });
-		const folderName = path.basename(localPath.path);
-		vscode.workspace.updateWorkspaceFolders(0, null, { uri:localPath, name:folderName});
+		// const folderName = path.basename(localPath.path);
+		vscode.commands.executeCommand('vscode.openFolder',localPath);
+		// vscode.workspace.updateWorkspaceFolders(0, null, { uri:localPath, name:folderName});
 	}
 	private async getHeader(){
 		if(!this.auth){
@@ -187,9 +188,9 @@ export function cloneAndOpenRepo(repoUrl:string,uri:vscode.Uri): void {
 
   gitClone.on('exit', () => {
     // Open the cloned repository in VS Code
-    const workspaceFolder = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0;
-    const folderName = path.basename(uri.path);
-    vscode.workspace.updateWorkspaceFolders(workspaceFolder, 0, { uri, name:folderName});
+    // const workspaceFolder = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0;
+    // const folderName = path.basename(uri.path);
+    vscode.commands.executeCommand('vscode.openFolder',uri);
   });
 }
 

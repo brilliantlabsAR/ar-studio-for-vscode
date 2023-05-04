@@ -119,18 +119,15 @@ export async function ensureConnected() {
             vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', true);
                 // writeEmitter.fire("Connected\r\n");
                 updateStatusBarItem("connected");
-            let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
-            if(allTerminals.length>0){
-                allTerminals[0].show();
-                vscode.commands.executeCommand('workbench.action.terminal.clear');
-            }
+           
             
             let updateInfo = await checkForUpdates();
-            await replSend('\x02');
+           
             if(!initializedWorkspace){
                 // setupWorkSpace();
                 // initializedWorkspace = true;
-            }    
+            }
+           
             // console.log(updateInfo);
             if (updateInfo !== "") {
                 let newFirmware = updateInfo?.includes('New firmware');
@@ -155,6 +152,13 @@ export async function ensureConnected() {
                 }
             }
             await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
+            let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
+            if(allTerminals.length>0){
+                allTerminals[0].show();
+                vscode.commands.executeCommand('workbench.action.terminal.clear');
+                
+            }  
+            await replSend('\x02'); 
         }
     }
 
@@ -239,15 +243,18 @@ export async function triggerFpgaUpdate(binPath?:vscode.Uri){
     updateStatusBarItem("connected");
 }
 
+//  close the file operation and raw mode
 async function exitRawReplInternal(){
     await replRawMode(false);
     internalOperation = false;
 }
 
+//  enter raw repl for file operation
 async function enterRawReplInternal(){
     if (!isConnected()) {
         return false;
     }
+    //  check if already a file operation going on
     if(replRawModeEnabled || internalOperation){
         await new Promise(r => {
             let interval = setInterval(()=>{
@@ -266,6 +273,7 @@ async function enterRawReplInternal(){
     return true;
 }
 
+// list files and folders for the device under given path
 export async function listFilesDevice(currentPath="/"):Promise<string[]>{
 
     if(!await enterRawReplInternal()){return[];};
@@ -296,6 +304,7 @@ del(os,l,d)`;
     return [];
 }
 
+//  create directory recursively
 export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
    
     if(!await enterRawReplInternal()){return false;};
@@ -308,6 +317,7 @@ export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
     return false;
 }
 
+//  upload files recursively to device
 export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string):Promise<boolean>{
     
     if(!await enterRawReplInternal()){return false;};
@@ -358,6 +368,7 @@ export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string)
     await exitRawReplInternal();
     return true;
 }
+//  create or update individual file on device
 export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):Promise<boolean>{
     
     if(!await enterRawReplInternal()){return false;};
@@ -377,6 +388,7 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
         if(response &&  !response.includes("Error")){return true;};
     }
     if(fileData.byteLength<=FILE_WRITE_MAX){
+        // TODO: transfer files in chunks once file size  bug is fixed over firmware
         // if file size less write in one attempt
         // attempt to write larger file
         // let asciiFile =Buffer.from(fileData).toString('base64');
@@ -413,6 +425,7 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
     
     return false;
 }
+//  rename or move files and folders on device
 export async function renameFileDevice(oldDevicePath:string, newDevicePath:string):Promise<boolean>{
     
     if(!await enterRawReplInternal()){return false;};
@@ -426,6 +439,7 @@ os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
     return false;
 }
 
+//  reading a individual file data from device
 export async function readFileDevice(devicePath:string):Promise<boolean|string>{
    
     if(!await enterRawReplInternal()){return false;};
@@ -437,8 +451,8 @@ export async function readFileDevice(devicePath:string):Promise<boolean|string>{
     return false;
 }
 
-
-export async function deletFilesDevice(devicePath:string):Promise<boolean>{
+//  delete files/directory recursively from device
+export async function deleteFilesDevice(devicePath:string):Promise<boolean>{
 
     if(!await enterRawReplInternal()){return false;};
 
@@ -460,4 +474,21 @@ rm('${devicePath}'); del(os);del(rm)`;
     await exitRawReplInternal();
     if(response &&  !response.includes("failed")){return true;};
     return false;
+}
+
+// handle data from terminal input 
+export async function terminalHandleInput(data:string){
+    if(replRawModeEnabled || internalOperation){
+        await new Promise(r => {
+            let interval = setInterval(()=>{
+                if(!replRawModeEnabled && !internalOperation){
+                    setTimeout(()=>{
+                        r("");
+                    },10);
+                    clearInterval(interval);
+                }
+            },10);
+        });
+    }
+    replSend(data);
 }
