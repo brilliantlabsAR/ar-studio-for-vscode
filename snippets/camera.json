@@ -1,5 +1,4 @@
 {
-   
     "capture()": {
         "prefix": "capture",
         "body": "camera.capture()",

@@ -127,9 +127,6 @@
         "body": "Stream.readline()",
         "description" : "Read a line and return it.This is a coroutine."
     },
-
-
-
     "write(buf)": {
         "prefix": "write",
         "body": "Stream.write(${1:buf})",
@@ -150,8 +147,6 @@
         "body": "Server.wait_closed()",
         "description" : "Wait for the server to close.This is a coroutine."
     },
-
-
     "get_event_loop()": {
         "prefix": "get_event_loop",
         "body": "uasyncio.get_event_loop()",

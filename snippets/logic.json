@@ -19,7 +19,6 @@
         "body": "${1:value1} and ${2:value2}",
         "description" : "Code snippet for the and logic."
     },
-    
      "or": {
         "prefix": "or",
         "body": "${1:value1} or ${2:value2}",
@@ -45,5 +44,4 @@
         "body": "${1:value1} != ${2:value2}",
         "description" : "Code snippet for the not equal (!=) operator."
     }
-   
 }

@@ -47,7 +47,6 @@ export async function connect() {
         return Promise.reject("This browser doesn't support WebBluetooth. " +
             "Make sure you're on Chrome Desktop/Android or BlueFy iOS.")
     }
-
     // // Bluefy on ios currently doesn't allow multiple filters
     // if (/iPhone|iPad/.test(navigator.userAgent)) {
     //     device = await navigator.bluetooth.requestDevice({
@@ -73,7 +72,6 @@ export async function connect() {
 
     const server = await device.gatt.connect();
     device.addEventListener('gattserverdisconnected', disconnect);
-
     const nordicDfuService = await server.getPrimaryService(nordicDfuServiceUuid)
         .catch(() => { });
     const replService = await server.getPrimaryService(replDataServiceUuid)
@@ -104,7 +102,6 @@ export async function connect() {
         await rawDataTxCharacteristic.startNotifications();
         rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
     }
-
     return Promise.resolve("repl connected");
 }
 
@@ -161,9 +158,7 @@ async function transmitReplData() {
             replDataTxInProgress = false;
             return;
         })
-
         .catch((error:any) => {
-
             if (error === "NetworkError: GATT operation already in progress.") {
                 // Ignore busy errors. Just wait and try again later
             }
@@ -177,15 +172,3 @@ async function transmitReplData() {
 
 }
 
-// TODO
-// export async function transmitRawData(bytes:any) {
-//     await rawDataRxCharacteristic.writeValueWithoutResponse(new Uint8Array(bytes))
-//         .then(() => {
-//             console.log("Sent: ", bytes);
-//         })
-//         .catch(error => {
-//             return Promise.reject(error);
-//         })
-// }
-
-// window.transmitRawData = transmitRawData;

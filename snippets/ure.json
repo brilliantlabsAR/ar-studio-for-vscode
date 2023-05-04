@@ -34,7 +34,6 @@
         "body": "match.start(${[index]})",
         "description": ""
       },
-      
       "end([index])": {
         "prefix": "end",
         "body": "match.end(${[index]})",

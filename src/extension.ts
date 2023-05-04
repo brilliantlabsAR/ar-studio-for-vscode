@@ -250,7 +250,6 @@ export async function activate(context: vscode.ExtensionContext) {
 					memFs.deleteFile(devicePath);
 				}
 			});
-			
 		}),
 		fsWatcher.onDidChange((e)=>{
 			if(currentSyncPath!==null && e.path.includes(currentSyncPath.path)){
@@ -478,7 +477,6 @@ export async function activate(context: vscode.ExtensionContext) {
 							// vscode.workspace.
 							vscode.commands.executeCommand('vscode.openFolder', workspacePath);
 							// vscode.workspace.updateWorkspaceFolders(0,null,{uri:workspacePath,name:projectName});
-						
 						}else{
 							vscode.window.showErrorMessage("Directory exist, open if you want to use existing directory")
 						}
@@ -497,7 +495,6 @@ export async function activate(context: vscode.ExtensionContext) {
 					selectTerminal().then();
 				}
 			}
-			
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.disconnect', async () => {
 			
