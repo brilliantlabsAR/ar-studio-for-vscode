@@ -1,5 +1,5 @@
 // let h1 = document.querySelector("h1");
-// const vscode = acquireVsCodeApi();
+const vscode = acquireVsCodeApi();
 // h1.addEventListener('click',handleClick);
 // function handleClick() {
 //     h1.innerHTML = "Updated";
@@ -12,10 +12,15 @@
 var width = 640;
 var height = 400;
 const rectbutton = document.getElementById('rect');
+const deleteButton = document.getElementById('delete');
 var currentSelection = null;
 
 rectbutton.addEventListener('click',()=>{
     currentSelection = "RECT";
+});
+deleteButton.addEventListener('click',()=>{
+    // console.log(tr);
+    // layer.draw();
 });
 var stage = new Konva.Stage({
   container: 'container',
@@ -26,48 +31,67 @@ var stage = new Konva.Stage({
 var layer = new Konva.Layer();
 stage.add(layer);
 
-var rect1 = new Konva.Rect({
-  x: 60,
-  y: 60,
-  width: 100,
-  height: 90,
-  fill: 'red',
-  name: 'rect',
-  draggable: true,
-});
-layer.add(rect1);
+// var rect1 = new Konva.Rect({
+//   x: 60,
+//   y: 60,
+//   width: 100,
+//   height: 90,
+//   fill: 'red',
+//   name: 'rect',
+//   draggable: true,
+// });
+// layer.add(rect1);
 
-var rect2 = new Konva.Rect({
-  x: 250,
-  y: 100,
-  width: 150,
-  height: 90,
-  fill: 'green',
-  name: 'rect',
-  draggable: true,
-});
-layer.add(rect2);
+// var rect2 = new Konva.Rect({
+//   x: 250,
+//   y: 100,
+//   width: 150,
+//   height: 90,
+//   fill: 'green',
+//   name: 'rect',
+//   draggable: true,
+// });
+// layer.add(rect2);
 
 var tr = new Konva.Transformer();
 layer.add(tr);
 
-// by default select all shapes
-tr.nodes([rect1, rect2]);
+// // by default select all shapes
+// tr.nodes([rect1, rect2]);
 
 // add a new feature, lets add ability to draw selection rectangle
 var selectionRectangle = new Konva.Rect({
-  fill: 'rgba(0,0,255,0.5)',
+  fill: 'rgba(255,255,255,0.5)',
   visible: false,
 });
 layer.add(selectionRectangle);
 
 var x1, y1, x2, y2;
+let ALL_OBJECTS = {};
+let movingId = null;
 stage.on('mousedown touchstart', (e) => {
   // do nothing if we mousedown on any shape
   if (e.target !== stage) {
     return;
   }
   e.evt.preventDefault();
+  if(currentSelection==="RECT"){
+    let id = new Date().valueOf();
+    let newrect = new Konva.Rect({
+      x: stage.getPointerPosition().x,
+      y: stage.getPointerPosition().y,
+      width: 0,
+      height: 0,
+      fill: 'red',
+      name: 'rect',
+      draggable: true,
+    });
+    ALL_OBJECTS[id] = newrect;
+    movingId  =  id;
+    layer.add(newrect);
+    currentSelection =null;
+
+  }
   x1 = stage.getPointerPosition().x;
   y1 = stage.getPointerPosition().y;
   x2 = stage.getPointerPosition().x;
@@ -86,6 +110,15 @@ stage.on('mousemove touchmove', (e) => {
   e.evt.preventDefault();
   x2 = stage.getPointerPosition().x;
   y2 = stage.getPointerPosition().y;
+  if(movingId){
+    ALL_OBJECTS[movingId].setAttrs({
+      x: Math.min(x1, x2),
+      y: Math.min(y1, y2),
+      width: Math.abs(x2 - x1),
+      height: Math.abs(y2 - y1),
+    });
+  }
+  
 
   selectionRectangle.setAttrs({
     x: Math.min(x1, x2),
@@ -105,7 +138,12 @@ stage.on('mouseup touchend', (e) => {
   setTimeout(() => {
     selectionRectangle.visible(false);
   });
-
+  if(movingId){
+    tr.nodes([ALL_OBJECTS[movingId]]);
+    vscode.postMessage(ALL_OBJECTS[movingId].getAttrs());
+    movingId =null;
+    return;
+  }
   var shapes = stage.find('.rect');
   var box = selectionRectangle.getClientRect();
   var selected = shapes.filter((shape) =>
@@ -126,7 +164,7 @@ stage.on('click tap', function (e) {
     tr.nodes([]);
     return;
   }
-
+console.log(e);
   // do nothing if clicked NOT on our rectangles
   if (!e.target.hasName('rect')) {
     return;
@@ -152,4 +190,8 @@ stage.on('click tap', function (e) {
     const nodes = tr.nodes().concat([e.target]);
     tr.nodes(nodes);
   }
+});
+
+stage.on('delete',function(){
+
 });

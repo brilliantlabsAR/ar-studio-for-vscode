@@ -58,6 +58,7 @@ export class UIEditorPanel {
             <body>
               <div class="tools">
               <button id="rect">Rect</button>
+              <button id="delete">delete</button>
               </div>
               <div class="main">
                 <div id="container"></div>
@@ -72,14 +73,14 @@ export class UIEditorPanel {
       private _setWebviewMessageListener(webview: vscode.Webview) {
         webview.onDidReceiveMessage(
           (message: any) => {
-            const command = message.command;
-            const text = message.text;
-    
-            switch (command) {
-              case "hello":
-                vscode.window.showInformationMessage(text);
-                return;
-            }
+         if(message.name==='rect'){
+          let currentEditors = vscode.window.visibleTextEditors;
+          let currentEditor = currentEditors.filter(te=>te.document.fileName.endsWith(".py"))[0];
+          currentEditor?.edit((editBuidler:vscode.TextEditorEdit)=>{
+            editBuidler.insert(new vscode.Position(0,0),`import display\ndisplay.Rectangle(${Math.round(message.x)},${Math.round(message.y)},${Math.round(message.x+message.width)},${Math.round(message.y+message.height)},display.RED)\n`);
+
+          });
+         }
           },
           undefined,
           this._disposables
