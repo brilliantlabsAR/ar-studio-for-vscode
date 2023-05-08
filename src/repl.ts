@@ -105,7 +105,6 @@ export async function ensureConnected() {
             await disconnect();
             vscode.window.showInformationMessage("Firmware Update done");
             updateStatusBarItem("progress");
-            
             // after 2 sec try to connect;
             setTimeout(ensureConnected,2000);
             
@@ -119,9 +118,7 @@ export async function ensureConnected() {
             vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', true);
                 // writeEmitter.fire("Connected\r\n");
                 updateStatusBarItem("connected");
-           
-            
-            let updateInfo = await checkForUpdates();
+               let updateInfo = await checkForUpdates();
            
             if(!initializedWorkspace){
                 // setupWorkSpace();
@@ -359,7 +356,6 @@ export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string)
             if(index===(uris.length-1)){
                 res("");
             }
-            
         });
        
     });
