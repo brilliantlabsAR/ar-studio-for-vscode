@@ -346,6 +346,7 @@
     "@abandonware/noble": "^1.9.2-20",
     "@octokit/request": "^6.2.3",
     "@vscode/webview-ui-toolkit": "^1.2.2",
+    "froala-editor": "^4.0.18",
     "jszip": "^3.10.1",
     "noble-winrt": "^0.1.1"
   }

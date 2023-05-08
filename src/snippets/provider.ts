@@ -45,14 +45,13 @@ export class SnippetProvider implements vscode.TreeDataProvider<Snippet>, vscode
                     		};
                 snippetItems.push(new Snippet(item,vscode.TreeItemCollapsibleState.None,snippetCodes[item].description,cmd,snippetCodes[item].id));
             });
-
 			return Promise.resolve(snippetItems);
 		} else {
             let categories:Snippet[] = [];
             // console.log(JSON.stringify(snippets.display));
             Object.keys(snippets).forEach(key=>{
                 categories.push(new Snippet(key,vscode.TreeItemCollapsibleState.Collapsed,key));
-            });
+            }); 
             return Promise.resolve(categories);
 		}
 	}
