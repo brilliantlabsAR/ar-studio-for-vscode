@@ -142,10 +142,12 @@ export async function activate(context: vscode.ExtensionContext) {
 		updateStatusBarItem("connected");
 	}else{
 		updateStatusBarItem("disconnected");
+
 	}
 	const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
 	? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
 	
+		
 	const fsWatcher = vscode.workspace.createFileSystemWatcher("**",true,false,true);
 	
 	// vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse(myscheme+':/'), name: myscheme });
@@ -161,6 +163,7 @@ export async function activate(context: vscode.ExtensionContext) {
 						let cmd = { langId: "python", name: jumbledSnippet?.slice(jumbledSnippet.indexOf("snippet_")+8) };
 						vscode.commands.executeCommand('editor.action.insertSnippet',cmd);
 					}
+				
 					return null;
 				}
 		  },
@@ -193,6 +196,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					memFs.deleteFile(devicePath);
 				}
 			});
+			
 		}),
     // event capture on file changes 
 		fsWatcher.onDidChange((e)=>{
@@ -326,6 +330,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		// get all repos from github topic to community projects tree
 		vscode.commands.registerCommand('brilliant-ar-studio.getPublicApps',  (thiscontext) => {
 			 projectProvider.refresh();
+	   
 		}),
 		// remove topic from github repos
 		vscode.commands.registerCommand('brilliant-ar-studio.UnPublishMonocleApp',  (thiscontext) => {
@@ -348,6 +353,7 @@ export async function activate(context: vscode.ExtensionContext) {
 						vscode.window.showErrorMessage('Not set remote repository');
 					}
 				}
+				
 			}
 		}),
 		// fork project and start in local 
@@ -435,10 +441,12 @@ export async function activate(context: vscode.ExtensionContext) {
 							// vscode.workspace.
 							vscode.commands.executeCommand('vscode.openFolder', workspacePath);
 							// vscode.workspace.updateWorkspaceFolders(0,null,{uri:workspacePath,name:projectName});
+						
 						}else{
 							vscode.window.showErrorMessage("Directory exist, open if you want to use existing directory");
 						}
 					}
+					
 				}
 			}
 		}),
@@ -451,20 +459,24 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 				selectTerminal().then();
 			}
+			
 		}),
 		// disconnect devcie
 		vscode.commands.registerCommand('brilliant-ar-studio.disconnect', async () => {
+			
 			disconnect();
 			vscode.commands.executeCommand('brilliant-ar-studio.syncStop');
+			
 		}),
 
 		// for UI webview
 		vscode.commands.registerCommand("brilliant-ar-studio.openUIEditor", () => {
-			UIEditorPanel.render();
+			UIEditorPanel.render(context.extensionUri);
 		})
 	);
 	context.subscriptions.push(alldisposables);
 	context.subscriptions.push(statusBarItemBle);
+
 }
 
 export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
@@ -498,6 +510,7 @@ export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
 		statusBarItemBle.text = "$(debug-disconnect) "+msg;
 	}
 	statusBarItemBle.show();
+	
 }
 
 // This method is called when your extension is deactivated
