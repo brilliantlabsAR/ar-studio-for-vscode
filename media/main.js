@@ -13,6 +13,8 @@ var width = 640;
 var height = 400;
 const rectbutton = document.getElementById('rect');
 const straightLine =document.getElementById('straightLine') ; // add a variable for staraight  line 
+const addText =document.getElementById('addText') ; // add a variable for text  
+
 const deleteButton = document.getElementById('delete');
 var currentSelection = null;
 
@@ -20,13 +22,21 @@ rectbutton.addEventListener('click',()=>{
     currentSelection = "RECT";
 });
 
+//get button click event for straight line
 straightLine.addEventListener('click',()=>{
   currentSelection = "STARIGHTLINE";
 });
+
+//get button click event for text
+straightLine.addEventListener('click',()=>{
+  currentSelection = "ADDTEXT";
+});
+
 deleteButton.addEventListener('click',()=>{
     // console.log(tr);
     // layer.draw();
 });
+
 var stage = new Konva.Stage({
   container: 'container',
   width: width,
@@ -47,17 +57,28 @@ var selectionRectangle = new Konva.Rect({
 layer.add(selectionRectangle);
 
 // add a new feature, lets add ability to draw selection straightLine
-
-
 var redLine = new Konva.Line({
-  points: [5, 70, 140, 23, 250, 60, 300, 20],
+  points: [],
   stroke: 'red',
   strokeWidth: 15,
   lineCap: 'round',
   lineJoin: 'round',
 });
-
 layer.add(redLine);
+
+// add a new feature, lets add ability to write  text
+
+var text = new Konva.Text({
+  x: stage.width() / 2,
+  y: 15,
+  text: 'Simple Text',
+  fontSize: 30,
+  fontFamily: 'Calibri',
+  fill: 'red',
+});
+
+layer.add(text);
+
 
 
 
@@ -106,6 +127,22 @@ stage.on('mousedown touchstart', (e) => {
     ALL_OBJECTS[id] = newLine;
     movingId  =  id;
     layer.add(newLine);
+    currentSelection =null;
+  }
+
+  if(currentSelection==="ADDTEXT"){
+    let id = new Date().valueOf();
+    var text = new Konva.Text({
+      x: stage.width() / 2,
+      y: 50,
+      text: 'Simple Textpp',
+      fontSize: 30,
+      fontFamily: 'Calibri',
+      fill: 'green',
+    });
+    ALL_OBJECTS[id] = text;
+    movingId  =  id;
+    layer.add(text);
     currentSelection =null;
   }
 
