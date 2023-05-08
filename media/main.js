@@ -12,11 +12,16 @@ const vscode = acquireVsCodeApi();
 var width = 640;
 var height = 400;
 const rectbutton = document.getElementById('rect');
+const straightLine =document.getElementById('straightLine') ; // add a variable for staraight  line 
 const deleteButton = document.getElementById('delete');
 var currentSelection = null;
 
 rectbutton.addEventListener('click',()=>{
     currentSelection = "RECT";
+});
+
+straightLine.addEventListener('click',()=>{
+  currentSelection = "STARIGHTLINE";
 });
 deleteButton.addEventListener('click',()=>{
     // console.log(tr);
@@ -31,33 +36,8 @@ var stage = new Konva.Stage({
 var layer = new Konva.Layer();
 stage.add(layer);
 
-// var rect1 = new Konva.Rect({
-//   x: 60,
-//   y: 60,
-//   width: 100,
-//   height: 90,
-//   fill: 'red',
-//   name: 'rect',
-//   draggable: true,
-// });
-// layer.add(rect1);
-
-// var rect2 = new Konva.Rect({
-//   x: 250,
-//   y: 100,
-//   width: 150,
-//   height: 90,
-//   fill: 'green',
-//   name: 'rect',
-//   draggable: true,
-// });
-// layer.add(rect2);
-
 var tr = new Konva.Transformer();
 layer.add(tr);
-
-// // by default select all shapes
-// tr.nodes([rect1, rect2]);
 
 // add a new feature, lets add ability to draw selection rectangle
 var selectionRectangle = new Konva.Rect({
@@ -66,9 +46,31 @@ var selectionRectangle = new Konva.Rect({
 });
 layer.add(selectionRectangle);
 
+// add a new feature, lets add ability to draw selection straightLine
+
+
+var redLine = new Konva.Line({
+  points: [5, 70, 140, 23, 250, 60, 300, 20],
+  stroke: 'red',
+  strokeWidth: 15,
+  lineCap: 'round',
+  lineJoin: 'round',
+});
+
+layer.add(redLine);
+
+
+
+
 var x1, y1, x2, y2;
 let ALL_OBJECTS = {};
 let movingId = null;
+
+
+
+
+
+
 stage.on('mousedown touchstart', (e) => {
   // do nothing if we mousedown on any shape
   if (e.target !== stage) {
@@ -90,8 +92,23 @@ stage.on('mousedown touchstart', (e) => {
     movingId  =  id;
     layer.add(newrect);
     currentSelection =null;
-
   }
+
+  if(currentSelection==="STARIGHTLINE"){
+    let id = new Date().valueOf();
+    var newLine = new Konva.Line({
+      points: [5, 70, 140, 23],
+      stroke: 'red',
+      strokeWidth: 1,
+      lineCap: 'round',
+      lineJoin: 'round',
+    });
+    ALL_OBJECTS[id] = newLine;
+    movingId  =  id;
+    layer.add(newLine);
+    currentSelection =null;
+  }
+
   x1 = stage.getPointerPosition().x;
   y1 = stage.getPointerPosition().y;
   x2 = stage.getPointerPosition().x;

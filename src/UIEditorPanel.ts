@@ -58,6 +58,8 @@ export class UIEditorPanel {
             <body>
               <div class="tools">
               <button id="rect">Rect</button>
+              <button id="straightLine">Straight Line</button>
+
               <button id="delete">delete</button>
               </div>
               <div class="main">
