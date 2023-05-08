@@ -6,19 +6,11 @@
     align-items: center;
     justify-content: center ;
     flex-direction: column;
+    background: black;
 }
-.tool-bar{
+.tools{
     margin-top: 2rem;
     display: flex;
     justify-content: space-between;
     /* align-items: center; */
-}
-.tool-bar div{
-    height: 60px;
-    width: 50%;
-}
-.canvas{
-    background-color: black;
-    width: 640px;
-    height: 400px;
 }
