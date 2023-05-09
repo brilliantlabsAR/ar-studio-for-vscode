@@ -18,24 +18,17 @@ const addText =document.getElementById('addText') ; // add a variable for text
 const deleteButton = document.getElementById('delete');
 var currentSelection = null;
 
+function deleteSelected(){
+  tr.nodes().forEach(node=>{
+    node.destroy();
+  });
+  tr.nodes([]);
+  layer.draw();
+}
 rectbutton.addEventListener('click',()=>{
     currentSelection = "RECT";
 });
-
-//get button click event for straight line
-straightLine.addEventListener('click',()=>{
-  currentSelection = "STARIGHTLINE";
-});
-
-//get button click event for text
-addText.addEventListener('click',()=>{
-  currentSelection = "ADDTEXT";
-});
-
-deleteButton.addEventListener('click',()=>{
-    // console.log(tr);
-    // layer.draw();
-});
+deleteButton.addEventListener('click',deleteSelected);
 
 var stage = new Konva.Stage({
   container: 'container',
@@ -248,4 +241,12 @@ console.log(e);
 
 stage.on('delete',function(){
 
+});
+window.addEventListener('keydown', function(event) {
+  const key = event.key; // const {key} = event; ES6+
+  if (key === "Backspace" || key === "Delete") {
+    if(tr.nodes().length>0){
+      deleteSelected();
+    }
+  }
 });
