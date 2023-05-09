@@ -71,10 +71,10 @@ layer.add(redLine);
 var text = new Konva.Text({
   x: stage.width() / 2,
   y: 15,
-  text: 'Simple Text',
+  text: '',
   fontSize: 30,
   fontFamily: 'Calibri',
-  fill: 'red',
+  fill: '',
 });
 
 layer.add(text);
