@@ -28,7 +28,7 @@ straightLine.addEventListener('click',()=>{
 });
 
 //get button click event for text
-straightLine.addEventListener('click',()=>{
+addText.addEventListener('click',()=>{
   currentSelection = "ADDTEXT";
 });
 
