@@ -15,13 +15,18 @@ const rectbutton = document.getElementById('rect');
 const deleteButton = document.getElementById('delete');
 var currentSelection = null;
 
+function deleteSelected(){
+  tr.nodes().forEach(node=>{
+    node.destroy();
+  });
+  tr.nodes([]);
+  layer.draw();
+}
 rectbutton.addEventListener('click',()=>{
     currentSelection = "RECT";
 });
-deleteButton.addEventListener('click',()=>{
-    // console.log(tr);
-    // layer.draw();
-});
+deleteButton.addEventListener('click',deleteSelected);
+
 var stage = new Konva.Stage({
   container: 'container',
   width: width,
@@ -194,4 +199,12 @@ console.log(e);
 
 stage.on('delete',function(){
 
+});
+window.addEventListener('keydown', function(event) {
+  const key = event.key; // const {key} = event; ES6+
+  if (key === "Backspace" || key === "Delete") {
+    if(tr.nodes().length>0){
+      deleteSelected();
+    }
+  }
 });
