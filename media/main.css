@@ -6,7 +6,7 @@
     align-items: center;
     justify-content: center ;
     flex-direction: column;
-    background: black;
+    /* background: black; */
 }
 .tools{
     margin-top: 2rem;
