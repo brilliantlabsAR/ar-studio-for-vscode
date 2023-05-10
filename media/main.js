@@ -32,10 +32,14 @@ addText.addEventListener('click',()=>{
   currentSelection = "ADDTEXT";
 });
 
-deleteButton.addEventListener('click',()=>{
-    // console.log(tr);
-    // layer.draw();
-});
+function deleteSelected(){
+  tr.nodes().forEach(node=>{
+    node.destroy();
+  });
+  tr.nodes([]);
+  layer.draw();
+}
+deleteButton.addEventListener('click',deleteSelected);
 
 var stage = new Konva.Stage({
   container: 'container',
@@ -57,27 +61,27 @@ var selectionRectangle = new Konva.Rect({
 layer.add(selectionRectangle);
 
 // add a new feature, lets add ability to draw selection straightLine
-var redLine = new Konva.Line({
-  points: [],
-  stroke: 'red',
-  strokeWidth: 15,
-  lineCap: 'round',
-  lineJoin: 'round',
-});
-layer.add(redLine);
+// var redLine = new Konva.Line({
+//   points: [],
+//   stroke: 'red',
+//   strokeWidth: 15,
+//   lineCap: 'round',
+//   lineJoin: 'round',
+// });
+// layer.add(redLine);
 
 // add a new feature, lets add ability to write  text
 
-var text = new Konva.Text({
-  x: stage.width() / 2,
-  y: 15,
-  text: 'Simple Text',
-  fontSize: 30,
-  fontFamily: 'Calibri',
-  fill: 'red',
-});
+// var text = new Konva.Text({
+//   x: stage.width() / 2,
+//   y: 15,
+//   text: 'Simple Text',
+//   fontSize: 30,
+//   fontFamily: 'Calibri',
+//   fill: 'red',
+// });
 
-layer.add(text);
+// layer.add(text);
 
 
 
@@ -118,12 +122,15 @@ stage.on('mousedown touchstart', (e) => {
   if(currentSelection==="STARIGHTLINE"){
     let id = new Date().valueOf();
     var newLine = new Konva.Line({
-      points: [5, 70, 140, 23],
+      points: [stage.getPointerPosition().x, stage.getPointerPosition().y,stage.getPointerPosition().x, stage.getPointerPosition().y],
       stroke: 'red',
       strokeWidth: 1,
       lineCap: 'round',
       lineJoin: 'round',
+      name: 'line',
+      draggable: true,
     });
+
     ALL_OBJECTS[id] = newLine;
     movingId  =  id;
     layer.add(newLine);
@@ -165,12 +172,20 @@ stage.on('mousemove touchmove', (e) => {
   x2 = stage.getPointerPosition().x;
   y2 = stage.getPointerPosition().y;
   if(movingId){
-    ALL_OBJECTS[movingId].setAttrs({
-      x: Math.min(x1, x2),
-      y: Math.min(y1, y2),
-      width: Math.abs(x2 - x1),
-      height: Math.abs(y2 - y1),
-    });
+    if(ALL_OBJECTS[movingId].getAttrs().name==='rect'){
+      ALL_OBJECTS[movingId].setAttrs({
+        x: Math.min(x1, x2),
+        y: Math.min(y1, y2),
+        width: Math.abs(x2 - x1),
+        height: Math.abs(y2 - y1),
+      });
+    }else if(ALL_OBJECTS[movingId].getAttrs().name==='line'){
+      const points = ALL_OBJECTS[movingId].points().slice();
+      points[2] = x2;
+      points[3] = y2;
+      ALL_OBJECTS[movingId].points(points);
+    }
+    
   }
   
 
@@ -198,12 +213,13 @@ stage.on('mouseup touchend', (e) => {
     movingId =null;
     return;
   }
-  var shapes = stage.find('.rect');
+  var shapes = stage.find('.rect,.line');
   var box = selectionRectangle.getClientRect();
   var selected = shapes.filter((shape) =>
     Konva.Util.haveIntersection(box, shape.getClientRect())
   );
   tr.nodes(selected);
+  
 });
 
 // clicks should select/deselect shapes
@@ -220,9 +236,9 @@ stage.on('click tap', function (e) {
   }
 console.log(e);
   // do nothing if clicked NOT on our rectangles
-  if (!e.target.hasName('rect')) {
-    return;
-  }
+  // if (!e.target.hasName('rect')) {
+  //   return;
+  // }
 
   // do we pressed shift or ctrl?
   const metaPressed = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
@@ -246,6 +262,15 @@ console.log(e);
   }
 });
 
-stage.on('delete',function(){
-
+window.addEventListener('keydown', function(event) {
+  const key = event.key; // const {key} = event; ES6+
+  if (key === "Backspace" || key === "Delete") {
+    if(tr.nodes().length>0){
+      deleteSelected();
+    }
+  }
 });
+
+// tr.on('transformend',()=>{
+//   vscode.postMessage({stage:stage.toJSON()});
+// });
