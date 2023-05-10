@@ -181,7 +181,7 @@ stage.on('mousemove touchmove', (e) => {
     height: Math.abs(y2 - y1),
   });
 });
-
+ 
 stage.on('mouseup touchend', (e) => {
   // do nothing if we didn't start selection
   if (!selectionRectangle.visible()) {
