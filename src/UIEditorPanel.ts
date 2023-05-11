@@ -69,7 +69,6 @@ export class UIEditorPanel {
               </div>
               <script type="text/javaScript" nonce="${nonce}" src="${webviewUri}"></script>
               <script type="text/javaScript" nonce="${nonce}" src="${mainJsUri}"></script>
-
             </body>
           </html>
         `;

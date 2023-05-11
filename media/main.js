@@ -198,18 +198,82 @@ stage.on('mousedown touchstart', (e) => {
 
   if(currentSelection==="ADDTEXT"){
     let id = new Date().valueOf();
-    var text = new Konva.Text({
-      x: stage.width() / 2,
-      y: 50,
-      text: 'Simple Textpp',
-      fontSize: 30,
-      fontFamily: 'Calibri',
-      fill: 'green',
+    var textNode = new Konva.Text({
+      text: 'Some text here',
+      x: 50,
+      y: 80,
+      fontSize: 20,
+      draggable: true,
+      width: 200,
+      fill: 'red',
     });
-    ALL_OBJECTS[id] = text;
+    ALL_OBJECTS[id] = textNode;
     movingId  =  id;
-    layer.add(text);
+    layer.add(textNode);
     currentSelection =null;
+
+
+    var tr = new Konva.Transformer({
+      node: textNode,
+      enabledAnchors: ['middle-left', 'middle-right'],
+      // set minimum width of text
+      boundBoxFunc: function (oldBox, newBox) {
+        newBox.width = Math.max(30, newBox.width);
+        return newBox;
+      },
+    });
+
+    textNode.on('transform', function () {
+      // reset scale, so only with is changing by transformer
+      textNode.setAttrs({
+        width: textNode.width() * textNode.scaleX(),
+        scaleX: 1,
+      });
+    });
+
+
+    textNode.on('dblclick dbltap', () => {
+      // create textarea over canvas with absolute position
+
+      // first we need to find position for textarea
+      // how to find it?
+
+      // at first lets find position of text node relative to the stage:
+      var textPosition = textNode.getAbsolutePosition();
+
+      // then lets find position of stage container on the page:
+      var stageBox = stage.container().getBoundingClientRect();
+
+      // so position of textarea will be the sum of positions above:
+      var areaPosition = {
+        x: stageBox.left + textPosition.x,
+        y: stageBox.top + textPosition.y,
+      };
+
+      // create textarea and style it
+      var textarea = document.createElement('textarea');
+      document.body.appendChild(textarea);
+
+      textarea.value = textNode.text();
+      textarea.style.position = 'absolute';
+      textarea.style.top = areaPosition.y + 'px';
+      textarea.style.left = areaPosition.x + 'px';
+      textarea.style.width = textNode.width();
+
+      textarea.focus();
+
+      textarea.addEventListener('keydown', function (e) {
+        // hide on enter
+        if (e.keyCode === 13) {
+          textNode.text(textarea.value);
+          document.body.removeChild(textarea);
+        }
+      });
+    });
+
+    layer.add(tr);
+    var textarea = document.createElement('textarea');
+    document.body.appendChild(textarea);
   }
 
   selectionRectangle.visible(true);
@@ -254,7 +318,7 @@ stage.on('mousemove touchmove', (e) => {
     height: Math.abs(y2 - y1),
   });
 });
-
+ 
 stage.on('mouseup touchend', (e) => {
   // do nothing if we didn't start selection
   if (!selectionRectangle.visible()) {
