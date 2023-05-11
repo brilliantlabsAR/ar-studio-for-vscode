@@ -11,26 +11,38 @@
 
 var width = 640;
 var height = 400;
-const rectbutton = document.getElementById('rect');
-const straightLine =document.getElementById('straightLine') ; // add a variable for staraight  line 
-const addText =document.getElementById('addText') ; // add a variable for text  
-
+const ANCHORS = ['top-left','top-right', 'bottom-left',  'bottom-right','top-center',  'bottom-center', 'middle-right', 'middle-left'];
+const shapeBtns =document.querySelectorAll('.shape-btn') ; // add a variable for staraight  line 
+const colorInput = document.getElementById('colorselection')
 const deleteButton = document.getElementById('delete');
 var currentSelection = null;
 
-rectbutton.addEventListener('click',()=>{
-    currentSelection = "RECT";
-});
+shapeBtns.forEach(btn=>{
+  btn.addEventListener('click',function(){
+    currentSelection = btn.value
+    btn.classList.add('active')
+  })
+})
 
-//get button click event for straight line
-straightLine.addEventListener('click',()=>{
-  currentSelection = "STARIGHTLINE";
-});
+colorInput.addEventListener('change',function(){
+  let color =  this.value
+  tr.nodes().forEach(node=>{
+    if(node.name()=='line-group'){
+      node.findOne('.line').stroke(color)
+    }else if(node.name()=='line'){
+      node.stroke(color)
+    }else{
+      node.fill(color)
 
-//get button click event for text
-addText.addEventListener('click',()=>{
-  currentSelection = "ADDTEXT";
-});
+    }
+  })
+  stage.find('.line').forEach(l=>{
+    if(l.getParent().find('.line-anchor')[0].visible()){
+        l.stroke(color);
+    }
+  })
+})
+
 
 function deleteSelected(){
   tr.nodes().forEach(node=>{
@@ -55,52 +67,33 @@ var stage = new Konva.Stage({
 var layer = new Konva.Layer();
 stage.add(layer);
 
-var tr = new Konva.Transformer();
+const tr = new Konva.Transformer({
+  anchorFill: 'blue',
+  anchorSize: 10,
+  borderDash: [3, 3],
+  anchorStrokeWidth : 0,
+  enabledAnchors: ANCHORS.splice(0,4),
+  keepRatio: false,
+  rotateAnchorOffset: 30,
+  rotateEnabled: false
+});
+tr.anchorCornerRadius(5);
 layer.add(tr);
 stage.getContainer().style.backgroundColor = 'rgb(0, 0, 0)';
 // add a new feature, lets add ability to draw selection rectangle
 var selectionRectangle = new Konva.Rect({
-  fill: 'rgba(255,255,255,0.5)',
+  // fill: 'rgba(255,255,255,0.5)',
+  stroke:'blue',
+  strokeWidth: 1,
+  dash: [3,3],
   visible: false,
 });
 layer.add(selectionRectangle);
 
-// add a new feature, lets add ability to draw selection straightLine
-// var redLine = new Konva.Line({
-//   points: [],
-//   stroke: 'red',
-//   strokeWidth: 15,
-//   lineCap: 'round',
-//   lineJoin: 'round',
-// });
-// layer.add(redLine);
-
-// add a new feature, lets add ability to write  text
-
-// var text = new Konva.Text({
-//   x: stage.width() / 2,
-//   y: 15,
-//   text: 'Simple Text',
-//   fontSize: 30,
-//   fontFamily: 'Calibri',
-//   fill: 'red',
-// });
-
-// layer.add(text);
-
-
-
-
 
 var x1, y1, x2, y2;
-let ALL_OBJECTS = {};
 let line_anchors = {};
 let movingId = null;
-
-
-
-
-
 
 stage.on('mousedown touchstart', (e) => {
   // do nothing if we mousedown on any shape
@@ -115,167 +108,30 @@ stage.on('mousedown touchstart', (e) => {
 
   selectionRectangle.width(0);
   selectionRectangle.height(0);
+  const id = new Date().valueOf();
+  document.querySelector('.shape-btn[value="'+currentSelection+'"')?.classList.remove('active')
   if(currentSelection==="RECT"){
-    let id = new Date().valueOf();
-    let newrect = new Konva.Rect({
-      x: stage.getPointerPosition().x,
-      y: stage.getPointerPosition().y,
-      width: 0,
-      height: 0,
-      fill: 'red',
-      name: 'rect',
-      draggable: true,
-    });
-    ALL_OBJECTS[id] = newrect;
-    movingId  =  id;
-    layer.add(newrect);
+    createRectangle(id)
+    
     currentSelection =null;
     // selectionRectangle.visible(true);
 
   }
 
   if(currentSelection==="STARIGHTLINE"){
-    const group = new Konva.Group({name: 'line-group', draggable: true, visible:true,opacity:1})
-    const id = new Date().valueOf();
-    const newLine = new Konva.Line({
-      points: [stage.getPointerPosition().x, stage.getPointerPosition().y,stage.getPointerPosition().x, stage.getPointerPosition().y],
-      stroke: 'red',
-      strokeWidth: 1,
-      lineCap: 'round',
-      lineJoin: 'round',
-      name: 'line',
-    //   draggable: true,
-    });
     
-    // layer.add(newLine);
-    const anchor1 = new Konva.Circle({
-        x: newLine.points()[0],
-        y: newLine.points()[1],
-        radius: 5,
-        fill: 'blue',
-        draggable: true,
-        name:'line-anchor'
-      })
-    //   layer.add(anchor1);
-      
-      const anchor2 = anchor1.clone({x: newLine.points()[2], y: newLine.points()[3],})
-    //   layer.add(anchor2);
-     group.add(newLine, anchor1, anchor2)
-     layer.add(group)
-      
-      function updateLine() {
-        const points = [
-          anchor1.x(),
-          anchor1.y(),
-          anchor2.x(),
-          anchor2.y(),
-        ]
-        newLine.points(points);
-        // layer.batchDraw();
-      }
-      
-      anchor1.on('dragmove', updateLine);
-      anchor2.on('dragmove', updateLine);
-      newLine.on("dragmove",function(e){
-        let points = newLine.points().slice()
-        // let new_points = points.map(p=>)
-        anchor1.setAttrs({x:points[0],y:points[1]})
-        anchor2.setAttrs({x:points[2],y:points[3]})
-        layer.batchDraw();
-
-      })
-      ALL_OBJECTS[id] = group;
-      movingId  =  id;
-      line_anchors[movingId] = [anchor1,anchor2]
-    //   layer.draw();
-    group.on('dblclick',()=>{
-        tr.nodes([group])
-    })
+    createStraightLine(id)
     currentSelection =null;
     // selectionRectangle.visible(true);
 
   }
 
   if(currentSelection==="ADDTEXT"){
-    let id = new Date().valueOf();
-    var textNode = new Konva.Text({
-      text: 'Some text here',
-      x: 50,
-      y: 80,
-      fontSize: 20,
-      draggable: true,
-      width: 200,
-      fill: 'red',
-    });
-    ALL_OBJECTS[id] = textNode;
-    movingId  =  id;
-    layer.add(textNode);
+    createText(id)
     currentSelection =null;
 
-
-    var tr = new Konva.Transformer({
-      node: textNode,
-      enabledAnchors: ['middle-left', 'middle-right'],
-      // set minimum width of text
-      boundBoxFunc: function (oldBox, newBox) {
-        newBox.width = Math.max(30, newBox.width);
-        return newBox;
-      },
-    });
-
-    textNode.on('transform', function () {
-      // reset scale, so only with is changing by transformer
-      textNode.setAttrs({
-        width: textNode.width() * textNode.scaleX(),
-        scaleX: 1,
-      });
-    });
-
-
-    textNode.on('dblclick dbltap', () => {
-      // create textarea over canvas with absolute position
-
-      // first we need to find position for textarea
-      // how to find it?
-
-      // at first lets find position of text node relative to the stage:
-      var textPosition = textNode.getAbsolutePosition();
-
-      // then lets find position of stage container on the page:
-      var stageBox = stage.container().getBoundingClientRect();
-
-      // so position of textarea will be the sum of positions above:
-      var areaPosition = {
-        x: stageBox.left + textPosition.x,
-        y: stageBox.top + textPosition.y,
-      };
-
-      // create textarea and style it
-      var textarea = document.createElement('textarea');
-      document.body.appendChild(textarea);
-
-      textarea.value = textNode.text();
-      textarea.style.position = 'absolute';
-      textarea.style.top = areaPosition.y + 'px';
-      textarea.style.left = areaPosition.x + 'px';
-      textarea.style.width = textNode.width();
-
-      textarea.focus();
-
-      textarea.addEventListener('keydown', function (e) {
-        // hide on enter
-        if (e.keyCode === 13) {
-          textNode.text(textarea.value);
-          document.body.removeChild(textarea);
-        }
-      });
-    });
-
-    layer.add(tr);
-    var textarea = document.createElement('textarea');
-    document.body.appendChild(textarea);
   }
-
+  tr.moveToTop()
   selectionRectangle.visible(true);
 
 });
@@ -289,15 +145,16 @@ stage.on('mousemove touchmove', (e) => {
   x2 = stage.getPointerPosition().x;
   y2 = stage.getPointerPosition().y;
   if(movingId){
-    if(ALL_OBJECTS[movingId].getAttrs().name==='rect'){
-      ALL_OBJECTS[movingId].setAttrs({
+    const shp = stage.findOne('#m'+movingId);
+    if(['rect','text'].includes(shp.name())){
+      shp.setAttrs({
         x: Math.min(x1, x2),
         y: Math.min(y1, y2),
         width: Math.abs(x2 - x1),
         height: Math.abs(y2 - y1),
       });
-    }else if(ALL_OBJECTS[movingId].getAttrs().name==='line-group'){
-      const line = ALL_OBJECTS[movingId].find('.line')[0]
+    }else if(shp.name()==='line-group'){
+      const line = shp.findOne('.line')
       const points = line.points().slice();
       points[2] = x2;
       points[3] = y2;
@@ -305,7 +162,7 @@ stage.on('mousemove touchmove', (e) => {
       line_anchors[movingId][1].setAttrs({
         x:x2,
         y:y2
-      })
+      });
     }
     
   }
@@ -330,8 +187,9 @@ stage.on('mouseup touchend', (e) => {
   selectionRectangle.visible(false);
   });
   if(movingId){
-    if(ALL_OBJECTS[movingId].name()!='line-group'){
-        tr.nodes([ALL_OBJECTS[movingId]]);
+    const shp = stage.findOne('#m'+movingId);
+    if(shp.name()!=='line-group'){
+        tr.nodes([shp]);
     }
     // vscode.postMessage(ALL_OBJECTS[movingId].getAttrs());
     movingId =null;
@@ -339,18 +197,17 @@ stage.on('mouseup touchend', (e) => {
     
     return;
   }
-  var shapes = stage.find('.rect,.line');
-  var box = selectionRectangle.getClientRect();
-  var selected = shapes.filter((shape) =>
+  let shapes = stage.find('.rect,.line,.text');
+  let box = selectionRectangle.getClientRect();
+  let selected = shapes.filter((shape) =>
     Konva.Util.haveIntersection(box, shape.getClientRect())
   );
-  if(selected.length==1 && selected[0].name()=='line'){
+  if(selected.length===1 && selected[0].name()==='line'){
     selected[0].getParent().find('.line-anchor').forEach(la=>{
-        la.visible(true)
-    })
+        la.visible(true);
+    });
   }else{
     tr.nodes(selected);
-    
   }
   
 });
@@ -370,10 +227,19 @@ stage.on('click tap', function (e) {
       });
     return;
   }
-console.log(e);
+// console.log(e);
   // do nothing if clicked NOT on our rectangles
   if (['line','line-group','line-anchor'].includes(e.target.name())) {
-    console.log(e)
+    // console.log(e)
+    if(e.target.name()==='line-group'){
+      e.target.find('.line-anchor').forEach(la=>{
+        la.visible(true);
+      });
+    }else{
+      e.target.getParent().find('.line-anchor').forEach(la=>{
+        la.visible(true);
+      });
+    }
     return;
   }
 
@@ -408,6 +274,267 @@ window.addEventListener('keydown', function(event) {
   }
 });
 
-// tr.on('transformend',()=>{
-//   vscode.postMessage({stage:stage.toJSON()});
-// });
+function createStraightLine(id){
+  let color = colorInput.value
+  const group = new Konva.Group({name: 'line-group', draggable: true, visible:true,opacity:1,id: "m"+id})
+    const newLine = new Konva.Line({
+      points: [stage.getPointerPosition().x, stage.getPointerPosition().y,stage.getPointerPosition().x, stage.getPointerPosition().y],
+      stroke: color,
+      strokeWidth: 2,
+      // lineCap: 'round',
+      // lineJoin: 'round',
+      name: 'line',
+      
+    //   draggable: true,
+    });
+    
+    // layer.add(newLine);
+    const anchor1 = new Konva.Circle({
+        x: newLine.points()[0],
+        y: newLine.points()[1],
+        radius: 5,
+        fill: 'blue',
+        draggable: true,
+        name:'line-anchor'
+      });
+    //   layer.add(anchor1);
+      
+      const anchor2 = anchor1.clone({x: newLine.points()[2], y: newLine.points()[3],});
+    //   layer.add(anchor2);
+     group.add(newLine, anchor1, anchor2);
+     layer.add(group);
+      
+      function updateLine() {
+        const points = [
+          anchor1.x(),
+          anchor1.y(),
+          anchor2.x(),
+          anchor2.y(),
+        ];
+        newLine.points(points);
+        // layer.batchDraw();
+      }
+      
+      anchor1.on('dragmove', updateLine);
+      anchor2.on('dragmove', updateLine);
+      newLine.on("dragmove",function(e){
+        let points =  newLine.points().slice();
+         // reset scale, so only with is changing by transformer
+         let p1 = newLine.getAbsoluteTransform().point({ x: points[0], y: points[1]});
+         let p2 = newLine.getAbsoluteTransform().point({ x: points[2], y: points[3]});
+
+          anchor1.setAttrs(p1);
+          anchor2.setAttrs(p2);
+      // layer.draw();
+
+
+      });
+      newLine.on("dragend",function(e){
+        let points =  newLine.points().slice();
+         // reset scale, so only with is changing by transformer
+         let p1 = newLine.getAbsoluteTransform().point({ x: points[0], y: points[1]});
+         let p2 = newLine.getAbsoluteTransform().point({ x: points[2], y: points[3]});
+
+          anchor1.setAttrs(p1);
+          anchor2.setAttrs(p2);
+          newLine.setAttrs({x:0,y:0})
+          newLine.points([p1.x, p1.y, p2.x, p2.y])
+          // layer.draw();
+
+      });
+      movingId  =  id;
+      line_anchors[movingId] = [anchor1,anchor2];
+      layer.draw();
+    // group.on('dblclick',()=>{
+    //     tr.nodes([group]);
+    // });
+    newLine.on('transform', function () {
+      let points =  newLine.points().slice();
+      //   // reset scale, so only with is changing by transformer
+       let p1 = newLine.getAbsoluteTransform().point({ x: points[0], y: points[1]});
+       let p2 = newLine.getAbsoluteTransform().point({ x: points[2], y: points[3]});
+        anchor1.setAttrs(p1);
+        anchor2.setAttrs(p2);
+        newLine.setAttrs({x:0,y:0})
+        newLine.points([p1.x, p1.y, p2.x, p2.y])
+        newLine.scaleX(1);
+        newLine.scaleY(1);
+
+      });
+      newLine.on('transformend', function () {
+        let points =  newLine.points().slice();
+        //   // reset scale, so only with is changing by transformer
+         let p1 = newLine.getAbsoluteTransform().point({ x: points[0], y: points[1]});
+         let p2 = newLine.getAbsoluteTransform().point({ x: points[2], y: points[3]});
+          anchor1.setAttrs(p1);
+          anchor2.setAttrs(p2);
+          newLine.setAttrs({x:0,y:0})
+          newLine.points([p1.x, p1.y, p2.x, p2.y])
+          newLine.scaleX(1);
+          newLine.scaleY(1);
+
+        });
+}
+function createRectangle(id){
+  let color = colorInput.value
+
+  let newrect = new Konva.Rect({
+    x: stage.getPointerPosition().x,
+    y: stage.getPointerPosition().y,
+    width: 0,
+    height: 0,
+    fill: color,
+    name: 'rect',
+    id: "m"+id,
+    draggable: true,
+  });
+  movingId  =  id;
+  layer.add(newrect);
+}
+function createText(id){
+  let color = colorInput.value
+
+  var textNode = new Konva.Text({
+    text: 'welcome',
+    x: x2,
+    y: y2,
+    fontSize: 20,
+    draggable: true,
+    width: 200,
+    fill: color,
+    name: "text",
+    id: "m"+id
+  });
+  movingId  =  id;
+  layer.add(textNode);
+
+
+
+  textNode.on('transform', function () {
+  //   // reset scale, so only with is changing by transformer
+    textNode.setAttrs({
+      width: textNode.width() * textNode.scaleX(),
+      height: textNode.height() * textNode.scaleY(),
+      scaleX: 1,
+      scaleY: 1,
+    });
+  });
+
+
+  textNode.on('dblclick dbltap', () => {
+    let textPosition = textNode.getAbsolutePosition();
+    let stageBox = stage.container().getBoundingClientRect();
+    let areaPosition = {
+      x: stageBox.left + textPosition.x,
+      y: stageBox.top + textPosition.y,
+    };
+
+    let textarea = document.createElement('textarea');
+    document.body.appendChild(textarea);
+    textarea.value = textNode.text();
+    textarea.style.position = 'absolute';
+    textarea.style.top = areaPosition.y - 1.5 + 'px';
+    textarea.style.left = areaPosition.x + 'px';
+    textarea.style.width = textNode.width() - textNode.padding() * 2 + 'px';
+    textarea.style.height = textNode.height() - textNode.padding() * 2 + 5 + 'px';
+    textarea.style.fontSize = textNode.fontSize() + 'px';
+    textarea.style.border = 'none';
+    textarea.style.padding = '0px';
+    textarea.style.margin = '0px';
+    textarea.style.overflow = 'hidden';
+    textarea.style.background = 'none';
+    textarea.style.outline = 'none';
+    textarea.style.resize = 'none';
+    textarea.style.lineHeight = textNode.lineHeight();
+    textarea.style.fontFamily = textNode.fontFamily();
+    textarea.style.transformOrigin = 'left top';
+    textarea.style.textAlign = textNode.align();
+    textarea.style.color = textNode.fill();
+    rotation = textNode.rotation();
+    let transform = '';
+    if (rotation) {
+      transform += 'rotateZ(' + rotation + 'deg)';
+    }
+
+    let px = 0;
+    // also we need to slightly move textarea on firefox
+    // because it jumps a bit
+    let isFirefox =
+      navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    if (isFirefox) {
+      px += 2 + Math.round(textNode.fontSize() / 20);
+    }
+    transform += 'translateY(-' + px + 'px)';
+
+    textarea.style.transform = transform;
+
+    // reset height
+    textarea.style.height = 'auto';
+    // after browsers resized it we can set actual value
+    textarea.style.height = textarea.scrollHeight + 3 + 'px';
+
+    textarea.focus();
+    textNode.hide()
+    function removeTextarea() {
+      textarea.parentNode.removeChild(textarea);
+      window.removeEventListener('click', handleOutsideClick);
+      textNode.show();
+      tr.show();
+      tr.forceUpdate();
+    }
+
+    function setTextareaWidth(newWidth) {
+      if (!newWidth) {
+        // set width for placeholder
+        newWidth = textNode.placeholder.length * textNode.fontSize();
+      }
+      // some extra fixes on different browsers
+      let isSafari = /^((?!chrome|android).)*safari/i.test(
+        navigator.userAgent
+      );
+      let isFirefox =
+        navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+      if (isSafari || isFirefox) {
+        newWidth = Math.ceil(newWidth);
+      }
+
+      let isEdge =
+        document.documentMode || /Edge/.test(navigator.userAgent);
+      if (isEdge) {
+        newWidth += 1;
+      }
+      textarea.style.width = newWidth + 'px';
+    }
+
+    textarea.addEventListener('keydown', function (e) {
+      // hide on enter
+      // but don't hide on shift + enter
+      if (e.keyCode === 13 && !e.shiftKey) {
+        textNode.text(textarea.value);
+        removeTextarea();
+      }
+      // on esc do not set value back to node
+      if (e.keyCode === 27) {
+        removeTextarea();
+      }
+    });
+
+    textarea.addEventListener('keydown', function (e) {
+      scale = textNode.getAbsoluteScale().x;
+      setTextareaWidth(textNode.width() * scale);
+      textarea.style.height = 'auto';
+      textarea.style.height =
+        textarea.scrollHeight + textNode.fontSize() + 'px';
+    });
+
+    function handleOutsideClick(e) {
+      if (e.target !== textarea) {
+        textNode.text(textarea.value);
+        removeTextarea();
+      }
+    }
+    setTimeout(() => {
+      window.addEventListener('click', handleOutsideClick);
+    });
+  });
+}

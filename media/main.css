@@ -11,6 +11,16 @@
 .tools{
     margin-top: 2rem;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     /* align-items: center; */
+}
+.tools button, .tools input{
+    padding: 2px;
+    height: 30px;
+    width: 40px;
+    margin-right: 5px;
+    font-size: 18px;
+}
+.shape-btn.active{
+    background-color: rgb(146, 143, 143);
 }
