@@ -1,5 +1,5 @@
 // let h1 = document.querySelector("h1");
-const vscode = acquireVsCodeApi();
+// const vscode = acquireVsCodeApi();
 // h1.addEventListener('click',handleClick);
 // function handleClick() {
 //     h1.innerHTML = "Updated";
@@ -37,6 +37,11 @@ function deleteSelected(){
     node.destroy();
   });
   tr.nodes([]);
+  stage.find('.line').forEach(l=>{
+    if(l.getParent().find('.line-anchor')[0].visible()){
+        l.getParent().destroy();
+    }
+  })
   layer.draw();
 }
 deleteButton.addEventListener('click',deleteSelected);
@@ -52,7 +57,7 @@ stage.add(layer);
 
 var tr = new Konva.Transformer();
 layer.add(tr);
-
+stage.getContainer().style.backgroundColor = 'rgb(0, 0, 0)';
 // add a new feature, lets add ability to draw selection rectangle
 var selectionRectangle = new Konva.Rect({
   fill: 'rgba(255,255,255,0.5)',
@@ -89,6 +94,7 @@ layer.add(selectionRectangle);
 
 var x1, y1, x2, y2;
 let ALL_OBJECTS = {};
+let line_anchors = {};
 let movingId = null;
 
 
@@ -102,6 +108,13 @@ stage.on('mousedown touchstart', (e) => {
     return;
   }
   e.evt.preventDefault();
+  x1 = stage.getPointerPosition().x;
+  y1 = stage.getPointerPosition().y;
+  x2 = stage.getPointerPosition().x;
+  y2 = stage.getPointerPosition().y;
+
+  selectionRectangle.width(0);
+  selectionRectangle.height(0);
   if(currentSelection==="RECT"){
     let id = new Date().valueOf();
     let newrect = new Konva.Rect({
@@ -117,24 +130,70 @@ stage.on('mousedown touchstart', (e) => {
     movingId  =  id;
     layer.add(newrect);
     currentSelection =null;
+    // selectionRectangle.visible(true);
+
   }
 
   if(currentSelection==="STARIGHTLINE"){
-    let id = new Date().valueOf();
-    var newLine = new Konva.Line({
+    const group = new Konva.Group({name: 'line-group', draggable: true, visible:true,opacity:1})
+    const id = new Date().valueOf();
+    const newLine = new Konva.Line({
       points: [stage.getPointerPosition().x, stage.getPointerPosition().y,stage.getPointerPosition().x, stage.getPointerPosition().y],
       stroke: 'red',
       strokeWidth: 1,
       lineCap: 'round',
       lineJoin: 'round',
       name: 'line',
-      draggable: true,
+    //   draggable: true,
     });
+    
+    // layer.add(newLine);
+    const anchor1 = new Konva.Circle({
+        x: newLine.points()[0],
+        y: newLine.points()[1],
+        radius: 5,
+        fill: 'blue',
+        draggable: true,
+        name:'line-anchor'
+      })
+    //   layer.add(anchor1);
+      
+      const anchor2 = anchor1.clone({x: newLine.points()[2], y: newLine.points()[3],})
+    //   layer.add(anchor2);
+     group.add(newLine, anchor1, anchor2)
+     layer.add(group)
+      
+      function updateLine() {
+        const points = [
+          anchor1.x(),
+          anchor1.y(),
+          anchor2.x(),
+          anchor2.y(),
+        ]
+        newLine.points(points);
+        // layer.batchDraw();
+      }
+      
+      anchor1.on('dragmove', updateLine);
+      anchor2.on('dragmove', updateLine);
+      newLine.on("dragmove",function(e){
+        let points = newLine.points().slice()
+        // let new_points = points.map(p=>)
+        anchor1.setAttrs({x:points[0],y:points[1]})
+        anchor2.setAttrs({x:points[2],y:points[3]})
+        layer.batchDraw();
 
-    ALL_OBJECTS[id] = newLine;
-    movingId  =  id;
-    layer.add(newLine);
+      })
+      ALL_OBJECTS[id] = group;
+      movingId  =  id;
+      line_anchors[movingId] = [anchor1,anchor2]
+    //   layer.draw();
+    group.on('dblclick',()=>{
+        tr.nodes([group])
+    })
     currentSelection =null;
+    // selectionRectangle.visible(true);
+
   }
 
   if(currentSelection==="ADDTEXT"){
@@ -217,14 +276,8 @@ stage.on('mousedown touchstart', (e) => {
     document.body.appendChild(textarea);
   }
 
-  x1 = stage.getPointerPosition().x;
-  y1 = stage.getPointerPosition().y;
-  x2 = stage.getPointerPosition().x;
-  y2 = stage.getPointerPosition().y;
-
   selectionRectangle.visible(true);
-  selectionRectangle.width(0);
-  selectionRectangle.height(0);
+
 });
 
 stage.on('mousemove touchmove', (e) => {
@@ -243,11 +296,16 @@ stage.on('mousemove touchmove', (e) => {
         width: Math.abs(x2 - x1),
         height: Math.abs(y2 - y1),
       });
-    }else if(ALL_OBJECTS[movingId].getAttrs().name==='line'){
-      const points = ALL_OBJECTS[movingId].points().slice();
+    }else if(ALL_OBJECTS[movingId].getAttrs().name==='line-group'){
+      const line = ALL_OBJECTS[movingId].find('.line')[0]
+      const points = line.points().slice();
       points[2] = x2;
       points[3] = y2;
-      ALL_OBJECTS[movingId].points(points);
+      line.points(points);
+      line_anchors[movingId][1].setAttrs({
+        x:x2,
+        y:y2
+      })
     }
     
   }
@@ -269,12 +327,16 @@ stage.on('mouseup touchend', (e) => {
   e.evt.preventDefault();
   // update visibility in timeout, so we can check it in click event
   setTimeout(() => {
-    selectionRectangle.visible(false);
+  selectionRectangle.visible(false);
   });
   if(movingId){
-    tr.nodes([ALL_OBJECTS[movingId]]);
-    vscode.postMessage(ALL_OBJECTS[movingId].getAttrs());
+    if(ALL_OBJECTS[movingId].name()!='line-group'){
+        tr.nodes([ALL_OBJECTS[movingId]]);
+    }
+    // vscode.postMessage(ALL_OBJECTS[movingId].getAttrs());
     movingId =null;
+    // selectionRectangle.visible(false);
+    
     return;
   }
   var shapes = stage.find('.rect,.line');
@@ -282,7 +344,14 @@ stage.on('mouseup touchend', (e) => {
   var selected = shapes.filter((shape) =>
     Konva.Util.haveIntersection(box, shape.getClientRect())
   );
-  tr.nodes(selected);
+  if(selected.length==1 && selected[0].name()=='line'){
+    selected[0].getParent().find('.line-anchor').forEach(la=>{
+        la.visible(true)
+    })
+  }else{
+    tr.nodes(selected);
+    
+  }
   
 });
 
@@ -296,13 +365,17 @@ stage.on('click tap', function (e) {
   // if click on empty area - remove all selections
   if (e.target === stage) {
     tr.nodes([]);
+    stage.find('.line-anchor').forEach(la=>{
+        la.visible(false);
+      });
     return;
   }
 console.log(e);
   // do nothing if clicked NOT on our rectangles
-  // if (!e.target.hasName('rect')) {
-  //   return;
-  // }
+  if (['line','line-group','line-anchor'].includes(e.target.name())) {
+    console.log(e)
+    return;
+  }
 
   // do we pressed shift or ctrl?
   const metaPressed = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
