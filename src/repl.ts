@@ -14,7 +14,7 @@ let fileWriteStart = false;
 let internalOperation = false;
 const decoder = new util.TextDecoder('utf-8');
 const RESET_CMD = '\x03\x04';
-const FILE_WRITE_MAX = 128;
+const FILE_WRITE_MAX = 1000000;
 let DIR_MAKE_CMD = `import os
 def md(p):
     c=""
@@ -35,10 +35,9 @@ export async function replRawMode(enable:boolean) {
     }
 
      outputChannel.appendLine("Leaving raw REPL mode");
-    await replSend('\x02');
+    await replSend('\x03\x02');
     replRawModeEnabled = false;
     
-
 }
 
 export async function replSend(string:string) {
@@ -377,8 +376,10 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
     let segments = dPath.split('/');
     if(segments.length>1){
         let newDirTocreate = segments.slice(0,segments.length-1).join("/");
-            let dirCreate = DIR_MAKE_CMD+`md('${newDirTocreate}}');del(os,md)`;
-            await replSend(dirCreate);
+            if(newDirTocreate!==devicePath){
+                let dirCreate = DIR_MAKE_CMD+`md('${newDirTocreate}');del(os,md)`;
+                    await replSend(dirCreate);
+            }
     }
     let fileData = await vscode.workspace.fs.readFile(uri);
 
