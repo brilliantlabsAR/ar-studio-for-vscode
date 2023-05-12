@@ -58,6 +58,7 @@ window.addEventListener('keydown', function(event) {
   }
   if (key === "Backspace" || key === "Delete") {
     // if(tr.nodes().length>0){
+      
       deleteSelected();
     // }
   }
