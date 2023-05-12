@@ -4,26 +4,30 @@ export class UIEditorPanel {
     public static currentPanel: UIEditorPanel | undefined;
     private readonly _panel: vscode.WebviewPanel;
     private _disposables: vscode.Disposable[] = [];
-  
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+    private screenName:string;
+    private screenPath:vscode.Uri;
+    
+    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri,screenName:string,screenPath:vscode.Uri) {
       this._panel = panel;
+      this.screenName= screenName;
+      this.screenPath= screenPath;
       this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
       this._panel.webview.html = this._getWebviewContent(this._panel.webview, extensionUri);
       this._setWebviewMessageListener(this._panel.webview);
     }
 
-    public static render(extensionUri: vscode.Uri) {
+    public static render(extensionUri: vscode.Uri,screenName:string,screenPath:vscode.Uri) {
         if (UIEditorPanel.currentPanel) {
             UIEditorPanel.currentPanel._panel.reveal(vscode.ViewColumn.One);
         } else {
-          const panel = vscode.window.createWebviewPanel("helloworld", "Hello World", vscode.ViewColumn.Two, {
+          const panel = vscode.window.createWebviewPanel(screenName, screenName, vscode.ViewColumn.Two, {
             // Enable javascript in the webview
             enableScripts: true,
             // Restrict the webview to only load resources from the `out` directory
             localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')]
           });
     
-          UIEditorPanel.currentPanel = new UIEditorPanel(panel,extensionUri);
+          UIEditorPanel.currentPanel = new UIEditorPanel(panel,extensionUri,screenName,screenPath);
         }
       }
       public dispose() {
@@ -57,12 +61,11 @@ export class UIEditorPanel {
           
             <body>
               <div class="tools">
-              <button id="rect">Rect</button>
-              <button id="straightLine">Straight Line</button>
-              <button id="addText">Add Text</button>
-
-
-              <button id="delete">delete</button>
+              <button id="rect" class="shape-btn" value="RECT">&#9645;</button>
+              <button id="straightLine" class="shape-btn" value="STARIGHTLINE">&#9586;</button>
+              <button id="addText" class="shape-btn" value="ADDTEXT" style="margin-right:2rem;">T</button>
+              <input type="color" value="#afafaf" name="colorselection" id="colorselection">
+              <button id="delete">&#10761;</button>
               </div>
               <div class="main">
                 <div id="container"></div>

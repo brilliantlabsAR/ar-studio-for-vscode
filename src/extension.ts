@@ -470,8 +470,18 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 
 		// for UI webview
-		vscode.commands.registerCommand("brilliant-ar-studio.openUIEditor", () => {
-			UIEditorPanel.render(context.extensionUri);
+		vscode.commands.registerCommand("brilliant-ar-studio.openUIEditor", async () => {
+			if(vscode.workspace.workspaceFolders){
+				let screenName = await vscode.window.showInputBox({prompt:"Enter Screen name"});
+				if(screenName){
+					screenName = screenName.replaceAll(" ","_").replaceAll("/","").replaceAll("\\","").replaceAll("-","_");
+					let screenPath = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,monocleFolder,screenName+"_screen.py");
+					await vscode.workspace.fs.writeFile(screenPath,Buffer.from('# GENERATED BRILLIANT AR STUDIO Do not modify this file directly\n\nimport display\n\nclass '+screenName+':\n\tpass'));
+					UIEditorPanel.render(context.extensionUri,screenName,screenPath);
+					await vscode.commands.executeCommand('vscode.open',screenPath);
+				}
+			}
+			
 		})
 	);
 	context.subscriptions.push(alldisposables);
