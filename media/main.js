@@ -193,7 +193,6 @@ stage.on('mousedown touchstart', (e) => {
     })
     currentSelection =null;
     // selectionRectangle.visible(true);
-
   }
 
   if(currentSelection==="ADDTEXT"){
