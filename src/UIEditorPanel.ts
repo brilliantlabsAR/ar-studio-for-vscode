@@ -59,7 +59,7 @@ export class UIEditorPanel {
               <div class="tools">
               <button id="rect" class="shape-btn" value="RECT">&#9645;</button>
               <button id="straightLine" class="shape-btn" value="STARIGHTLINE">&#9586;</button>
-              <button id="addText" class="shape-btn" value="ADDTEXT">A</button>
+              <button id="addText" class="shape-btn" value="ADDTEXT" style="margin-right:2rem;">T</button>
               <input type="color" value="#afafaf" name="colorselection" id="colorselection">
               <button id="delete">&#10761;</button>
               </div>

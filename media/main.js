@@ -15,8 +15,53 @@ const ANCHORS = ['top-left','top-right', 'bottom-left',  'bottom-right','top-cen
 const shapeBtns =document.querySelectorAll('.shape-btn') ; // add a variable for staraight  line 
 const colorInput = document.getElementById('colorselection')
 const deleteButton = document.getElementById('delete');
+const ArrowKeys = ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"]
 var currentSelection = null;
+const DELTA = 4;
 
+window.addEventListener('keydown', function(event) {
+  const key = event.key; // const {key} = event; ES6+
+  if(event.ctrlKey && (key =='a'|| key=='A')){
+    let shapes = stage.find('.rect,.line,.text');
+    if(shapes.length===1 && shapes[0].name()==='line'){
+      shapes[0].getParent().find('.line-anchor').forEach(la=>{
+          la.visible(true);
+      });
+    }else{
+      tr.nodes(shapes);
+    }
+    return;
+  }
+  let offset = DELTA;
+  if(event.ctrlKey && ArrowKeys.includes(key)){
+    offset = 1;
+  }
+  if(key==="ArrowLeft"){
+    tr.nodes().forEach(node=>{
+      node.x(node.x() - offset);
+    });
+  }
+  if(key==="ArrowRight"){
+    tr.nodes().forEach(node=>{
+      node.x(node.x() + offset);
+    });
+  }
+  if(key=="ArrowUp"){
+    tr.nodes().forEach(node=>{
+      node.y(node.y() - offset);
+    });
+  }
+  if(key=="ArrowDown"){
+    tr.nodes().forEach(node=>{
+      node.y(node.y() + offset);
+    });
+  }
+  if (key === "Backspace" || key === "Delete") {
+    // if(tr.nodes().length>0){
+      deleteSelected();
+    // }
+  }
+});
 shapeBtns.forEach(btn=>{
   btn.addEventListener('click',function(){
     currentSelection = btn.value
@@ -265,14 +310,6 @@ stage.on('click tap', function (e) {
   }
 });
 
-window.addEventListener('keydown', function(event) {
-  const key = event.key; // const {key} = event; ES6+
-  if (key === "Backspace" || key === "Delete") {
-    if(tr.nodes().length>0){
-      deleteSelected();
-    }
-  }
-});
 
 function createStraightLine(id){
   let color = colorInput.value
@@ -399,6 +436,7 @@ function createText(id){
     x: x2,
     y: y2,
     fontSize: 20,
+    fontFamily: 'JetBrains Mono',
     draggable: true,
     width: 200,
     fill: color,
