@@ -1,5 +1,5 @@
 // let h1 = document.querySelector("h1");
-// const vscode = acquireVsCodeApi();
+const vscode = acquireVsCodeApi();
 // h1.addEventListener('click',handleClick);
 // function handleClick() {
 //     h1.innerHTML = "Updated";
@@ -58,7 +58,7 @@ window.addEventListener('keydown', function(event) {
   }
   if (key === "Backspace" || key === "Delete") {
     // if(tr.nodes().length>0){
-      
+
       deleteSelected();
     // }
   }

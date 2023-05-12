@@ -36,6 +36,11 @@
           "icon": "media/Monocle_Icon.svg"
         },
         {
+          "id": "screens",
+          "name": "screens",
+          "icon": "media/Monocle_Icon.svg"
+        },
+        {
           "id": "fpga",
           "name": "FPGA",
           "icon": "media/Monocle_Icon.svg"
@@ -174,8 +179,8 @@
       },
       {
         "command": "brilliant-ar-studio.openUIEditor",
-        "title": "Brilliant AR Studio: Open GUI editor",
-        "icon": "$(file)"
+        "title": "Brilliant AR Studio: Open New GUI Screen",
+        "icon": "$(plus)"
       }
     ],
     "menus": {
@@ -196,8 +201,8 @@
           "group": "navigation@3"
         },
         {
-          "command": "brilliant-ar-studio.getPublicApps",
-          "when": "view == projects",
+          "command": "brilliant-ar-studio.openUIEditor",
+          "when": "view == screens",
           "group": "navigation@0"
         }
       ],
