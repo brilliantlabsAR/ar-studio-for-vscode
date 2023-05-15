@@ -8,17 +8,27 @@ const vscode = acquireVsCodeApi();
 //       text: "Hey",
 //     });
 // }
-
+const debounce = (func, delay) => {
+  let debounceTimer;
+  return function() {
+      const context = this;
+      const args = arguments;
+          clearTimeout(debounceTimer);
+              
+          debounceTimer = setTimeout(() => func.apply(context, args), delay);
+  };
+};
 var width = 640;
 var height = 400;
 const ANCHORS = ['top-left','top-right', 'bottom-left',  'bottom-right','top-center',  'bottom-center', 'middle-right', 'middle-left'];
 const shapeBtns =document.querySelectorAll('.shape-btn') ; // add a variable for staraight  line 
 const colorInput = document.getElementById('colorselection')
 const deleteButton = document.getElementById('delete');
-const ArrowKeys = ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"]
+const ArrowKeys = ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"];
 var currentSelection = null;
 const DELTA = 4;
-
+var intention = "click";
+var detectIntention = null;
 window.addEventListener('keydown', function(event) {
   const key = event.key; // const {key} = event; ES6+
   if(event.ctrlKey && (key =='a'|| key=='A')){
@@ -30,6 +40,7 @@ window.addEventListener('keydown', function(event) {
     }else{
       tr.nodes(shapes);
     }
+    event.preventDefault();
     return;
   }
   let offset = DELTA;
@@ -46,12 +57,12 @@ window.addEventListener('keydown', function(event) {
       node.x(node.x() + offset);
     });
   }
-  if(key=="ArrowUp"){
+  if(key==="ArrowUp"){
     tr.nodes().forEach(node=>{
       node.y(node.y() - offset);
     });
   }
-  if(key=="ArrowDown"){
+  if(key==="ArrowDown"){
     tr.nodes().forEach(node=>{
       node.y(node.y() + offset);
     });
@@ -71,23 +82,22 @@ shapeBtns.forEach(btn=>{
 })
 
 colorInput.addEventListener('change',function(){
-  let color =  this.value
+  let color =  this.value;
   tr.nodes().forEach(node=>{
-    if(node.name()=='line-group'){
-      node.findOne('.line').stroke(color)
-    }else if(node.name()=='line'){
-      node.stroke(color)
+    if(node.name()==='line-group'){
+      node.findOne('.line').stroke(color);
+    }else if(node.name()==='line'){
+      node.stroke(color);
     }else{
-      node.fill(color)
-
+      node.fill(color);
     }
-  })
+  });
   stage.find('.line').forEach(l=>{
     if(l.getParent().find('.line-anchor')[0].visible()){
         l.stroke(color);
     }
-  })
-})
+  });
+});
 
 
 function deleteSelected(){
@@ -146,6 +156,10 @@ stage.on('mousedown touchstart', (e) => {
   if (e.target !== stage) {
     return;
   }
+  intention = "click";
+  detectIntention = setTimeout(function(){
+    intention = "mouseup";
+  },500);
   e.evt.preventDefault();
   x1 = stage.getPointerPosition().x;
   y1 = stage.getPointerPosition().y;
@@ -232,6 +246,12 @@ stage.on('mouseup touchend', (e) => {
   setTimeout(() => {
   selectionRectangle.visible(false);
   });
+  clearInterval(detectIntention);
+  if(intention==="click"){
+    onClickEvent(e);
+    sendUIData();
+    return;
+  }
   if(movingId){
     const shp = stage.findOne('#m'+movingId);
     if(shp.name()!=='line-group'){
@@ -240,7 +260,7 @@ stage.on('mouseup touchend', (e) => {
     // vscode.postMessage(ALL_OBJECTS[movingId].getAttrs());
     movingId =null;
     // selectionRectangle.visible(false);
-    
+    sendUIData()
     return;
   }
   let shapes = stage.find('.rect,.line,.text');
@@ -255,7 +275,7 @@ stage.on('mouseup touchend', (e) => {
   }else{
     tr.nodes(selected);
   }
-  
+  sendUIData()
 });
 
 // clicks should select/deselect shapes
@@ -264,9 +284,12 @@ stage.on('click tap', function (e) {
   if (selectionRectangle.visible()) {
     return;
   }
-
-  // if click on empty area - remove all selections
-  if (e.target === stage) {
+  onClickEvent(e);
+ 
+});
+function onClickEvent(e){
+   // if click on empty area - remove all selections
+   if (e.target === stage) {
     tr.nodes([]);
     stage.find('.line-anchor').forEach(la=>{
         la.visible(false);
@@ -309,8 +332,7 @@ stage.on('click tap', function (e) {
     const nodes = tr.nodes().concat([e.target]);
     tr.nodes(nodes);
   }
-});
-
+}
 
 function createStraightLine(id){
   let color = colorInput.value
@@ -577,3 +599,26 @@ function createText(id){
     });
   });
 }
+
+stage.on('dragmoveend',sendUIData());
+stage.on('transformend',sendUIData());
+
+
+
+function sendUIData(){
+  debounce(function(){
+
+    let data = stage.find('.line,.rect,.text');
+
+
+    // console.log(data);
+    let dataToUpdate = data.map(d=>{
+      let attrs = d.getAttrs();
+      return attrs;
+    });
+    if(dataToUpdate.length>0){
+      vscode.postMessage(dataToUpdate);
+    }
+  }(),2000);
+}
+

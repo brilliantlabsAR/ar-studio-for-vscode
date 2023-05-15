@@ -46,7 +46,7 @@ console.log(term);
             let categories:Project[] = [];
             let repoList:any =   await getRepoList();
 			// console.log(repoList);
-            if(repoList.data.items.length>0){
+            if(repoList?.data.items.length>0){
                 repoList.data.items.forEach((repo:any)=>{
 					let desc:string = repo.description?repo.full_name+" "+repo.description:repo.full_name;
                     categories.push(new Project(repo.name, repo.owner.avatar_url, repo.clone_url, desc));

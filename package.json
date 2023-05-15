@@ -181,6 +181,11 @@
         "command": "brilliant-ar-studio.openUIEditor",
         "title": "Brilliant AR Studio: Open New GUI Screen",
         "icon": "$(plus)"
+      },
+      {
+        "command": "brilliant-ar-studio.editUIEditor",
+        "title": "Brilliant AR Studio:Edit GUI Screen",
+        "icon": "$(edit)"
       }
     ],
     "menus": {

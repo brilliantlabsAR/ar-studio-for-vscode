@@ -11,8 +11,9 @@ import { SnippetProvider } from './snippets/provider';
 import { UIEditorPanel } from "./UIEditorPanel";
 const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
-import { DeviceFs, MonocleFile } from './fileSystemProvider';
-const monocleFolder = "device files";
+import { DeviceFs, MonocleFile,ScreenProvider } from './fileSystemProvider';
+export const monocleFolder = "device files";
+export const screenFolder ="screens";
 let statusBarItemBle:vscode.StatusBarItem;
 
 export const writeEmitter = new vscode.EventEmitter<string>();
@@ -22,7 +23,7 @@ export var outputChannel:vscode.OutputChannel;
 
 export var deviceTreeProvider:vscode.TreeView<MonocleFile>;
 
-const isPathExist = async (uri:vscode.Uri):Promise<boolean>=>{
+export const isPathExist = async (uri:vscode.Uri):Promise<boolean>=>{
 	let exist = fs.existsSync(uri.fsPath);
 	return exist;
 };
@@ -100,7 +101,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	var currentSyncPath:vscode.Uri|null = null;
 
 	const memFs = new DeviceFs();
-	deviceTreeProvider = vscode.window.createTreeView('fileExplorer', { treeDataProvider:memFs });
+	const screenProvider = new ScreenProvider();
+	const deviceTreeProvider = vscode.window.createTreeView('fileExplorer', { treeDataProvider:memFs });
+	const screenTreeprovider =  vscode.window.createTreeView('screens',{treeDataProvider:screenProvider});
 	async function startSyncing(){
 		if(vscode.workspace.workspaceFolders){
 			let rootUri = vscode.workspace.workspaceFolders[0].uri;
@@ -475,13 +478,23 @@ export async function activate(context: vscode.ExtensionContext) {
 				let screenName = await vscode.window.showInputBox({prompt:"Enter Screen name"});
 				if(screenName){
 					screenName = screenName.replaceAll(" ","_").replaceAll("/","").replaceAll("\\","").replaceAll("-","_");
-					let screenPath = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,monocleFolder,screenName+"_screen.py");
+					let screenPath = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,monocleFolder,screenFolder,screenName+"_screen.py");
 					await vscode.workspace.fs.writeFile(screenPath,Buffer.from('# GENERATED BRILLIANT AR STUDIO Do not modify this file directly\n\nimport display\n\nclass '+screenName+':\n\tpass'));
+					await vscode.commands.executeCommand('vscode.open',screenPath,vscode.ViewColumn.One);
 					UIEditorPanel.render(context.extensionUri,screenName,screenPath);
-					await vscode.commands.executeCommand('vscode.open',screenPath);
+					screenProvider.refresh();
+					
 				}
 			}
 			
+		}),
+		vscode.commands.registerCommand("brilliant-ar-studio.editUIEditor",async(thiscontext)=>{
+			// console.log(thiscontext)
+			if(await isPathExist(thiscontext.uri)){
+				// await vscode.workspace.fs.writeFile(thiscontext.uri,Buffer.from('# GENERATED BRILLIANT AR STUDIO Do not modify this file directly\n\nimport display\n\nclass '+screenName+':\n\tpass'));
+				await vscode.commands.executeCommand('vscode.open',thiscontext.uri,vscode.ViewColumn.One);
+				UIEditorPanel.render(context.extensionUri,thiscontext.name,thiscontext.uri);
+			}
 		})
 	);
 	context.subscriptions.push(alldisposables);

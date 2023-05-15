@@ -12,6 +12,9 @@
     margin-top: 2rem;
     display: flex;
     justify-content: flex-start;
+    -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
     /* align-items: center; */
 }
 .tools button, .tools input{
