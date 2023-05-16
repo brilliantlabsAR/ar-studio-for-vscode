@@ -24,3 +24,13 @@
 .shape-btn.active{
     background-color: rgb(146, 143, 143);
 }
+
+.box {
+    -webkit-clip-path:polygon(0 0, 100% 35%, 100% 65%, 0% 100%);
+    clip-path:polygon(0 0, 100% 35%, 100% 65%, 0% 100%);
+    height: 30px;
+    width: 40px;
+    background:#E0E6E5;
+    margin-right: 5px;
+
+   }

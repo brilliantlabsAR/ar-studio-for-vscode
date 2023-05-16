@@ -64,11 +64,14 @@ export class UIEditorPanel {
               <button id="rect" class="shape-btn" value="RECT">&#9645;</button>
               <button id="straightLine" class="shape-btn" value="STARIGHTLINE">&#9586;</button>
               <button id="addText" class="shape-btn" value="ADDTEXT" style="margin-right:2rem;">T</button>
+              <button class="shape-btn box" id="polygon" value="POLYGON"></button>
+
               <input type="color" value="#afafaf" name="colorselection" id="colorselection">
               <button id="delete">&#10761;</button>
+
               </div>
               <div class="main">
-                <div id="container"></div>
+                <div id="container" id="polygon"></div>
               </div>
               <script type="text/javaScript" nonce="${nonce}" src="${webviewUri}"></script>
               <script type="text/javaScript" nonce="${nonce}" src="${mainJsUri}"></script>

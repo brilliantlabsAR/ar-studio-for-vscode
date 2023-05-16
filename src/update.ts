@@ -174,6 +174,7 @@ async function downloadLatestFpgaImage() {
         assetId: assetId
     });
 
+    
     // Annoyingly we have to fetch the data via a cors proxy
     let download = await fetch('https://api.brilliant.xyz/firmware?url=' + response.data.browser_download_url);
     let blob = await download.blob();
