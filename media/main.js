@@ -8,6 +8,29 @@ const vscode = acquireVsCodeApi();
 //       text: "Hey",
 //     });
 // }
+let liveUpdate = true;
+window.addEventListener('message', event => {
+
+  let uiData = event.data; // The JSON data our extension sent
+  liveUpdate = false;
+  uiData.forEach(ui=>{
+    const id = new Date().valueOf();
+    switch (ui.name) {
+      case "rect":
+        createRectangle(id,ui);
+        break;
+      case "line":
+        createStraightLine(id,ui);
+        break;
+      case "text":
+          createText(id,ui);
+          break;
+      default:
+        break;
+    }
+  });
+  liveUpdate = true;
+});
 const debounce = (func, delay) => {
   let debounceTimer;
   return function() {
@@ -334,10 +357,12 @@ function onClickEvent(e){
   }
 }
 
-function createStraightLine(id){
-  let color = colorInput.value
-  const group = new Konva.Group({name: 'line-group', draggable: true, visible:true,opacity:1,id: "m"+id})
-    const newLine = new Konva.Line({
+function createStraightLine(id,attrs=null){
+  let color = colorInput.value;
+  const group = new Konva.Group({name: 'line-group', draggable: true, visible:true,opacity:1,id: "m"+id});
+  if(attrs===null){
+    movingId  =  id;
+    attrs ={
       points: [stage.getPointerPosition().x, stage.getPointerPosition().y,stage.getPointerPosition().x, stage.getPointerPosition().y],
       stroke: color,
       strokeWidth: 2,
@@ -346,7 +371,11 @@ function createStraightLine(id){
       name: 'line',
       
     //   draggable: true,
-    });
+    };
+  }else{
+    attrs["id"] = "m"+id;
+  }
+    const newLine = new Konva.Line(attrs);
     
     // layer.add(newLine);
     const anchor1 = new Konva.Circle({
@@ -355,7 +384,8 @@ function createStraightLine(id){
         radius: 5,
         fill: 'blue',
         draggable: true,
-        name:'line-anchor'
+        name:'line-anchor',
+        visible: attrs===null
       });
     //   layer.add(anchor1);
       
@@ -402,8 +432,8 @@ function createStraightLine(id){
           // layer.draw();
 
       });
-      movingId  =  id;
-      line_anchors[movingId] = [anchor1,anchor2];
+      
+      line_anchors[id] = [anchor1,anchor2];
       layer.draw();
     // group.on('dblclick',()=>{
     //     tr.nodes([group]);
@@ -435,10 +465,12 @@ function createStraightLine(id){
 
         });
 }
-function createRectangle(id){
-  let color = colorInput.value
+function createRectangle(id,attrs=null){
+if(attrs===null){
+  movingId  =  id;
+  let color = colorInput.value;
 
-  let newrect = new Konva.Rect({
+  attrs = {
     x: stage.getPointerPosition().x,
     y: stage.getPointerPosition().y,
     width: 0,
@@ -447,26 +479,42 @@ function createRectangle(id){
     name: 'rect',
     id: "m"+id,
     draggable: true,
+  };
+}else{
+  attrs["id"] = "m"+id;
+}
+  let newrect = new Konva.Rect(attrs);
+  newrect.on('transformend',function(){
+    newrect.setAttrs({
+      width: newrect.width() * newrect.scaleX(),
+      height: newrect.height() * newrect.scaleY(),
+      scaleX: 1,
+      scaleY: 1
+    });
   });
-  movingId  =  id;
   layer.add(newrect);
 }
-function createText(id){
-  let color = colorInput.value
-
-  var textNode = new Konva.Text({
-    text: 'welcome',
-    x: x2,
-    y: y2,
-    fontSize: 20,
-    fontFamily: 'JetBrains Mono',
-    draggable: true,
-    width: 200,
-    fill: color,
-    name: "text",
-    id: "m"+id
-  });
+function createText(id, attrs=null){
+  let color = colorInput.value;
+  if(attrs===null){
   movingId  =  id;
+
+    attrs = {
+      text: 'welcome',
+      x: x2,
+      y: y2,
+      fontSize: 20,
+      fontFamily: 'JetBrains Mono',
+      draggable: true,
+      width: 200,
+      fill: color,
+      name: "text",
+      id: "m"+id
+    };
+  }else{
+    attrs["id"] = "m"+id;
+  }
+  var textNode = new Konva.Text(attrs);
   layer.add(textNode);
 
 
@@ -542,6 +590,7 @@ function createText(id){
       textNode.show();
       tr.show();
       tr.forceUpdate();
+      sendUIData();
     }
 
     function setTextareaWidth(newWidth) {
@@ -616,7 +665,7 @@ function sendUIData(){
       let attrs = d.getAttrs();
       return attrs;
     });
-    if(dataToUpdate.length>0){
+    if(dataToUpdate.length>0 && liveUpdate){
       vscode.postMessage(dataToUpdate);
     }
   }(),2000);
