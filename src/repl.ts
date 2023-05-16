@@ -35,10 +35,9 @@ export async function replRawMode(enable:boolean) {
     }
 
      outputChannel.appendLine("Leaving raw REPL mode");
-    await replSend('\x02');
+    await replSend('\x03\x02');
     replRawModeEnabled = false;
     
-
 }
 
 export async function replSend(string:string) {
@@ -212,6 +211,7 @@ export async function sendFileUpdate(update:any){
             writeEmitter.fire("\r\n"+textToEcho);
         }
     }
+    replRawModeEnabled = false;
     await replRawMode(false);
     fileWriteStart  = false;
   
@@ -373,10 +373,10 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
     let segments = dPath.split('/');
     if(segments.length>1){
         let newDirTocreate = segments.slice(0,segments.length-1).join("/");
-        if(newDirTocreate!==devicePath){
-            let dirCreate = DIR_MAKE_CMD+`md('${newDirTocreate}');del(os,md)`;
-            await replSend(dirCreate);
-        }
+            if(newDirTocreate!==devicePath){
+                let dirCreate = DIR_MAKE_CMD+`md('${newDirTocreate}');del(os,md)`;
+                    await replSend(dirCreate);
+            }
     }
     let fileData = await vscode.workspace.fs.readFile(uri);
 
