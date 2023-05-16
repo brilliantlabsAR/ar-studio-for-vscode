@@ -38,3 +38,15 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - REPL, file size limit increased
 
 ## [1.5.0] -
+
+### fixed
+
+- REPL, file create bug and dfu update adjusted with new display
+
+## [1.7.0] -
+
+### ADDED
+
+- Drag and Drop UI for screen code generation
+
+## [1.8.0] - 2023-05-16
