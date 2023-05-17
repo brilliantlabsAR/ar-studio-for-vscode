@@ -26,6 +26,10 @@ Browse community projects, or publish your own:
 
 ![Animation of user projects](./media/vscode-ext-custom-projects.gif)
 
+Create and Edit display screens with DRAG-DROP UI:
+
+![Drag Drop UI](./media/vscode-ext-drag-drop-GUI.png)
+
 ## Requirements
 
 - Windows or MacOS

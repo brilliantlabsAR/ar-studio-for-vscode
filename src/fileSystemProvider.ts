@@ -9,7 +9,7 @@ import {
 	readFileDevice,
 	uploadFileBulkDevice
 } from './repl';
-import {deviceTreeProvider} from './extension';
+import {deviceTreeProvider, isPathExist, monocleFolder,screenFolder} from './extension';
 
 export class File extends vscode.TreeItem implements vscode.FileStat {
 
@@ -230,4 +230,50 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 }
 
 
-// class ScreenProvider implements vscode.TreeDataProvider
+export class ScreenProvider implements vscode.TreeDataProvider<vscode.TreeItem>{
+
+	private _onDidChangeTreeData: vscode.EventEmitter<MonocleFile | undefined | void> = new vscode.EventEmitter<MonocleFile | undefined | void>();
+	readonly onDidChangeTreeData: vscode.Event<MonocleFile | undefined | void> = this._onDidChangeTreeData.event;
+	
+	refresh(): void {
+		this._onDidChangeTreeData.fire();
+	}
+	getTreeItem(element: vscode.TreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+		return element;
+	}
+	getChildren(element?: vscode.TreeItem | undefined): vscode.ProviderResult<vscode.TreeItem[]> {
+		if(element){
+			return [];
+		}
+		return this.getAllScreens();
+	}
+	private async getAllScreens(){
+		if(vscode.workspace.workspaceFolders){
+			const rootUri = vscode.workspace.workspaceFolders[0].uri;
+			const localFiles = vscode.Uri.joinPath(rootUri,monocleFolder);
+			
+			if(await isPathExist(localFiles)){
+				const screenFiles = new vscode.RelativePattern(localFiles, screenFolder+'/*_screen.py');
+				const filesFound = await vscode.workspace.findFiles(screenFiles);
+				if(filesFound.length===0){
+					return [];
+				}else{
+					return filesFound.map(f=>{
+						let filename = path.posix.basename(f.path);
+						let newitem = new vscode.TreeItem(filename.replace('_screen.py',''),vscode.TreeItemCollapsibleState.None);
+						newitem.iconPath = vscode.ThemeIcon.File;
+						newitem.command =  {command:"brilliant-ar-studio.editUIEditor",title:"Edit In UI Editor",arguments:[{"uri":f,"name":filename.replace('_screen.py','')}]};
+						return newitem;
+					});
+				}
+			}else{
+				
+				vscode.window.showWarningMessage("Project not initialized!");
+				return [];
+			}
+		}else{
+			return [];
+		}
+		
+	}
+}

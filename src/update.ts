@@ -76,9 +76,9 @@ async function getUpdateInfo() {
 let fpgaUpdateInProgress:any = false;
 export async function startFirmwareUpdate() {
     await replRawMode(true);
-    await replSend("import display;" +
-        "display.text('Updating firmware...',120,180,0xffffff);" +
-        "display.show();" +
+    await replSend("import display as d;" +
+        "m= d.Text('Updating firmware...',120,180,0xffffff,justify=d.MIDDLE_LEFT);" +
+        "d.show(m);" +
         "import update;" +
         "update.micropython()");
     await replRawMode(false);
