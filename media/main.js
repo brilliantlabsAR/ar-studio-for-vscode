@@ -9,26 +9,30 @@ const vscode = acquireVsCodeApi();
 //     });
 // }
 let liveUpdate = true;
-window.addEventListener('message', event => {
+window.addEventListener('message', async (event) => {
 
   let uiData = event.data; // The JSON data our extension sent
   liveUpdate = false;
-  uiData.forEach(ui=>{
-    const id = new Date().valueOf();
-    switch (ui.name) {
-      case "rect":
-        createRectangle(id,ui);
-        break;
-      case "line":
-        createStraightLine(id,ui);
-        break;
-      case "text":
-          createText(id,ui);
+  if(await isFontReady()){
+    uiData.forEach(ui=>{
+      const id = new Date().valueOf();
+      switch (ui.name) {
+        case "rect":
+          createRectangle(id,ui);
           break;
-      default:
-        break;
-    }
-  });
+        case "line":
+          createStraightLine(id,ui);
+          break;
+        case "text":
+            createText(id,ui);
+            break;
+        default:
+          break;
+      }
+    });
+    layer.draw();
+  };
+  
   liveUpdate = true;
 });
 const debounce = (func, delay) => {
@@ -54,7 +58,7 @@ var intention = "click";
 var detectIntention = null;
 window.addEventListener('keydown', function(event) {
   const key = event.key; // const {key} = event; ES6+
-  if(event.ctrlKey && (key =='a'|| key=='A')){
+  if(event.ctrlKey && (key ==='a'|| key==='A')){
     let shapes = stage.find('.rect,.line,.text');
     if(shapes.length===1 && shapes[0].name()==='line'){
       shapes[0].getParent().find('.line-anchor').forEach(la=>{
@@ -63,6 +67,21 @@ window.addEventListener('keydown', function(event) {
     }else{
       tr.nodes(shapes);
     }
+    event.preventDefault();
+    return;
+  }
+  if(event.ctrlKey && (key ==='d'|| key==='D') && tr.nodes().length>0){
+    let shapes = tr.nodes();
+   
+      let newshapes = [];
+      shapes.forEach(sh=>{
+        const id = new Date().valueOf();
+
+        let newshape = sh.clone({x:sh.x()+10,y:sh.y()+10,id});
+        layer.add(newshape);
+        newshapes.push(newshape);
+      });
+      tr.nodes(newshapes);
     event.preventDefault();
     return;
   }
@@ -90,7 +109,7 @@ window.addEventListener('keydown', function(event) {
       node.y(node.y() + offset);
     });
   }
-  if (key === "Backspace" || key === "Delete") {
+  if ( key === "Delete") {
     // if(tr.nodes().length>0){
 
       deleteSelected();
@@ -99,10 +118,11 @@ window.addEventListener('keydown', function(event) {
 });
 shapeBtns.forEach(btn=>{
   btn.addEventListener('click',function(){
-    currentSelection = btn.value
-    btn.classList.add('active')
-  })
-})
+    currentSelection = btn.value;
+    btn.classList.add('active');
+    stage.container().style.cursor = 'crosshair';
+  });
+});
 
 colorInput.addEventListener('change',function(){
   let color =  this.value;
@@ -182,6 +202,8 @@ stage.on('mousedown touchstart', (e) => {
   intention = "click";
   detectIntention = setTimeout(function(){
     intention = "mouseup";
+    stage.container().style.cursor = 'crosshair';
+
   },500);
   e.evt.preventDefault();
   x1 = stage.getPointerPosition().x;
@@ -214,7 +236,7 @@ stage.on('mousedown touchstart', (e) => {
     currentSelection =null;
 
   }
-  tr.moveToTop()
+  tr.moveToTop();
   selectionRectangle.visible(true);
 
 });
@@ -275,6 +297,7 @@ stage.on('mouseup touchend', (e) => {
     sendUIData();
     return;
   }
+  
   if(movingId){
     const shp = stage.findOne('#m'+movingId);
     if(shp.name()!=='line-group'){
@@ -284,6 +307,8 @@ stage.on('mouseup touchend', (e) => {
     movingId =null;
     // selectionRectangle.visible(false);
     sendUIData()
+    stage.container().style.cursor = 'default';
+
     return;
   }
   let shapes = stage.find('.rect,.line,.text');
@@ -298,7 +323,9 @@ stage.on('mouseup touchend', (e) => {
   }else{
     tr.nodes(selected);
   }
-  sendUIData()
+  stage.container().style.cursor = 'default';
+
+  sendUIData();
 });
 
 // clicks should select/deselect shapes
@@ -360,6 +387,8 @@ function onClickEvent(e){
 function createStraightLine(id,attrs=null){
   let color = colorInput.value;
   const group = new Konva.Group({name: 'line-group', draggable: true, visible:true,opacity:1,id: "m"+id});
+  group.on('mouseleave',cursorChangeLeave);
+  group.on('mouseenter',cursorChangeEnter);
   if(attrs===null){
     movingId  =  id;
     attrs ={
@@ -392,6 +421,9 @@ function createStraightLine(id,attrs=null){
       const anchor2 = anchor1.clone({x: newLine.points()[2], y: newLine.points()[3],});
     //   layer.add(anchor2);
      group.add(newLine, anchor1, anchor2);
+     group.on('dragstart',cursorChangeDragstart);
+     group.on('dragend',cursorChangeDragEnd);
+
      layer.add(group);
       
       function updateLine() {
@@ -407,6 +439,7 @@ function createStraightLine(id,attrs=null){
       
       anchor1.on('dragmove', updateLine);
       anchor2.on('dragmove', updateLine);
+      newLine.on('dragstart',cursorChangeDragstart);
       newLine.on("dragmove",function(e){
         let points =  newLine.points().slice();
          // reset scale, so only with is changing by transformer
@@ -430,6 +463,7 @@ function createStraightLine(id,attrs=null){
           newLine.setAttrs({x:0,y:0})
           newLine.points([p1.x, p1.y, p2.x, p2.y])
           // layer.draw();
+          cursorChangeDragEnd(e);
 
       });
       
@@ -492,6 +526,10 @@ if(attrs===null){
       scaleY: 1
     });
   });
+  newrect.on('mouseenter',cursorChangeEnter);
+  newrect.on('mouseleave',cursorChangeLeave);
+  newrect.on('dragstart',cursorChangeDragstart);
+  newrect.on('dragend',cursorChangeDragEnd);
   layer.add(newrect);
 }
 function createText(id, attrs=null){
@@ -503,7 +541,7 @@ function createText(id, attrs=null){
       text: 'welcome',
       x: x2,
       y: y2,
-      fontSize: 20,
+      fontSize: 40,
       fontFamily: 'JetBrains Mono',
       draggable: true,
       width: 200,
@@ -513,6 +551,8 @@ function createText(id, attrs=null){
     };
   }else{
     attrs["id"] = "m"+id;
+    attrs["fontSize"] = 40;
+    attrs["fontFamily"] = 'JetBrains Mono';
   }
   var textNode = new Konva.Text(attrs);
   layer.add(textNode);
@@ -528,8 +568,10 @@ function createText(id, attrs=null){
       scaleY: 1,
     });
   });
-
-
+  textNode.on('dragstart',cursorChangeDragstart);
+  textNode.on('dragend',cursorChangeDragEnd);
+  textNode.on('mouseenter',cursorChangeEnter);
+  textNode.on('mouseleave',cursorChangeLeave);
   textNode.on('dblclick dbltap', () => {
     let textPosition = textNode.getAbsolutePosition();
     let stageBox = stage.container().getBoundingClientRect();
@@ -583,7 +625,7 @@ function createText(id, attrs=null){
     textarea.style.height = textarea.scrollHeight + 3 + 'px';
 
     textarea.focus();
-    textNode.hide()
+    textNode.hide();
     function removeTextarea() {
       textarea.parentNode.removeChild(textarea);
       window.removeEventListener('click', handleOutsideClick);
@@ -619,12 +661,12 @@ function createText(id, attrs=null){
     textarea.addEventListener('keydown', function (e) {
       // hide on enter
       // but don't hide on shift + enter
-      if (e.keyCode === 13 && !e.shiftKey) {
+      if (e.key === "Enter" && !e.shiftKey) {
         textNode.text(textarea.value);
         removeTextarea();
       }
       // on esc do not set value back to node
-      if (e.keyCode === 27) {
+      if (e.key === "Escape") {
         removeTextarea();
       }
     });
@@ -670,4 +712,35 @@ function sendUIData(){
     }
   }(),2000);
 }
+// stage.click();
 
+async function isFontReady() {
+  let ready = await document.fonts.ready;
+  return ready;
+}
+function cursorChangeLeave(e){
+    if(currentSelection===null){
+      stage.container().style.cursor = 'default';
+    }
+    if(selectionRectangle.visible()){
+      stage.container().style.cursor = 'crosshair';
+    }
+}
+
+function cursorChangeEnter(e){
+  if(currentSelection===null){
+    stage.container().style.cursor = 'pointer';
+  }
+  if(selectionRectangle.visible()){
+    stage.container().style.cursor = 'crosshair';
+  }
+}
+function cursorChangeDragstart(e){
+  stage.container().style.cursor = 'move';
+
+}
+function cursorChangeDragEnd(e){
+
+  stage.container().style.cursor = 'pointer';
+
+}

@@ -51,6 +51,7 @@ export class UIEditorPanel {
         const mainJsUri = getUri(webview, extensionUri, ["media" ,"main.js"]);
         const nonce = getNonce();
         const stylesMainUri = getUri(webview, extensionUri, ["media" ,"main.css"]);
+        // const fontUri = getUri(webview, extensionUri, ["media" ,"JetBrains_Mono/JetBrainsMono-VariableFont_wght.ttf"]);
         return /*html*/ `
           <!DOCTYPE html>
           <html lang="en">
@@ -58,11 +59,12 @@ export class UIEditorPanel {
 
               <meta charset="UTF-8">
               <meta charset="utf-8" />
-              <title>Konva Select and Transform Demo</title>
+              <title>${this.screenName}</title>
               <link  rel="stylesheet" nonce="${nonce}" href="${stylesMainUri}">
             </head>
           
             <body>
+              <h6 class="title">Draw to update ${this.screenName}</h6>
               <div class="tools">
               <button id="rect" class="shape-btn" value="RECT">&#9645;</button>
               <button id="straightLine" class="shape-btn" value="STARIGHTLINE">&#9586;</button>
@@ -196,7 +198,7 @@ export class UIEditorPanel {
       }
       finalPyString +=`\n\tdef __init__(self):\n\t\td.show(self.blocks)`;
 
-      finalPyString +="\n\n\n# To use this screen import into main.py or copy below code in main.py\n# from screens."+screenName+" import "+screenName+"\n# "+screenName+"()";
+      finalPyString +="\n\n\n# To use this in main.py screen import into main.py or copy below code in main.py\n# from screens."+screenName+"_screen import "+screenName+"\n"+screenName+"()";
       return finalPyString;
 
   }
