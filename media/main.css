@@ -1,3 +1,7 @@
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url(./JetBrains_Mono/JetBrainsMono-VariableFont_wght.ttf);
+  }
 .main {
     padding: 10px;
     /* height: 100vh;
@@ -9,7 +13,6 @@
     /* background: black; */
 }
 .tools{
-    margin-top: 2rem;
     display: flex;
     justify-content: flex-start;
     -webkit-user-select: none; /* Safari */
@@ -26,4 +29,16 @@
 }
 .shape-btn.active{
     background-color: rgb(146, 143, 143);
+}
+
+.title{
+    font-family: 'JetBrains Mono';
+    text-align: center;
+    font-size: 14px;
+    margin: 0;
+    margin-bottom: 0.6rem;
+    -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+
 }
