@@ -37,3 +37,11 @@
     margin-right: 5px;
 
    }
+
+   .thickness{
+    border: 1px solid black;
+    text-align: left;
+    background-color: gray;
+   }
+
+   
