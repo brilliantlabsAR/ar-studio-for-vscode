@@ -159,7 +159,7 @@ export class UIEditorPanel {
                 strokeWidth: parseInt(attrs[1].replaceAll(" ","").replace('thickness=',"")),
               });
             }
-            if(shape==='Polygone'){
+            if(shape==='Polygon'){
               let points = block.slice(block.indexOf('['),block.indexOf(']')+1);
               let newblock = block.replace(points,'');
               let attrs = newblock.slice(newblock.indexOf("(")+1,newblock.indexOf(")")).split(",").filter(d=>d!=='').map(d=>d.trim());
@@ -235,7 +235,7 @@ export class UIEditorPanel {
 
         }
         if(uiElement.name==='polygone'){
-          finalPyString += `\n\t\td.Polygone([${uiElement.points.map((point:number)=>Math.round(point)).join(',')}], 0x${uiElement.fill.replace("#","")}),`;
+          finalPyString += `\n\t\td.Polygon([${uiElement.points.map((point:number)=>Math.round(point)).join(',')}], 0x${uiElement.fill.replace("#","")}),`;
 
         }
         if(uiElement.name==='text'){
