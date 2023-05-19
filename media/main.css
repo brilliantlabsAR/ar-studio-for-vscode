@@ -42,3 +42,20 @@
   user-select: none; /* Standard syntax */
 
 }
+.box {
+    -webkit-clip-path:polygon(0 0, 100% 35%, 100% 65%, 0% 100%);
+    clip-path:polygon(0 0, 100% 35%, 100% 65%, 0% 100%);
+    height: 30px;
+    width: 40px;
+    background:#E0E6E5;
+    margin-right: 5px;
+
+   }
+
+   .thickness{
+    border: 1px solid black;
+    text-align: left;
+    background-color: gray;
+   }
+
+   

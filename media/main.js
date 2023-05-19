@@ -56,7 +56,8 @@ var width = 640;
 var height = 400;
 const ANCHORS = ['top-left','top-right', 'bottom-left',  'bottom-right','top-center',  'bottom-center', 'middle-right', 'middle-left'];
 const shapeBtns =document.querySelectorAll('.shape-btn') ; // add a variable for staraight  line 
-const colorInput = document.getElementById('colorselection')
+const colorInput = document.getElementById('colorselection');
+const dropDown = document.getElementById("myDropdown");
 const deleteButton = document.getElementById('delete');
 const ArrowKeys = ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"];
 var currentSelection = null;
@@ -217,7 +218,24 @@ colorInput.addEventListener('change',function(){
     }
   });
 });
+dropDown.addEventListener("change", function () {
+  // Code to execute when the div is clicked
+  const selectedValue = dropDown.value;
+  strokeWidth = parseInt(selectedValue);
 
+  // Do something with the selected value
+  console.log("Selected value: " + selectedValue);
+
+   
+      // tr.nodes().forEach((node) => {
+      //  console.log(node);
+      // });
+      stage.find(".line,.polyline").forEach((l) => {
+        if (l.getParent().find(".line-anchor")[0].visible()) {
+          l.strokeWidth(selectedValue);
+        }
+      });
+});
 
 function deleteSelected(){
   tr.nodes().forEach(node=>{
@@ -370,7 +388,7 @@ stage.on('mousedown touchstart', (e) => {
       }else{
         attrs = {...attrs,
           stroke: colorInput.value,
-          strokeWidth: 2
+          strokeWidth: dropDown.value
       };
       }
       createStraightLine(id,attrs);

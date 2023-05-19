@@ -51,6 +51,7 @@ export class UIEditorPanel {
         const mainJsUri = getUri(webview, extensionUri, ["media" ,"main.js"]);
         const nonce = getNonce();
         const stylesMainUri = getUri(webview, extensionUri, ["media" ,"main.css"]);
+        const imageUrl = getUri(webview, extensionUri, ["media", "thickness_icon.png"]);
         // const fontUri = getUri(webview, extensionUri, ["media" ,"JetBrains_Mono/JetBrainsMono-VariableFont_wght.ttf"]);
         return /*html*/ `
           <!DOCTYPE html>
@@ -73,6 +74,20 @@ export class UIEditorPanel {
 
               <button id="addText" class="shape-btn" value="ADDTEXT" style="margin-right:2rem;">T</button>
               <input type="color" value="#afafaf" name="colorselection" id="colorselection">
+              <div class="thickness" >
+                <img height=25 width=25 src="${imageUrl}" />
+                <select id="myDropdown" >
+                <option value="1"> 1</option>
+                <option value="2"> 2</option>
+                <option value="3"> 3</option>
+                <option value="4"> 4</option>
+                <option value="5"> 5</option>
+                <option value="6"> 6</option>
+                <option value="7"> 7</option>
+                <option value="8"> 8</option>
+                <option value="9"> 9</option>
+              </select>
+              </div>
               <button id="delete">&#10761;</button>
               </div>
               <div class="main">
