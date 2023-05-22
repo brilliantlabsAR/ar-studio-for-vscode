@@ -33,9 +33,9 @@ Browse community projects, or publish your own:
    choose project name and directory and you are good to go.
 
 2. connect monocle from one of the ways
-   a. command 'Brilliant AR Studio: Connect'
-   b. status bar button 'monocle'
-   c. file explorer -> Brilliant AR Studio: device files -> connect
+   1. command 'Brilliant AR Studio: Connect'
+   2. status bar button 'monocle'
+   3. file explorer -> Brilliant AR Studio: device files -> connect
 
 3. after connect you can see REPL and all files listed in file explorer -> Brilliant AR Studio: device files
 
