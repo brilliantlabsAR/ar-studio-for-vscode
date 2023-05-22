@@ -87,8 +87,14 @@ export class UIEditorPanel {
                 <option value="8"> 8</option>
                 <option value="9"> 9</option>
               </select>
-              </div>
-              <button id="delete">&#10761;</button>
+              </div> <!--
+              <button id="alignLeft" value="LEFT" class="alignBtn active hz">L</button>
+              <button id="alignCenter" value="CENTER" class="alignBtn hz">C</button>
+              <button id="alignRight" value="RIGHT" class="alignBtn hz">R</button>
+              <button id="alignTOP" value="TOP" class="alignBtn active vt">T</button>
+              <button id="alignMiddle" value="MIDDLE" class="alignBtn vt">M</button>
+              <button id="alignBottom" value="BOTTOM" class="alignBtn vt">B</button> -->
+              <button id="delete" >&#10761;</button>
               </div>
               <div class="main">
                 <div id="container"></div>
@@ -103,15 +109,6 @@ export class UIEditorPanel {
         webview.onDidReceiveMessage(
           (message: any) => {
               this.updatePy(message);
-            // if(message.name==='rect'){
-            //   let currentEditors = vscode.window.visibleTextEditors;
-            //   let currentEditor = currentEditors.filter(te=>te.document.fileName.endsWith(".py"))[0];
-            //     currentEditor?.edit((editBuidler:vscode.TextEditorEdit)=>{
-            //       // editBuidler.insert(new vscode.Position(0,0),`import display\ndisplay.Rectangle(${Math.round(message.x)},${Math.round(message.y)},${Math.round(message.x+message.width)},${Math.round(message.y+message.height)},display.RED)\n`);
-            //       editBuidler.replace(new vscode.Position(0,0),"")
-            //     });
-            //     currentEditor.options.lineNumbers
-            // }
           },
           undefined,
           this._disposables

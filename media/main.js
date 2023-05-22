@@ -56,6 +56,7 @@ var width = 640;
 var height = 400;
 const ANCHORS = ['top-left','top-right', 'bottom-left',  'bottom-right','top-center',  'bottom-center', 'middle-right', 'middle-left'];
 const shapeBtns =document.querySelectorAll('.shape-btn') ; // add a variable for staraight  line 
+const alignBtns =document.querySelectorAll('.alignBtn') ; // add a variable for staraight  line 
 const colorInput = document.getElementById('colorselection');
 const dropDown = document.getElementById("myDropdown");
 const deleteButton = document.getElementById('delete');
@@ -236,7 +237,27 @@ dropDown.addEventListener("change", function () {
         }
       });
 });
-
+alignBtns.forEach(btn=>{
+  btn.addEventListener('click',function(){
+    let isHz = btn.classList.contains('hz');
+    document.querySelectorAll('.alignBtn.active'+(isHz?'.hz':'.vt')).forEach(el=>{
+      el?.classList.remove('active');
+    });
+    btn.classList.add('active');
+    tr.nodes().forEach(shp=>{
+      if(shp.name()==='text'){
+        shp.setAttrs({alignment:getCurrentAlignment()});
+        shp.setAttrs(calculateOffset(shp));
+      }
+    });
+  });
+});
+function getCurrentAlignment(){
+  // let horz = document.querySelector('.alignBtn.hz.active').value;
+  // let vert = document.querySelector('.alignBtn.vt.active').value;
+  // return vert+"_"+horz;
+   return "TOP_LEFT";
+}
 function deleteSelected(){
   tr.nodes().forEach(node=>{
     node.destroy();
@@ -270,7 +291,9 @@ const tr = new Konva.Transformer({
   enabledAnchors: ANCHORS.splice(0,4),
   keepRatio: false,
   rotateAnchorOffset: 30,
-  rotateEnabled: false
+  rotateEnabled: false,
+  shouldOverdrawWholeArea: true,
+  flipEnabled:true
 });
 tr.anchorCornerRadius(5);
 layer.add(tr);
@@ -335,19 +358,20 @@ stage.on('mousedown touchstart', (e) => {
     if(movingId){
         const shp = stage.findOne("#m"+movingId);
         let line = shp.findOne('.'+selectorr);
-        let points = line.points().slice();
-        points.push(stage.getPointerPosition().x);
-        points.push(stage.getPointerPosition().y);
-        line.points(points);
-        let anchors  = shp.find('.line-anchor');
-        anchors[anchors.length-1].setAttrs({
-          x:x2,
-          y:y2
-        });
+        
+        // let anchors  = shp.find('.line-anchor');
+        // anchors[anchors.length-1].setAttrs({
+        //   x:x2,
+        //   y:y2
+        // });
         if(currentSelection==='STRAIGHTLINE'){
           currentSelection = null;
           movingId = null;
         }else{
+          let points = line.points().slice();
+          points.push(stage.getPointerPosition().x);
+          points.push(stage.getPointerPosition().y);
+          line.points(points);
           const anchor = new Konva.Circle({
             x: stage.getPointerPosition().x,
             y: stage.getPointerPosition().y,
@@ -443,12 +467,18 @@ stage.on('mousemove touchmove', (e) => {
  
   if(movingId){
     const shp = stage.findOne('#m'+movingId);
-    if(['rect','text'].includes(shp.name())){
+    if(shp.name()==='rect'){
       shp.setAttrs({
         x: Math.min(x1, x2),
         y: Math.min(y1, y2),
         width: Math.abs(x2 - x1),
         height: Math.abs(y2 - y1),
+      });
+    }else if(shp.name()==='text'){
+      shp.setAttrs({
+        x: Math.min(x1, x2),
+        y: Math.min(y1, y2),
+        width: Math.abs(x2 - x1),
       });
     }else if(shp.name()==='line-group'){
       // let selectorr='.line';
@@ -792,9 +822,11 @@ function createText(id, attrs=null){
       fontFamily: 'JetBrains Mono',
       draggable: true,
       width: 200,
+      height:40,
       fill: color,
       name: "text",
-      id: "m"+id
+      id: "m"+id,
+      alignment: getCurrentAlignment()
     };
   }else{
     attrs["id"] = "m"+id;
@@ -810,11 +842,16 @@ function createText(id, attrs=null){
   //   // reset scale, so only with is changing by transformer
     textNode.setAttrs({
       width: textNode.width() * textNode.scaleX(),
-      height: textNode.height() * textNode.scaleY(),
+      // height: textNode.height() * textNode.scaleY(),
       scaleX: 1,
       scaleY: 1,
     });
   });
+  textNode.on('transformend',function(){
+    // default top left
+    textNode.setAttrs(calculateOffset(textNode));
+  });
+  textNode.setAttrs(calculateOffset(textNode));
   textNode.on('dragstart',cursorChangeDragstart);
   textNode.on('dragend',cursorChangeDragEnd);
   textNode.on('mouseenter',cursorChangeEnter);
@@ -992,4 +1029,42 @@ function cursorChangeDragEnd(e){
 
   stage.container().style.cursor = 'pointer';
 
+}
+
+function calculateOffset(textNode) {
+  let align = textNode.getAttrs().alignment;
+  let offsetAttrs= {
+    offsetY: 0,
+    offsetX: 0,
+  };
+
+  if(!align){return;}
+  const [vertical,hoizon] = align.split("_");
+  switch (hoizon) {
+    case "LEFT":
+      offsetAttrs.offsetX = 0;
+      break;
+    case "CENTER":
+      offsetAttrs.offsetX = Math.floor(textNode.width()/2);
+      break;
+    case "RIGHT":
+      offsetAttrs.offsetX =  Math.floor(textNode.width());
+      break;
+    default:
+      break;
+  }
+  switch (vertical) {
+    case "TOP":
+      offsetAttrs.offsetY = 0;
+      break;
+    case "MIDDLE":
+      offsetAttrs.offsetY = Math.floor(textNode.height()/2);
+      break;
+    case "BOTTOM":
+      offsetAttrs.offsetY =  Math.floor(textNode.height());
+      break;
+    default:
+      break;
+  };
+  return offsetAttrs;
 }

@@ -2,6 +2,21 @@
     font-family: 'JetBrains Mono';
     src: url(./JetBrains_Mono/JetBrainsMono-VariableFont_wght.ttf);
   }
+  /* root {
+    --vscode-foreground: #cccccc;
+    --vscode-disabledForeground: rgba(204, 204, 204, 0.5);
+    --vscode-errorForeground: #f85149;
+    --vscode-descriptionForeground: #8b949e;
+    --vscode-icon-foreground: #cccccc;
+    --vscode-focusBorder: #0078d4;
+    --vscode-textSeparator-foreground: #21262d;
+    --vscode-textLink-foreground: #40a6ff;
+    --vscode-textLink-activeForeground: #40a6ff;
+    --vscode-textPreformat-foreground: #d7ba7d;
+    --vscode-textBlockQuote-background: #010409;
+    --vscode-textBlockQuote-border: rgba(255, 255, 255, 0.08);
+    --vscode-textCodeBlock-background: rgba(110, 118, 129, 0.4);
+  } */
 .main {
     padding: 10px;
     /* height: 100vh;
@@ -25,12 +40,21 @@
     height: 30px;
     width: 40px;
     margin-right: 5px;
-    font-size: 18px;
-}
-.shape-btn.active{
-    background-color: rgb(146, 143, 143);
+    font-size: 16px;
+    cursor: pointer;
+    background-color: var(--vscode-foreground);
 }
 
+.shape-btn.active{
+    background-color: var(--vscode-disabledForeground);
+}
+
+.alignBtn{
+  background-color:var(--vscode-disabledForeground)!important;
+}
+.alignBtn.active{
+  background-color: var(--vscode-foreground)!important;
+}
 .title{
     font-family: 'JetBrains Mono';
     text-align: center;
