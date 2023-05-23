@@ -76,7 +76,8 @@ Create and Edit display screens with DRAG-DROP UI:
    6. to delete select and press delete button, multiple selected objects can be deleted
    7. ctrl + A to select all
    8. ctrl + D to duplicate selected
-
+   
+   TIP: To snap line, polyline, polygon to nearest multiple of 45 degrees hold ctrl or shift
 ## Requirements
 
 - Windows or MacOS

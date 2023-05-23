@@ -253,10 +253,10 @@ alignBtns.forEach(btn=>{
   });
 });
 function getCurrentAlignment(){
-  // let horz = document.querySelector('.alignBtn.hz.active').value;
-  // let vert = document.querySelector('.alignBtn.vt.active').value;
-  // return vert+"_"+horz;
-   return "TOP_LEFT";
+  let horz = document.querySelector('.alignBtn.hz.active').value;
+  let vert = document.querySelector('.alignBtn.vt.active').value;
+  return vert+"_"+horz;
+  //  return "TOP_LEFT";
 }
 function deleteSelected(){
   tr.nodes().forEach(node=>{
@@ -292,7 +292,6 @@ const tr = new Konva.Transformer({
   keepRatio: false,
   rotateAnchorOffset: 30,
   rotateEnabled: false,
-  shouldOverdrawWholeArea: true,
   flipEnabled:true
 });
 tr.anchorCornerRadius(5);
@@ -436,6 +435,9 @@ stage.on('mousedown touchstart', (e) => {
 stage.on('mousemove touchmove', (e) => {
   x2 = stage.getPointerPosition().x;
   y2 = stage.getPointerPosition().y;
+  const metaPressed = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
+
+  // console.log(e.evt.shiftKey)
   // if line in progress
   if(movingId && ["POLYLINE","STRAIGHTLINE","POLYGONE"].includes(currentSelection)){
     const shp = stage.findOne('#m'+movingId);
@@ -448,13 +450,39 @@ stage.on('mousemove touchmove', (e) => {
     }
     const line = shp.findOne(selectorr);
     const points = line.points().slice();
-    points[points.length-2] = x2;
-    points[points.length-1] = y2;
+    const pl = points.length;
+    if(metaPressed){
+      let px1 = points[pl-4];
+      let py1 = points[pl-3];
+      let px2 = x2;
+      let py2 = y2;
+      let dx = px2-px1;
+      let dy = py2-py1;
+      let ang = Math.round(Math.atan2(dy,dx)*(4 / Math.PI))*45;
+      if(Math.abs(ang)===0 || Math.abs(ang)===180 ){
+        points[pl-2] = x2;
+        points[pl-1] = py1;
+      }else if(Math.abs(ang)===90){
+        points[pl-2] = px1;
+        points[pl-1] = y2;
+      }else{
+        let r = Math.abs(Math.sqrt(dx*dx + dy*dy));
+        let cosx = r * Math.cos(ang * Math.PI / 180);
+        let sinx = r * Math.sin(ang * Math.PI / 180);
+        points[pl-2] = px1+cosx;
+        points[pl-1] = py1+sinx;
+      }
+    }else{
+      points[pl-2] = x2;
+      points[pl-1] = y2;
+    }
+    // points[pl-2] = x2;
+    // points[pl-1] = y2;
     line.points(points);
     let anchors  = shp.find('.line-anchor');
     anchors[anchors.length-1].setAttrs({
-      x:x2,
-      y:y2
+      x:points[pl-2],
+      y:points[pl-1]
     });
   e.evt.preventDefault();
 
@@ -579,6 +607,9 @@ stage.on('mouseup touchend', (e) => {
   }else{
     tr.nodes(selected);
   }
+  if(selected.length>1){
+    tr.shouldOverdrawWholeArea(true);
+  }
   stage.container().style.cursor = 'default';
 
   sendUIData();
@@ -601,6 +632,7 @@ function onClickEvent(e){
     stage.find('.line-anchor').forEach(la=>{
         la.visible(false);
       });
+    tr.shouldOverdrawWholeArea(false);
     return;
   }
 // console.log(e);
@@ -841,12 +873,15 @@ function createText(id, attrs=null){
   textNode.on('transform', function () {
   //   // reset scale, so only with is changing by transformer
     textNode.setAttrs({
-      width: textNode.width() * textNode.scaleX(),
+      // width: textNode.width() * textNode.scaleX(),
       // height: textNode.height() * textNode.scaleY(),
       scaleX: 1,
       scaleY: 1,
     });
   });
+  // textNode.on('transformstart',function(){
+  //   tr.shouldOverdrawWholeArea(false);
+  // });
   textNode.on('transformend',function(){
     // default top left
     textNode.setAttrs(calculateOffset(textNode));
@@ -860,8 +895,8 @@ function createText(id, attrs=null){
     let textPosition = textNode.getAbsolutePosition();
     let stageBox = stage.container().getBoundingClientRect();
     let areaPosition = {
-      x: stageBox.left + textPosition.x,
-      y: stageBox.top + textPosition.y,
+      x: stageBox.left + textPosition.x - textNode.offsetX(),
+      y: stageBox.top + textPosition.y - textNode.offsetY(),
     };
 
     let textarea = document.createElement('textarea');

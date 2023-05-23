@@ -51,7 +51,14 @@ export class UIEditorPanel {
         const mainJsUri = getUri(webview, extensionUri, ["media" ,"main.js"]);
         const nonce = getNonce();
         const stylesMainUri = getUri(webview, extensionUri, ["media" ,"main.css"]);
+        // const fontawesomeUri = getUri(webview, extensionUri, ["media" ,"fontawesome.css"]);
         const imageUrl = getUri(webview, extensionUri, ["media", "thickness_icon.png"]);
+        const top = getUri(webview, extensionUri, ["media", "icons","top.png"]);
+        const left = getUri(webview, extensionUri, ["media", "icons","left.png"]);
+        const center = getUri(webview, extensionUri, ["media", "icons","center.png"]);
+        const middle = getUri(webview, extensionUri, ["media", "icons","middle.png"]);
+        const bottom = getUri(webview, extensionUri, ["media", "icons","bottom.png"]);
+        const right = getUri(webview, extensionUri, ["media", "icons","right.png"]);
         // const fontUri = getUri(webview, extensionUri, ["media" ,"JetBrains_Mono/JetBrainsMono-VariableFont_wght.ttf"]);
         return /*html*/ `
           <!DOCTYPE html>
@@ -62,7 +69,7 @@ export class UIEditorPanel {
               <meta charset="utf-8" />
               <title>${this.screenName}</title>
               <link  rel="stylesheet" nonce="${nonce}" href="${stylesMainUri}">
-            </head>
+             
           
             <body>
               <h6 class="title">Draw to update ${this.screenName}</h6>
@@ -87,13 +94,13 @@ export class UIEditorPanel {
                 <option value="8"> 8</option>
                 <option value="9"> 9</option>
               </select>
-              </div> <!--
-              <button id="alignLeft" value="LEFT" class="alignBtn active hz">L</button>
-              <button id="alignCenter" value="CENTER" class="alignBtn hz">C</button>
-              <button id="alignRight" value="RIGHT" class="alignBtn hz">R</button>
-              <button id="alignTOP" value="TOP" class="alignBtn active vt">T</button>
-              <button id="alignMiddle" value="MIDDLE" class="alignBtn vt">M</button>
-              <button id="alignBottom" value="BOTTOM" class="alignBtn vt">B</button> -->
+              </div>
+              <button id="alignLeft" value="LEFT" class="alignBtn active hz"><img src="${left}" /></button>
+              <button id="alignCenter" value="CENTER" class="alignBtn hz"><img src="${center}" /></button>
+              <button id="alignRight" value="RIGHT" class="alignBtn hz"><img src="${right}" /></button>
+              <button id="alignTOP" value="TOP" class="alignBtn active vt"><img src="${top}" /></button>
+              <button id="alignMiddle" value="MIDDLE" class="alignBtn vt"><img src="${middle}" /></button>
+              <button id="alignBottom" value="BOTTOM" class="alignBtn vt"><img src="${bottom}" /></button> 
               <button id="delete" >&#10761;</button>
               </div>
               <div class="main">
@@ -177,6 +184,7 @@ export class UIEditorPanel {
                 x: parseInt(attrs[1]),
                 y: parseInt(attrs[2]),
                 fill: "#"+attrs[3].replace("0x",""),
+                alignment: attrs[4].replaceAll(" ","").replace('justify=d.',""),
                 draggable: true,
               });
             }
@@ -236,7 +244,7 @@ export class UIEditorPanel {
 
         }
         if(uiElement.name==='text'){
-          finalPyString += `\n\t\td.Text('${uiElement.text}', ${Math.round(uiElement.x)}, ${Math.round(uiElement.y)}, 0x${uiElement.fill.replace("#","")}, justify=d.TOP_LEFT),`;
+          finalPyString += `\n\t\td.Text('${uiElement.text}', ${Math.round(uiElement.x)}, ${Math.round(uiElement.y)}, 0x${uiElement.fill.replace("#","")}, justify=d.${uiElement.alignment}),`;
 
         }
       });

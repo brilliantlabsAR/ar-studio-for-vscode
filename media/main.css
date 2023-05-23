@@ -50,10 +50,16 @@
 }
 
 .alignBtn{
-  background-color:var(--vscode-disabledForeground)!important;
+  background-color:  transparent !important;
 }
 .alignBtn.active{
-  background-color: var(--vscode-foreground)!important;
+  background-color: rgba(0,0,0,0.5) !important;
+}
+.alignBtn:first-child{
+margin-left: 10px;
+}
+.alignBtn:last-child{
+  margin-right: 10px;
 }
 .title{
     font-family: 'JetBrains Mono';
