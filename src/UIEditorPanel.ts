@@ -51,7 +51,19 @@ export class UIEditorPanel {
         const mainJsUri = getUri(webview, extensionUri, ["media" ,"main.js"]);
         const nonce = getNonce();
         const stylesMainUri = getUri(webview, extensionUri, ["media" ,"main.css"]);
-        const imageUrl = getUri(webview, extensionUri, ["media", "thickness_icon.png"]);
+        // const fontawesomeUri = getUri(webview, extensionUri, ["media" ,"fontawesome.css"]);
+        const thickness = getUri(webview, extensionUri, ["media","icons", "thickness_icon.png"]);
+        const top = getUri(webview, extensionUri, ["media", "icons","top.png"]);
+        const left = getUri(webview, extensionUri, ["media", "icons","left.png"]);
+        const center = getUri(webview, extensionUri, ["media", "icons","center.png"]);
+        const middle = getUri(webview, extensionUri, ["media", "icons","middle.png"]);
+        const bottom = getUri(webview, extensionUri, ["media", "icons","bottom.png"]);
+        const right = getUri(webview, extensionUri, ["media", "icons","right.png"]);
+        const rect = getUri(webview, extensionUri, ["media", "icons","rect.png"]);
+        const polygon = getUri(webview, extensionUri, ["media", "icons","polygon.png"]);
+        const line = getUri(webview, extensionUri, ["media", "icons","line.png"]);
+        const polyline = getUri(webview, extensionUri, ["media", "icons","polyline.png"]);
+        const text = getUri(webview, extensionUri, ["media", "icons","text.png"]);
         // const fontUri = getUri(webview, extensionUri, ["media" ,"JetBrains_Mono/JetBrainsMono-VariableFont_wght.ttf"]);
         return /*html*/ `
           <!DOCTYPE html>
@@ -62,35 +74,43 @@ export class UIEditorPanel {
               <meta charset="utf-8" />
               <title>${this.screenName}</title>
               <link  rel="stylesheet" nonce="${nonce}" href="${stylesMainUri}">
-            </head>
+             
           
             <body>
-              <h6 class="title">Draw to update ${this.screenName}</h6>
-              <div class="tools">
-              <button id="rect" class="shape-btn" value="RECT">&#9645;</button>
-              <button id="straightLine" class="shape-btn" value="STRAIGHTLINE">&#9586;</button>
-              <button id="polyLine" class="shape-btn" value="POLYLINE">&#9722;</button>
-              <button id="polygone" class="shape-btn" value="POLYGONE">&#9699;</button>
-
-              <button id="addText" class="shape-btn" value="ADDTEXT" style="margin-right:2rem;">T</button>
-              <input type="color" value="#afafaf" name="colorselection" id="colorselection">
-              <div class="thickness" >
-                <img height=25 width=25 src="${imageUrl}" />
-                <select id="myDropdown" >
-                <option value="1"> 1</option>
-                <option value="2"> 2</option>
-                <option value="3"> 3</option>
-                <option value="4"> 4</option>
-                <option value="5"> 5</option>
-                <option value="6"> 6</option>
-                <option value="7"> 7</option>
-                <option value="8"> 8</option>
-                <option value="9"> 9</option>
-              </select>
-              </div>
-              <button id="delete">&#10761;</button>
-              </div>
               <div class="main">
+              <div class="tools">
+              <button id="rect" class="shape-btn" value="RECT"><img src="${rect}" /></button>
+              <button id="straightLine" class="shape-btn" value="STRAIGHTLINE"><img src="${line}" /></button>
+              <button id="polyLine" class="shape-btn" value="POLYLINE"><img src="${polyline}" /></button>
+              <button id="polygone" class="shape-btn" value="POLYGONE"><img src="${polygon}" /></button>
+
+              <button id="addText" class="shape-btn" value="ADDTEXT" style="margin-right:2rem;"><img src="${text}" /></button>
+              <input type="color" value="#afafaf" name="colorselection" id="colorselection">
+              <button class="thickness" id="thicknessBtn" >
+                <img src="${thickness}" />
+                <span>1</span>
+              </button>
+              <div id="myDropdown" style="display: none;">
+                <ul>
+                  <li class="t-op" data-thick="1"> 1</li>
+                  <li class="t-op" data-thick="2"> 2</li>
+                  <li class="t-op" data-thick="3"> 3</li>
+                  <li class="t-op" data-thick="4"> 4</li>
+                  <li class="t-op" data-thick="5"> 5</li>
+                  <li class="t-op" data-thick="6"> 6</li>
+                  <li class="t-op" data-thick="7"> 7</li>
+                  <li class="t-op" data-thick="8"> 8</li>
+                  <li class="t-op" data-thick="9"> 9</li>
+                </ul>
+              </div>
+              <button id="alignLeft" value="LEFT" class="alignBtn active hz"><img src="${left}" /></button>
+              <button id="alignCenter" value="CENTER" class="alignBtn hz"><img src="${center}" /></button>
+              <button id="alignRight" value="RIGHT" class="alignBtn hz"><img src="${right}" /></button>
+              <button id="alignTOP" value="TOP" class="alignBtn active vt"><img src="${top}" /></button>
+              <button id="alignMiddle" value="MIDDLE" class="alignBtn vt"><img src="${middle}" /></button>
+              <button id="alignBottom" value="BOTTOM" class="alignBtn vt"><img src="${bottom}" /></button> 
+              <button id="delete" >&#10761;</button>
+              </div>
                 <div id="container"></div>
               </div>
               <script type="text/javaScript" nonce="${nonce}" src="${webviewUri}"></script>
@@ -103,15 +123,6 @@ export class UIEditorPanel {
         webview.onDidReceiveMessage(
           (message: any) => {
               this.updatePy(message);
-            // if(message.name==='rect'){
-            //   let currentEditors = vscode.window.visibleTextEditors;
-            //   let currentEditor = currentEditors.filter(te=>te.document.fileName.endsWith(".py"))[0];
-            //     currentEditor?.edit((editBuidler:vscode.TextEditorEdit)=>{
-            //       // editBuidler.insert(new vscode.Position(0,0),`import display\ndisplay.Rectangle(${Math.round(message.x)},${Math.round(message.y)},${Math.round(message.x+message.width)},${Math.round(message.y+message.height)},display.RED)\n`);
-            //       editBuidler.replace(new vscode.Position(0,0),"")
-            //     });
-            //     currentEditor.options.lineNumbers
-            // }
           },
           undefined,
           this._disposables
@@ -180,6 +191,7 @@ export class UIEditorPanel {
                 x: parseInt(attrs[1]),
                 y: parseInt(attrs[2]),
                 fill: "#"+attrs[3].replace("0x",""),
+                alignment: attrs[4].replaceAll(" ","").replace('justify=d.',""),
                 draggable: true,
               });
             }
@@ -239,7 +251,7 @@ export class UIEditorPanel {
 
         }
         if(uiElement.name==='text'){
-          finalPyString += `\n\t\td.Text('${uiElement.text}', ${Math.round(uiElement.x)}, ${Math.round(uiElement.y)}, 0x${uiElement.fill.replace("#","")}, justify=d.TOP_LEFT),`;
+          finalPyString += `\n\t\td.Text('${uiElement.text}', ${Math.round(uiElement.x)}, ${Math.round(uiElement.y)}, 0x${uiElement.fill.replace("#","")}, justify=d.${uiElement.alignment}),`;
 
         }
       });
