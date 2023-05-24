@@ -9,170 +9,251 @@ const vscode = acquireVsCodeApi();
 //     });
 // }
 let liveUpdate = true;
-window.addEventListener("message", (event) => {
+window.addEventListener('message', async (event) => {
+
   let uiData = event.data; // The JSON data our extension sent
   liveUpdate = false;
-  uiData.forEach((ui) => {
-    const id = new Date().valueOf();
-    switch (ui.name) {
-      case "rect":
-        createRectangle(id, ui);
-        break;
-      case "line":
-        createStraightLine(id, ui);
-        break;
-      case "text":
-        createText(id, ui);
-        break;
-      default:
-        break;
-    }
-  });
+  console.log(uiData);
+  if(await isFontReady()){
+    uiData.forEach(ui=>{
+      const id = new Date().valueOf();
+      switch (ui.name) {
+        case "rect":
+          createRectangle(id,ui);
+          break;
+        case "line":
+          createStraightLine(id,ui);
+          break;
+        case "polygone":
+          createStraightLine(id,ui);
+          break;
+        case "polyline":
+          createStraightLine(id,ui);
+          break;
+        case "text":
+            createText(id,ui);
+            break;
+        default:
+          break;
+      }
+    });
+    layer.draw();
+  };
+  
   liveUpdate = true;
 });
-const debounce = (func, delay) => {
-  let debounceTimer;
-  return function () {
-    const context = this;
-    const args = arguments;
-    clearTimeout(debounceTimer);
+let debounceTimer  ;
 
-    debounceTimer = setTimeout(() => func.apply(context, args), delay);
-  };
-};
+const debounce = (func, wait) => {  
+  return function() {  
+      const context = this ;
+      const args = arguments  ;
+          clearTimeout(debounceTimer)  ;
+           debounceTimer = setTimeout(() => func.apply(context, args), wait)  ;
+  }  ;
+}   ;
 var width = 640;
 var height = 400;
-const ANCHORS = [
-  "top-left",
-  "top-right",
-  "bottom-left",
-  "bottom-right",
-  "top-center",
-  "bottom-center",
-  "middle-right",
-  "middle-left",
-];
-const shapeBtns = document.querySelectorAll(".shape-btn"); // add a variable for staraight  line
-const colorInput = document.getElementById("colorselection");
-// Get the div element
+const ANCHORS = ['top-left','top-right', 'bottom-left',  'bottom-right','top-center',  'bottom-center', 'middle-right', 'middle-left'];
+const shapeBtns =document.querySelectorAll('.shape-btn') ; // add a variable for staraight  line 
+const colorInput = document.getElementById('colorselection');
 const dropDown = document.getElementById("myDropdown");
-
-const polygon = document.getElementById("polygon"); //add polygon using id
-
-var strokeWidth =10;
-
-const deleteButton = document.getElementById("delete");
-const ArrowKeys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
+const deleteButton = document.getElementById('delete');
+const ArrowKeys = ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"];
 var currentSelection = null;
 const DELTA = 4;
-var polygonPoints = [];
-
 var intention = "click";
 var detectIntention = null;
-window.addEventListener("keydown", function (event) {
+window.addEventListener('keydown', function(event) {
   const key = event.key; // const {key} = event; ES6+
-  if (event.ctrlKey && (key == "a" || key == "A")) {
-    let shapes = stage.find(".rect,.line,.text");
-    if (shapes.length === 1 && shapes[0].name() === "line") {
-      shapes[0]
-        .getParent()
-        .find(".line-anchor")
-        .forEach((la) => {
+  if(event.ctrlKey && (key ==='a'|| key==='A')){
+    let shapes = stage.find('.rect,.line,.text,.polyline,.polygone');
+    if(shapes.length===1 && ['line','polyline','polygone'].includes(shapes[0].name())){
+      shapes[0].getParent().find('.line-anchor').forEach(la=>{
           la.visible(true);
-        });
-    } else {
+      });
+    }else{
       tr.nodes(shapes);
     }
     event.preventDefault();
     return;
   }
+  if(event.ctrlKey && (key ==='d'|| key==='D') && tr.nodes().length>0){
+    let shapes = tr.nodes();
+   
+      let newshapes = [];
+      shapes.forEach(sh=>{
+        const id = new Date().valueOf();
+
+        let newshape = sh.clone({x:sh.x()+10,y:sh.y()+10,id});
+        layer.add(newshape);
+        newshapes.push(newshape);
+      });
+      tr.nodes(newshapes);
+    event.preventDefault();
+    return;
+  }
   let offset = DELTA;
-  if (event.ctrlKey && ArrowKeys.includes(key)) {
+  if(event.ctrlKey && ArrowKeys.includes(key)){
     offset = 1;
   }
-  if (key === "ArrowLeft") {
-    tr.nodes().forEach((node) => {
+  if(key==="ArrowLeft"){
+    tr.nodes().forEach(node=>{
       node.x(node.x() - offset);
     });
+    stage.find('.line,.polyline,.polygone').forEach(l=>{
+      let anchors = l.getParent().find('.line-anchor');
+      if(anchors[0].visible()){
+          let points =  l.points().slice();
+          let newPoints = points.map((p,ind)=>ind%2===0?p-offset:p);
+          l.points(newPoints);
+          for (let i = 0; i < newPoints.length; i +=2) {
+            anchors[i/2].setAttrs({x:newPoints[i],y:newPoints[i+1]});
+          }
+      }
+    });
   }
-  if (key === "ArrowRight") {
-    tr.nodes().forEach((node) => {
+  if(key==="ArrowRight"){
+    tr.nodes().forEach(node=>{
       node.x(node.x() + offset);
     });
+    stage.find('.line,.polyline,.polygone').forEach(l=>{
+      let anchors = l.getParent().find('.line-anchor');
+      if(anchors[0].visible()){
+          let points =  l.points().slice();
+          let newPoints = points.map((p,ind)=>ind%2===0?p+offset:p);
+          l.points(newPoints);
+          for (let i = 0; i < newPoints.length; i +=2) {
+            anchors[i/2].setAttrs({x:newPoints[i],y:newPoints[i+1]});
+          }
+      }
+    });
   }
-  if (key === "ArrowUp") {
-    tr.nodes().forEach((node) => {
+  if(key==="ArrowUp"){
+    tr.nodes().forEach(node=>{
       node.y(node.y() - offset);
     });
-  }
-  if (key === "ArrowDown") {
-    tr.nodes().forEach((node) => {
-      node.y(node.y() + offset);
+    stage.find('.line,.polyline,.polygone').forEach(l=>{
+      let anchors = l.getParent().find('.line-anchor');
+      if(anchors[0].visible()){
+          let points =  l.points().slice();
+          let newPoints = points.map((p,ind)=>ind%2!==0?p-offset:p);
+          l.points(newPoints);
+          for (let i = 0; i < newPoints.length; i +=2) {
+            anchors[i/2].setAttrs({x:newPoints[i],y:newPoints[i+1]});
+          }
+      }
     });
   }
-  if (key === "Backspace" || key === "Delete") {
+  if(key==="ArrowDown"){
+    tr.nodes().forEach(node=>{
+      node.y(node.y() + offset);
+    });
+    stage.find('.line,.polyline,.polygone').forEach(l=>{
+      let anchors = l.getParent().find('.line-anchor');
+      if(anchors[0].visible()){
+          let points =  l.points().slice();
+          let newPoints = points.map((p,ind)=>ind%2!==0?p+offset:p);
+          l.points(newPoints);
+          for (let i = 0; i < newPoints.length; i +=2) {
+            anchors[i/2].setAttrs({x:newPoints[i],y:newPoints[i+1]});
+          }
+      }
+    });
+  }
+  if ( key === "Delete") {
     // if(tr.nodes().length>0){
 
-    deleteSelected();
+      deleteSelected();
     // }
   }
-  if (key === "Escape" && currentSelection) {
+  if ( key === "Escape") {
     // if(tr.nodes().length>0){
-
-    currentSelection = null;
-    polygonPoints = [];
-    selectionRectangle.visible(false);
+      if(movingId && ["POLYLINE","POLYGONE"].includes(currentSelection)){
+        let objj = stage.findOne("#m"+movingId);
+        objj.destroy();
+        movingId = null;
+        currentSelection = null;
+        sendUIData();
+        stage.container().style.cursor = 'default';
+      }   
     // }
   }
 });
 
-shapeBtns.forEach((btn) => {
-  btn.addEventListener("click", function () {
+shapeBtns.forEach(btn=>{
+  btn.addEventListener('click',function(){
     currentSelection = btn.value;
-    btn.classList.add("active");
+    btn.classList.add('active');
+    stage.container().style.cursor = 'crosshair';
   });
 });
 
-
-
-
-colorInput.addEventListener("change", function () {
-  let color = this.value;  F5D
-  tr.nodes().forEach((node) => {
-    if (node.name() === "line-group") {
-      node.findOne(".line").stroke(color);
-    } else if (node.name() === "line") {
+colorInput.addEventListener('change',function(){
+  let color =  this.value;
+  tr.nodes().forEach(node=>{
+    if(node.name()==='line-group'){
+      node.findOne('.line')?.stroke(color);
+      node.findOne('.polyline')?.stroke(color);
+      node.findOne('.polygone')?.fill(color);
+    }else if(['line','polyline'].includes(node.name())){
       node.stroke(color);
-    } else {
+    }else if(node.name()==='polygone'){
+      node.fill(color);
+      node.stroke(color);
+    }else{
       node.fill(color);
     }
   });
-  stage.find(".line").forEach((l) => {
-    if (l.getParent().find(".line-anchor")[0].visible()) {
-      l.stroke(color);
+  stage.find('.line,.polyline').forEach(l=>{
+    if(l.getParent().find('.line-anchor')[0].visible()){
+        l.stroke(color);
+    }
+  });
+  stage.find('.polygone').forEach(l=>{
+    if(l.getParent().find('.line-anchor')[0].visible()){
+        l.fill(color);
+        l.stroke(color);
     }
   });
 });
+dropDown.addEventListener("change", function () {
+  // Code to execute when the div is clicked
+  const selectedValue = dropDown.value;
+  strokeWidth = parseInt(selectedValue);
 
+  // Do something with the selected value
+  console.log("Selected value: " + selectedValue);
 
+   
+      // tr.nodes().forEach((node) => {
+      //  console.log(node);
+      // });
+      stage.find(".line,.polyline").forEach((l) => {
+        if (l.getParent().find(".line-anchor")[0].visible()) {
+          l.strokeWidth(selectedValue);
+        }
+      });
+});
 
-
-function deleteSelected() {
-  tr.nodes().forEach((node) => {
+function deleteSelected(){
+  tr.nodes().forEach(node=>{
     node.destroy();
   });
   tr.nodes([]);
-  stage.find(".line").forEach((l) => {
-    if (l.getParent().find(".line-anchor")[0].visible()) {
-      l.getParent().destroy();
+  stage.find('.line,.polyline,.polygone').forEach(l=>{
+    if(l.getParent().find('.line-anchor')[0].visible()){
+        l.getParent().destroy();
     }
   });
+  sendUIData();
+  stage.container().style.cursor = 'default';
   layer.draw();
 }
-deleteButton.addEventListener("click", deleteSelected);
+deleteButton.addEventListener('click',deleteSelected);
 
 var stage = new Konva.Stage({
-  container: "container",
+  container: 'container',
   width: width,
   height: height,
 });
@@ -181,43 +262,44 @@ var layer = new Konva.Layer();
 stage.add(layer);
 
 const tr = new Konva.Transformer({
-  anchorFill: "blue",
+  anchorFill: 'blue',
   anchorSize: 10,
   borderDash: [3, 3],
-  anchorStrokeWidth: 0,
-  enabledAnchors: ANCHORS.splice(0, 4),
+  anchorStrokeWidth : 0,
+  enabledAnchors: ANCHORS.splice(0,4),
   keepRatio: false,
   rotateAnchorOffset: 30,
-  rotateEnabled: false,
+  rotateEnabled: false
 });
 tr.anchorCornerRadius(5);
 layer.add(tr);
-
-stage.getContainer().style.backgroundColor = "rgb(0, 0, 0)";
+stage.getContainer().style.backgroundColor = 'rgb(0, 0, 0)';
 // add a new feature, lets add ability to draw selection rectangle
 var selectionRectangle = new Konva.Rect({
   // fill: 'rgba(255,255,255,0.5)',
-  stroke: "blue",
+  stroke:'blue',
   strokeWidth: 1,
-  dash: [3, 3],
+  dash: [3,3],
   visible: false,
 });
 layer.add(selectionRectangle);
+
 
 var x1, y1, x2, y2;
 let line_anchors = {};
 let movingId = null;
 
-stage.on("mousedown touchstart", (e) => {
+stage.on('mousedown touchstart', (e) => {
   // do nothing if we mousedown on any shape
-  if (e.target !== stage) {
+  if (currentSelection===null && e.target !== stage) {
     return;
   }
   intention = "click";
-  detectIntention = setTimeout(function () {
+  detectIntention = setTimeout(function(){
     intention = "mouseup";
-  }, 500);
-  e.evt.preventDefault();
+    stage.container().style.cursor = 'crosshair';
+
+  },500);
   x1 = stage.getPointerPosition().x;
   y1 = stage.getPointerPosition().y;
   x2 = stage.getPointerPosition().x;
@@ -226,66 +308,196 @@ stage.on("mousedown touchstart", (e) => {
   selectionRectangle.width(0);
   selectionRectangle.height(0);
   const id = new Date().valueOf();
-  document
-    .querySelector('.shape-btn[value="' + currentSelection + '"')
-    ?.classList.remove("active");
-  if (currentSelection === "RECT") {
+  document.querySelector('.shape-btn[value="'+currentSelection+'"')?.classList.remove('active')
+  if(currentSelection==="RECT"){
     createRectangle(id);
-
-    currentSelection = null;
+    
+    currentSelection =null;
     // selectionRectangle.visible(true);
+
   }
 
-  if (currentSelection === "STARIGHTLINE") {
-    createStraightLine(id);
-    currentSelection = null;
+  // if(currentSelection==="STRAIGHTLINE"){
+  //   createStraightLine(id)
+  //   // currentSelection =null;
+  //   // selectionRectangle.visible(true);
+
+  // }
+  if( ["POLYLINE","STRAIGHTLINE","POLYGONE"].includes(currentSelection)){
+    let selectorr='line';
+    if(currentSelection==='POLYLINE'){
+      selectorr = 'polyline';
+    }
+    if(currentSelection==='POLYGONE'){
+      selectorr = 'polygone';
+    }
+    if(movingId){
+        const shp = stage.findOne("#m"+movingId);
+        let line = shp.findOne('.'+selectorr);
+        let points = line.points().slice();
+        points.push(stage.getPointerPosition().x);
+        points.push(stage.getPointerPosition().y);
+        line.points(points);
+        let anchors  = shp.find('.line-anchor');
+        anchors[anchors.length-1].setAttrs({
+          x:x2,
+          y:y2
+        });
+        if(currentSelection==='STRAIGHTLINE'){
+          currentSelection = null;
+          movingId = null;
+        }else{
+          const anchor = new Konva.Circle({
+            x: stage.getPointerPosition().x,
+            y: stage.getPointerPosition().y,
+            radius: 5,
+            fill: 'blue',
+            draggable: true,
+            name:'line-anchor',
+            visible:false
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+          });
+          shp.add(anchor);
+          function updateLine() {
+            let anchors = shp.find('.line-anchor');
+            let newpoints = anchors.map(anch=> [anch.x(),anch.y()]);
+            line.points(newpoints.flat());
+          }
+          
+          anchor.on('dragmove', updateLine);
+          anchor.on('dragmove', updateLine);
+          
+        }
+      
+    }else{
+      movingId  =  id;
+      let attrs = {
+        points: [stage.getPointerPosition().x, stage.getPointerPosition().y,stage.getPointerPosition().x, stage.getPointerPosition().y],
+        name: selectorr,
+        closed: currentSelection==='POLYGONE'
+        
+      //   draggable: true,
+      };
+      if(currentSelection==="POLYGONE"){
+        attrs = {...attrs,
+                fill: colorInput.value,
+                stroke: colorInput.value,
+                strokeWidth: 1,
+
+              };
+      }else{
+        attrs = {...attrs,
+          stroke: colorInput.value,
+          strokeWidth: dropDown.value
+      };
+      }
+      createStraightLine(id,attrs);
+    }
+    
+    // currentSelection =null;
     // selectionRectangle.visible(true);
+
   }
 
-  if (currentSelection === "POLYGON") {
-    console.log("current section");
-    // createPolygon();
-    currentSelection = "POLYGON";
-    // selectionRectangle.visible(true);
-  }
-
-  if (currentSelection === "ADDTEXT") {
+  if(currentSelection==="ADDTEXT"){
     createText(id);
-    currentSelection = null;
+    currentSelection =null;
+
   }
   tr.moveToTop();
   selectionRectangle.visible(true);
+
 });
 
-stage.on("mousemove touchmove", (e) => {
+stage.on('mousemove touchmove', (e) => {
+  x2 = stage.getPointerPosition().x;
+  y2 = stage.getPointerPosition().y;
+  // if line in progress
+  if(movingId && ["POLYLINE","STRAIGHTLINE","POLYGONE"].includes(currentSelection)){
+    const shp = stage.findOne('#m'+movingId);
+    let selectorr='.line';
+    if(currentSelection==='POLYLINE'){
+      selectorr = '.polyline';
+    }
+    if(currentSelection==='POLYGONE'){
+      selectorr = '.polygone';
+    }
+    const line = shp.findOne(selectorr);
+    const points = line.points().slice();
+    points[points.length-2] = x2;
+    points[points.length-1] = y2;
+    line.points(points);
+    let anchors  = shp.find('.line-anchor');
+    anchors[anchors.length-1].setAttrs({
+      x:x2,
+      y:y2
+    });
+  e.evt.preventDefault();
+
+    return;
+  }
   // do nothing if we didn't start selection
   if (!selectionRectangle.visible()) {
     return;
   }
-  e.evt.preventDefault();
-  x2 = stage.getPointerPosition().x;
-  y2 = stage.getPointerPosition().y;
-  if (movingId) {
-    const shp = stage.findOne("#m" + movingId);
-    if (["rect", "text"].includes(shp.name())) {
+ 
+  if(movingId){
+    const shp = stage.findOne('#m'+movingId);
+    if(['rect','text'].includes(shp.name())){
       shp.setAttrs({
         x: Math.min(x1, x2),
         y: Math.min(y1, y2),
         width: Math.abs(x2 - x1),
         height: Math.abs(y2 - y1),
       });
-    } else if (shp.name() === "line-group") {
-      const line = shp.findOne(".line");
-      const points = line.points().slice();
-      points[2] = x2;
-      points[3] = y2;
-      line.points(points);
-      line_anchors[movingId][1].setAttrs({
-        x: x2,
-        y: y2,
-      });
+    }else if(shp.name()==='line-group'){
+      // let selectorr='.line';
+      // if(currentSelection==='POLYLINE'){
+      //   selectorr = '.polyline';
+      // }
+      // const line = shp.findOne(selectorr)
+      // const points = line.points().slice();
+      // points[points.length-2] = x2;
+      // points[points.length-1] = y2;
+      // line.points(points);
+      // let anchors  = shp.find('.line-anchor');
+      // anchors[anchors.length-1].setAttrs({
+      //   x:x2,
+      //   y:y2
+      // });
     }
+    
   }
+  
 
   selectionRectangle.setAttrs({
     x: Math.min(x1, x2),
@@ -294,113 +506,117 @@ stage.on("mousemove touchmove", (e) => {
     height: Math.abs(y2 - y1),
   });
 });
-
-stage.on("mouseup touchend", (e) => {
+stage.on("dblclick",function(){
+  if(movingId && ["POLYLINE","POLYGONE"].includes(currentSelection)){
+    let selectorr = '.polygone'
+    if(currentSelection==='POLYLINE'){
+      selectorr = '.polyline';
+    }
+    let shp = stage.findOne("#m"+movingId);
+    let line = shp.findOne(selectorr);
+    let points = line.points().slice();
+    let anchors = shp.find('.line-anchor');
+    anchors[anchors.length-1].destroy();
+    anchors[anchors.length-2].destroy();
+    line.points(points.slice(0,points.length-4));
+    movingId = null;
+    currentSelection = null;
+  }
+  sendUIData();
+  stage.container().style.cursor = 'default';
+  // sendUIData();
+});
+stage.on('mouseup touchend', (e) => {
   // do nothing if we didn't start selection
   if (!selectionRectangle.visible()) {
     return;
   }
+  if(movingId){
+    if(['POLYLINE','POLYGONE','STRAIGHTLINE'].includes(currentSelection)){  
+      return;
+    }
+  }
   e.evt.preventDefault();
   // update visibility in timeout, so we can check it in click event
   setTimeout(() => {
-    selectionRectangle.visible(false);
+  selectionRectangle.visible(false);
   });
   clearInterval(detectIntention);
-  if (intention === "click") {
+  if(intention==="click"){
     onClickEvent(e);
+    stage.container().style.cursor = 'default';
+
     sendUIData();
     return;
   }
-  if (movingId) {
-    const shp = stage.findOne("#m" + movingId);
-    if (shp.name() !== "line-group") {
-      tr.nodes([shp]);
+  
+  if(movingId){
+    if(['POLYLINE','POLYGONE','STRAIGHTLINE'].includes(currentSelection)){  
+      return;
+    }
+    const shp = stage.findOne('#m'+movingId);
+    if(shp.name()!=='line-group'){
+        tr.nodes([shp]);
     }
     // vscode.postMessage(ALL_OBJECTS[movingId].getAttrs());
-    movingId = null;
+    movingId =null;
     // selectionRectangle.visible(false);
     sendUIData();
+    stage.container().style.cursor = 'default';
+    currentSelection = null;
     return;
   }
-  let shapes = stage.find(".rect,.line,.text");
+  let shapes = stage.find('.rect,.line,.text,.polyline,.polygone');
   let box = selectionRectangle.getClientRect();
   let selected = shapes.filter((shape) =>
     Konva.Util.haveIntersection(box, shape.getClientRect())
   );
-  if (selected.length === 1 && selected[0].name() === "line") {
-    selected[0]
-      .getParent()
-      .find(".line-anchor")
-      .forEach((la) => {
+  if(selected.length===1 && ['line','polyline','polygone'].includes(selected[0].name())){
+    selected[0].getParent().find('.line-anchor').forEach(la=>{
         la.visible(true);
-      });
-  } else {
+    });
+  }else{
     tr.nodes(selected);
   }
+  stage.container().style.cursor = 'default';
+
   sendUIData();
 });
 
 // clicks should select/deselect shapes
-stage.on("click tap", function (e) {
-  console.log(e);
-  console.log(currentSelection);
-
-  if (currentSelection === "POLYGON") {
-    console.log(currentSelection);
-    addPolygonPoint();
-    return;
-  }
-
+stage.on('click tap', function (e) {
   // if we are selecting with rect, do nothing
   if (selectionRectangle.visible()) {
     return;
   }
   onClickEvent(e);
+ 
 });
-function onClickEvent(e) {
-  // if click on empty area - remove all selections
-  if (e.target === stage) {
+function onClickEvent(e){
+  
+   // if click on empty area - remove all selections
+   if (e.target === stage) {
     tr.nodes([]);
-    stage.find(".line-anchor").forEach((la) => {
-      la.visible(false);
-    });
+    stage.find('.line-anchor').forEach(la=>{
+        la.visible(false);
+      });
     return;
   }
-  // console.log(e);
+// console.log(e);
   // do nothing if clicked NOT on our rectangles
-  if (["line", "line-group", "line-anchor"].includes(e.target.name())) {
+  if (['line','line-group','line-anchor','polyline','polygone'].includes(e.target.name())) {
     // console.log(e)
-    if (e.target.name() === "line-group") {
-      e.target.find(".line-anchor").forEach((la) => {
+    if(e.target.name()==='line-group'){
+      e.target.find('.line-anchor').forEach(la=>{
         la.visible(true);
       });
-    } else {
-      e.target
-        .getParent()
-        .find(".line-anchor")
-        .forEach((la) => {
-          la.visible(true);
-        });
+    }else{
+      e.target.getParent().find('.line-anchor').forEach(la=>{
+        la.visible(true);
+      });
     }
     return;
   }
-
-  // if (["poly-line-group"].includes(e.target.name())) {
-  //   // console.log(e)
-  //   if (e.target.name() === "line-group") {
-  //     e.target.find(".line-anchor").forEach((la) => {
-  //       la.visible(true);
-  //     });
-  //   } else {
-  //     e.target
-  //       .getParent()
-  //       .find(".line-anchor")
-  //       .forEach((la) => {
-  //         la.visible(true);
-  //       });
-  //   }
-  //   return;
-  // }
 
   // do we pressed shift or ctrl?
   const metaPressed = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
@@ -424,203 +640,203 @@ function onClickEvent(e) {
   }
 }
 
-function createStraightLine(id, attrs = null) {
+function createStraightLine(id,attrs=null){
   let color = colorInput.value;
-  const group = new Konva.Group({
-    name: "line-group",
-    draggable: true,
-    visible: true,
-    opacity: 1,
-    id: "m" + id,
-  });
-  if (attrs === null) {
-    movingId = id;
-    attrs = {
-      points: [
-        stage.getPointerPosition().x,
-        stage.getPointerPosition().y,
-        stage.getPointerPosition().x,
-        stage.getPointerPosition().y,
-      ],
+  const group = new Konva.Group({name: 'line-group', draggable: true, visible:true,opacity:1,id: "m"+id});
+  group.on('mouseleave',cursorChangeLeave);
+  group.on('mouseenter',cursorChangeEnter);
+  if(attrs===null){
+    movingId  =  id;
+    attrs ={
+      points: [stage.getPointerPosition().x, stage.getPointerPosition().y,stage.getPointerPosition().x, stage.getPointerPosition().y],
       stroke: color,
-      strokeWidth: strokeWidth,
+      strokeWidth: 2,
       // lineCap: 'round',
       // lineJoin: 'round',
-      name: "line",
-
-      //   draggable: true,
+      name: 'line',
+      
+    //   draggable: true,
     };
-  } else {
-    attrs["id"] = "m" + id;
   }
-  const newLine = new Konva.Line(attrs);
-
-  // layer.add(newLine);
-  const anchor1 = new Konva.Circle({
-    x: newLine.points()[0],
-    y: newLine.points()[1],
-    radius: 5,
-    fill: "blue",
-    draggable: true,
-    name: "line-anchor",
-    visible: attrs === null,
-  });
-  //   layer.add(anchor1);
-
-  const anchor2 = anchor1.clone({
-    x: newLine.points()[2],
-    y: newLine.points()[3],
-  });
-  //   layer.add(anchor2);
-  group.add(newLine, anchor1, anchor2);
-  layer.add(group);
-
-  function updateLine() {
    
-    const attrs = newLine.attrs;
-    console.log(attrs);
+    const newLine = new Konva.Line(attrs);
+    group.add(newLine);
 
-    attrs.points = [anchor1.x(), anchor1.y(), anchor2.x(), anchor2.y()];
-    attrs.strokeWidth = strokeWidth;
+    function updateLine() {
+      let anchors = group.find('.line-anchor');
+      let newpoints = anchors.map(anch=> [anch.x(),anch.y()]);
+      newLine.points(newpoints.flat());
+    }
+    
+    
+    for (let i = 0; i < attrs.points.length; i +=2) {
+      const element = attrs.points[i];
+      const anchor = new Konva.Circle({
+        x: attrs.points[i],
+        y: attrs.points[i+1],
+        radius: 5,
+        fill: 'blue',
+        draggable: true,
+        name:'line-anchor',
+        visible: false
+      });
+      group.add(anchor);
+      anchor.on('dragmove', updateLine);
+    }
+     group.on('dragstart',cursorChangeDragstart);
+     group.on('dragend',()=>{
+      let points =  newLine.points().slice();
+      // reset scale, so only with is changing by transformer
+      let newpoints = [];
+     let anchors = group.find('.line-anchor');
 
-    console.log(attrs);
+      for (let index = 0; index < points.length; index +=2) {
+       const { x, y } = group.getAbsoluteTransform().point({ x: points[index], y: points[index+1]});
+       newpoints.push(x,y);
+       anchors[index/2].setAttrs({x,y});
+       
+      }
+       group.setAttrs({x:0,y:0});
+       newLine.points(newpoints);
+      cursorChangeDragEnd();
+     });
 
-    newLine.setAttrs(attrs);
+     layer.add(group);
+      
+      newLine.on('dragstart',cursorChangeDragstart);
+      newLine.on("dragmove",function(e){
+        let points =  newLine.points().slice();
+        // let newpoints = [];
+        let anchors = group.find('.line-anchor');
 
+         for (let index = 0; index < points.length; index +=2) {
+          const { x, y } = newLine.getAbsoluteTransform().point({ x: points[index], y: points[index+1]});
+          // newpoints.push(x,y);
+          anchors[index/2].setAttrs({x,y});
+          
+         }
 
-    return;
-    attrs.points.strokeWidth = strokeWidth;
-     attrs.points.points = [anchor1.x(), anchor1.y(), anchor2.x(), anchor2.y()];
-    newLine.points(attrs.points);
-    console.log('update line');
-    // layer.batchDraw();
-  }
+      });
+      newLine.on("dragend",function(e){
+        let points =  newLine.points().slice();
+         // reset scale, so only with is changing by transformer
+         let newpoints = [];
+        let anchors = group.find('.line-anchor');
 
-  anchor1.on("dragmove", updateLine);
-  anchor2.on("dragmove", updateLine);
-  newLine.on("dragmove", function (e) {
-    let points = newLine.points().slice();
-    // reset scale, so only with is changing by transformer
-    let p1 = newLine
-      .getAbsoluteTransform()
-      .point({ x: points[0], y: points[1] });
-    let p2 = newLine
-      .getAbsoluteTransform()
-      .point({ x: points[2], y: points[3] });
+         for (let index = 0; index < points.length; index +=2) {
+          const { x, y } = newLine.getAbsoluteTransform().point({ x: points[index], y: points[index+1]});
+          newpoints.push(x,y);
+          anchors[index/2].setAttrs({x,y});
+          
+         }
+          newLine.setAttrs({x:0,y:0});
+          newLine.points(newpoints);
+          // layer.draw();
+          cursorChangeDragEnd(e);
 
-    anchor1.setAttrs(p1);
-    anchor2.setAttrs(p2);
-    // layer.draw();
-  });
-  newLine.on("dragend", function (e) {
-    let points = newLine.points().slice();
-    // reset scale, so only with is changing by transformer
-    let p1 = newLine
-      .getAbsoluteTransform()
-      .point({ x: points[0], y: points[1] });
-    let p2 = newLine
-      .getAbsoluteTransform()
-      .point({ x: points[2], y: points[3] });
+      });
+      newLine.on('transform', function () {
+      let points =  newLine.points().slice();
+      let anchors = group.find('.line-anchor');
 
-    anchor1.setAttrs(p1);
-    anchor2.setAttrs(p2);
-    newLine.setAttrs({ x: 0, y: 0 });
-    newLine.points([p1.x, p1.y, p2.x, p2.y]);
-    // layer.draw();
-  });
+      //   // reset scale, so only with is changing by transformer
+      let newpoints = [];
+         for (let index = 0; index < points.length; index +=2) {
+          const { x, y } = newLine.getAbsoluteTransform().point({ x: points[index], y: points[index+1]});
+          newpoints.push(x,y);
+          anchors[index/2].setAttrs({x,y});
+          
+          
+         }
+        newLine.points(newpoints);
+        newLine.setAttrs({x:0,y:0});
 
-  line_anchors[id] = [anchor1, anchor2];
-  layer.draw();
-  // group.on('dblclick',()=>{
-  //     tr.nodes([group]);
-  // });
-  newLine.on("transform", function () {
-    let points = newLine.points().slice();
-    //   // reset scale, so only with is changing by transformer
-    let p1 = newLine
-      .getAbsoluteTransform()
-      .point({ x: points[0], y: points[1] });
-    let p2 = newLine
-      .getAbsoluteTransform()
-      .point({ x: points[2], y: points[3] });
-    anchor1.setAttrs(p1);
-    anchor2.setAttrs(p2);
-    newLine.setAttrs({ x: 0, y: 0 });
-    newLine.points([p1.x, p1.y, p2.x, p2.y]);
-    newLine.scaleX(1);
-    newLine.scaleY(1);
-  });
-  newLine.on("transformend", function () {
-    let points = newLine.points().slice();
-    //   // reset scale, so only with is changing by transformer
-    let p1 = newLine
-      .getAbsoluteTransform()
-      .point({ x: points[0], y: points[1] });
-    let p2 = newLine
-      .getAbsoluteTransform()
-      .point({ x: points[2], y: points[3] });
-    anchor1.setAttrs(p1);
-    anchor2.setAttrs(p2);
-    newLine.setAttrs({ x: 0, y: 0 });
-    newLine.points([p1.x, p1.y, p2.x, p2.y]);
-    newLine.scaleX(1);
-    newLine.scaleY(1);
-  });
+        newLine.scaleX(1);
+        newLine.scaleY(1);
+
+      });
+      newLine.on('transformend', function () {
+        let points =  newLine.points().slice();
+        let anchors = group.find('.line-anchor');
+
+        //   // reset scale, so only with is changing by transformer
+        let newpoints = [];
+         for (let index = 0; index < points.length; index +=2) {
+          const { x, y } = newLine.getAbsoluteTransform().point({ x: points[index], y: points[index+1]});
+          newpoints.push(x,y);
+          anchors[index/2].setAttrs({x,y});
+
+          
+         }
+          newLine.points(newpoints);
+          newLine.setAttrs({x:0,y:0});
+          newLine.scaleX(1);
+          newLine.scaleY(1);
+
+        });
 }
-function createRectangle(id, attrs = null) {
-  if (attrs === null) {
-    movingId = id;
-    let color = colorInput.value;
+function createRectangle(id,attrs=null){
+if(attrs===null){
+  movingId  =  id;
+  let color = colorInput.value;
 
-    attrs = {
-      x: stage.getPointerPosition().x,
-      y: stage.getPointerPosition().y,
-      width: 0,
-      height: 0,
-      fill: color,
-      name: "rect",
-      id: "m" + id,
-      draggable: true,
-    };
-  } else {
-    attrs["id"] = "m" + id;
-  }
+  attrs = {
+    x: stage.getPointerPosition().x,
+    y: stage.getPointerPosition().y,
+    width: 0,
+    height: 0,
+    fill: color,
+    name: 'rect',
+    id: "m"+id,
+    draggable: true,
+  };
+}else{
+  attrs["id"] = "m"+id;
+}
   let newrect = new Konva.Rect(attrs);
-  newrect.on("transformend", function () {
+  newrect.on('transformend',function(){
     newrect.setAttrs({
       width: newrect.width() * newrect.scaleX(),
       height: newrect.height() * newrect.scaleY(),
       scaleX: 1,
-      scaleY: 1,
+      scaleY: 1
     });
   });
+  newrect.on('mouseenter',cursorChangeEnter);
+  newrect.on('mouseleave',cursorChangeLeave);
+  newrect.on('dragstart',cursorChangeDragstart);
+  newrect.on('dragend',cursorChangeDragEnd);
   layer.add(newrect);
 }
-function createText(id, attrs = null) {
+function createText(id, attrs=null){
   let color = colorInput.value;
-  if (attrs === null) {
-    movingId = id;
+  if(attrs===null){
+  movingId  =  id;
 
     attrs = {
-      text: "welcome",
+      text: 'welcome',
       x: x2,
       y: y2,
-      fontSize: 20,
-      fontFamily: "JetBrains Mono",
+      fontSize: 40,
+      fontFamily: 'JetBrains Mono',
       draggable: true,
       width: 200,
       fill: color,
       name: "text",
-      id: "m" + id,
+      id: "m"+id
     };
-  } else {
-    attrs["id"] = "m" + id;
+  }else{
+    attrs["id"] = "m"+id;
+    attrs["fontSize"] = 40;
+    attrs["fontFamily"] = 'JetBrains Mono';
   }
   var textNode = new Konva.Text(attrs);
   layer.add(textNode);
 
-  textNode.on("transform", function () {
-    //   // reset scale, so only with is changing by transformer
+
+
+  textNode.on('transform', function () {
+  //   // reset scale, so only with is changing by transformer
     textNode.setAttrs({
       width: textNode.width() * textNode.scaleX(),
       height: textNode.height() * textNode.scaleY(),
@@ -628,8 +844,11 @@ function createText(id, attrs = null) {
       scaleY: 1,
     });
   });
-
-  textNode.on("dblclick dbltap", () => {
+  textNode.on('dragstart',cursorChangeDragstart);
+  textNode.on('dragend',cursorChangeDragEnd);
+  textNode.on('mouseenter',cursorChangeEnter);
+  textNode.on('mouseleave',cursorChangeLeave);
+  textNode.on('dblclick dbltap', () => {
     let textPosition = textNode.getAbsolutePosition();
     let stageBox = stage.container().getBoundingClientRect();
     let areaPosition = {
@@ -637,55 +856,55 @@ function createText(id, attrs = null) {
       y: stageBox.top + textPosition.y,
     };
 
-    let textarea = document.createElement("textarea");
+    let textarea = document.createElement('textarea');
     document.body.appendChild(textarea);
     textarea.value = textNode.text();
-    textarea.style.position = "absolute";
-    textarea.style.top = areaPosition.y - 1.5 + "px";
-    textarea.style.left = areaPosition.x + "px";
-    textarea.style.width = textNode.width() - textNode.padding() * 2 + "px";
-    textarea.style.height =
-      textNode.height() - textNode.padding() * 2 + 5 + "px";
-    textarea.style.fontSize = textNode.fontSize() + "px";
-    textarea.style.border = "none";
-    textarea.style.padding = "0px";
-    textarea.style.margin = "0px";
-    textarea.style.overflow = "hidden";
-    textarea.style.background = "none";
-    textarea.style.outline = "none";
-    textarea.style.resize = "none";
+    textarea.style.position = 'absolute';
+    textarea.style.top = areaPosition.y - 1.5 + 'px';
+    textarea.style.left = areaPosition.x + 'px';
+    textarea.style.width = textNode.width() - textNode.padding() * 2 + 'px';
+    textarea.style.height = textNode.height() - textNode.padding() * 2 + 5 + 'px';
+    textarea.style.fontSize = textNode.fontSize() + 'px';
+    textarea.style.border = 'none';
+    textarea.style.padding = '0px';
+    textarea.style.margin = '0px';
+    textarea.style.overflow = 'hidden';
+    textarea.style.background = 'none';
+    textarea.style.outline = 'none';
+    textarea.style.resize = 'none';
     textarea.style.lineHeight = textNode.lineHeight();
     textarea.style.fontFamily = textNode.fontFamily();
-    textarea.style.transformOrigin = "left top";
+    textarea.style.transformOrigin = 'left top';
     textarea.style.textAlign = textNode.align();
     textarea.style.color = textNode.fill();
     rotation = textNode.rotation();
-    let transform = "";
+    let transform = '';
     if (rotation) {
-      transform += "rotateZ(" + rotation + "deg)";
+      transform += 'rotateZ(' + rotation + 'deg)';
     }
 
     let px = 0;
     // also we need to slightly move textarea on firefox
     // because it jumps a bit
-    let isFirefox = navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
+    let isFirefox =
+      navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
     if (isFirefox) {
       px += 2 + Math.round(textNode.fontSize() / 20);
     }
-    transform += "translateY(-" + px + "px)";
+    transform += 'translateY(-' + px + 'px)';
 
     textarea.style.transform = transform;
 
     // reset height
-    textarea.style.height = "auto";
+    textarea.style.height = 'auto';
     // after browsers resized it we can set actual value
-    textarea.style.height = textarea.scrollHeight + 3 + "px";
+    textarea.style.height = textarea.scrollHeight + 3 + 'px';
 
     textarea.focus();
     textNode.hide();
     function removeTextarea() {
       textarea.parentNode.removeChild(textarea);
-      window.removeEventListener("click", handleOutsideClick);
+      window.removeEventListener('click', handleOutsideClick);
       textNode.show();
       tr.show();
       tr.forceUpdate();
@@ -698,193 +917,108 @@ function createText(id, attrs = null) {
         newWidth = textNode.placeholder.length * textNode.fontSize();
       }
       // some extra fixes on different browsers
-      let isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      let isFirefox = navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
+      let isSafari = /^((?!chrome|android).)*safari/i.test(
+        navigator.userAgent
+      );
+      let isFirefox =
+        navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
       if (isSafari || isFirefox) {
         newWidth = Math.ceil(newWidth);
       }
 
-      let isEdge = document.documentMode || /Edge/.test(navigator.userAgent);
+      let isEdge =
+        document.documentMode || /Edge/.test(navigator.userAgent);
       if (isEdge) {
         newWidth += 1;
       }
-      textarea.style.width = newWidth + "px";
+      textarea.style.width = newWidth + 'px';
     }
 
-    textarea.addEventListener("keydown", function (e) {
+    textarea.addEventListener('keydown', function (e) {
       // hide on enter
       // but don't hide on shift + enter
-      if (e.keyCode === 13 && !e.shiftKey) {
+      if (e.key === "Enter" && !e.shiftKey) {
         textNode.text(textarea.value);
         removeTextarea();
       }
       // on esc do not set value back to node
-      if (e.keyCode === 27) {
+      if (e.key === "Escape") {
         removeTextarea();
       }
     });
 
-    textarea.addEventListener("keydown", function (e) {
+    textarea.addEventListener('keydown', function (e) {
       scale = textNode.getAbsoluteScale().x;
       setTextareaWidth(textNode.width() * scale);
-      textarea.style.height = "auto";
+      textarea.style.height = 'auto';
       textarea.style.height =
-        textarea.scrollHeight + textNode.fontSize() + "px";
+        textarea.scrollHeight + textNode.fontSize() + 'px';
     });
 
-    function handleOutsideClick(e) {
+    function handleOutsideClick(e) {yk
       if (e.target !== textarea) {
         textNode.text(textarea.value);
         removeTextarea();
       }
     }
     setTimeout(() => {
-      window.addEventListener("click", handleOutsideClick);
+      window.addEventListener('click', handleOutsideClick);
     });
   });
 }
 
-// create polygon
-function createPolygon() {
-  console.log("create");
+stage.on('dragmoveend',sendUIData);
+stage.on('dragmove',sendUIData);
+stage.on('transformend',sendUIData);
+stage.on('transform',sendUIData);
 
-  var layer = new Konva.Layer();
 
-  var poly = new Konva.Line({
-    points: polygonPoints,
-    fill: "red",
-    stroke: "white",
-    strokeWidth: 2,
-    closed: true,
-  });
 
-  // add the shape to the layer
-  layer.add(poly);
+function sendUIData(){
+  debounce(function(){
 
-  // add the layer to the stage
-  stage.add(layer);
-  addAnchor();
-}
+    let data = stage.find('.line,.rect,.text,.polyline,.polygone');
 
-function addPolygonPoint() {
-  x = stage.getPointerPosition().x;
-  y = stage.getPointerPosition().y;
-  polygonPoints.push(x, y);
-  if (polygonPoints.length === 4) {
-    var layer = new Konva.Layer();
-    const newLine = new Konva.Line({
-      points: polygonPoints,
-      stroke: "red",
-      strokeWidth: 2,
-      // lineCap: 'round',
-      // lineJoin: 'round',
-      name: "line",
 
-      //   draggable: true,
+    // console.log(data);
+    let dataToUpdate = data.map(d=>{
+      let attrs = d.getAttrs();
+      return attrs;
     });
+    if(liveUpdate){
+      vscode.postMessage(dataToUpdate);
+    }
+  },1000)();
+}
+// stage.click();
 
-    layer.add(newLine);
-    stage.add(layer);
-
-    console.log("welcome");
-    console.log(x, y);
-
-    addAnchor();
-  }
-
-  if (polygonPoints.length > 4) {
-    createPolygon();
-  }
+async function isFontReady() {
+  let ready = await document.fonts.ready;
+  return ready;
+}
+function cursorChangeLeave(e){
+    if(currentSelection===null){
+      stage.container().style.cursor = 'default';
+    }
+    if(selectionRectangle.visible()){
+      stage.container().style.cursor = 'crosshair';
+    }
 }
 
-function addAnchor() {
-  var layer = new Konva.Layer();
-
-  const group = new Konva.Group({
-    name: "poly-line-group",
-    draggable: true,
-    visible: true,
-    opacity: 1,
-  });
-
-  // attrs ={
-  //   points: [stage.getPointerPosition().x, stage.getPointerPosition().y,stage.getPointerPosition().x, stage.getPointerPosition().y],
-  //   stroke: color,
-  //   strokeWidth: 2,
-  //   // lineCap: 'round',
-  //   // lineJoin: 'round',
-  //   name: 'line',
-
-  // //   draggable: true,
-  // };
-
-  // const newLine = new Konva.Line(attrs);
-
-  anchorArray = [];
-  for (let index = 0; index < polygonPoints.length; index += 2) {
-    const x = polygonPoints[index];
-    const y = polygonPoints[index + 1];
-
-    const anchor = new Konva.Circle({
-      x: x,
-      y: y,
-      radius: 5,
-      fill: "blue",
-      draggable: true,
-      name: "line-anchor",
-      visible: attrs === null,
-    });
-    anchorArray.push(anchor);
-    // Rest of your code...
+function cursorChangeEnter(e){
+  if(currentSelection===null){
+    stage.container().style.cursor = 'pointer';
   }
-
-  group.add(newLine, anchorArray);
-  layer.add(group);
+  if(selectionRectangle.visible()){
+    stage.container().style.cursor = 'crosshair';
+  }
 }
+function cursorChangeDragstart(e){
+  stage.container().style.cursor = 'move';
 
-stage.on("dragmoveend", sendUIData());
-stage.on("transformend", sendUIData());
-
-function sendUIData() {
-  debounce(
-    (function () {
-      let data = stage.find(".line,.rect,.text");
-
-      // console.log(data);
-      let dataToUpdate = data.map((d) => {
-        let attrs = d.getAttrs();
-        return attrs;
-      });
-      if (dataToUpdate.length > 0 && liveUpdate) {
-        vscode.postMessage(dataToUpdate);
-      }
-    })(),
-    2000
-  );
 }
+function cursorChangeDragEnd(e){
 
+  stage.container().style.cursor = 'pointer';
 
-// Add event listener to the div
-dropDown.addEventListener("change", function () {
-  // Code to execute when the div is clicked
-  const selectedValue = dropDown.value;
-  strokeWidth = parseInt(selectedValue);
-
-  // Do something with the selected value
-  console.log("Selected value: " + selectedValue);
-
-   
-      tr.nodes().forEach((node) => {
-       console.log(node);
-      });
-      // stage.find(".line").forEach((l) => {
-      //   if (l.getParent().find(".line-anchor")[0].visible()) {
-      //     l.stroke(color);
-      //   }
-      // });
-});
-
-
-
-
-
+}
