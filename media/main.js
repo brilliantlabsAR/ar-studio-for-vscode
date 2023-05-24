@@ -56,6 +56,7 @@ var width = 640;
 var height = 400;
 const ANCHORS = ['top-left','top-right', 'bottom-left',  'bottom-right','top-center',  'bottom-center', 'middle-right', 'middle-left'];
 const shapeBtns =document.querySelectorAll('.shape-btn') ; // add a variable for staraight  line 
+const alignBtns =document.querySelectorAll('.alignBtn') ; // add a variable for staraight  line 
 const colorInput = document.getElementById('colorselection');
 const dropDown = document.getElementById("myDropdown");
 const deleteButton = document.getElementById('delete');
@@ -235,7 +236,27 @@ dropDown.addEventListener("change", function () {
         }
       });
 });
-
+alignBtns.forEach(btn=>{
+  btn.addEventListener('click',function(){
+    let isHz = btn.classList.contains('hz');
+    document.querySelectorAll('.alignBtn.active'+(isHz?'.hz':'.vt')).forEach(el=>{
+      el?.classList.remove('active');
+    });
+    btn.classList.add('active');
+    tr.nodes().forEach(shp=>{
+      if(shp.name()==='text'){
+        shp.setAttrs({alignment:getCurrentAlignment()});
+        shp.setAttrs(calculateOffset(shp));
+      }
+    });
+  });
+});
+function getCurrentAlignment(){
+  let horz = document.querySelector('.alignBtn.hz.active').value;
+  let vert = document.querySelector('.alignBtn.vt.active').value;
+  return vert+"_"+horz;
+  //  return "TOP_LEFT";
+}
 function deleteSelected(){
   tr.nodes().forEach(node=>{
     node.destroy();
@@ -269,7 +290,8 @@ const tr = new Konva.Transformer({
   enabledAnchors: ANCHORS.splice(0,4),
   keepRatio: false,
   rotateAnchorOffset: 30,
-  rotateEnabled: false
+  rotateEnabled: false,
+  flipEnabled:true
 });
 tr.anchorCornerRadius(5);
 layer.add(tr);
@@ -334,19 +356,20 @@ stage.on('mousedown touchstart', (e) => {
     if(movingId){
         const shp = stage.findOne("#m"+movingId);
         let line = shp.findOne('.'+selectorr);
-        let points = line.points().slice();
-        points.push(stage.getPointerPosition().x);
-        points.push(stage.getPointerPosition().y);
-        line.points(points);
-        let anchors  = shp.find('.line-anchor');
-        anchors[anchors.length-1].setAttrs({
-          x:x2,
-          y:y2
-        });
+        
+        // let anchors  = shp.find('.line-anchor');
+        // anchors[anchors.length-1].setAttrs({
+        //   x:x2,
+        //   y:y2
+        // });
         if(currentSelection==='STRAIGHTLINE'){
           currentSelection = null;
           movingId = null;
         }else{
+          let points = line.points().slice();
+          points.push(stage.getPointerPosition().x);
+          points.push(stage.getPointerPosition().y);
+          line.points(points);
           const anchor = new Konva.Circle({
             x: stage.getPointerPosition().x,
             y: stage.getPointerPosition().y,
@@ -441,6 +464,9 @@ stage.on('mousedown touchstart', (e) => {
 stage.on('mousemove touchmove', (e) => {
   x2 = stage.getPointerPosition().x;
   y2 = stage.getPointerPosition().y;
+  const metaPressed = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
+
+  // console.log(e.evt.shiftKey)
   // if line in progress
   if(movingId && ["POLYLINE","STRAIGHTLINE","POLYGONE"].includes(currentSelection)){
     const shp = stage.findOne('#m'+movingId);
@@ -453,13 +479,39 @@ stage.on('mousemove touchmove', (e) => {
     }
     const line = shp.findOne(selectorr);
     const points = line.points().slice();
-    points[points.length-2] = x2;
-    points[points.length-1] = y2;
+    const pl = points.length;
+    if(metaPressed){
+      let px1 = points[pl-4];
+      let py1 = points[pl-3];
+      let px2 = x2;
+      let py2 = y2;
+      let dx = px2-px1;
+      let dy = py2-py1;
+      let ang = Math.round(Math.atan2(dy,dx)*(4 / Math.PI))*45;
+      if(Math.abs(ang)===0 || Math.abs(ang)===180 ){
+        points[pl-2] = x2;
+        points[pl-1] = py1;
+      }else if(Math.abs(ang)===90){
+        points[pl-2] = px1;
+        points[pl-1] = y2;
+      }else{
+        let r = Math.abs(Math.sqrt(dx*dx + dy*dy));
+        let cosx = r * Math.cos(ang * Math.PI / 180);
+        let sinx = r * Math.sin(ang * Math.PI / 180);
+        points[pl-2] = px1+cosx;
+        points[pl-1] = py1+sinx;
+      }
+    }else{
+      points[pl-2] = x2;
+      points[pl-1] = y2;
+    }
+    // points[pl-2] = x2;
+    // points[pl-1] = y2;
     line.points(points);
     let anchors  = shp.find('.line-anchor');
     anchors[anchors.length-1].setAttrs({
-      x:x2,
-      y:y2
+      x:points[pl-2],
+      y:points[pl-1]
     });
   e.evt.preventDefault();
 
@@ -472,12 +524,18 @@ stage.on('mousemove touchmove', (e) => {
  
   if(movingId){
     const shp = stage.findOne('#m'+movingId);
-    if(['rect','text'].includes(shp.name())){
+    if(shp.name()==='rect'){
       shp.setAttrs({
         x: Math.min(x1, x2),
         y: Math.min(y1, y2),
         width: Math.abs(x2 - x1),
         height: Math.abs(y2 - y1),
+      });
+    }else if(shp.name()==='text'){
+      shp.setAttrs({
+        x: Math.min(x1, x2),
+        y: Math.min(y1, y2),
+        width: Math.abs(x2 - x1),
       });
     }else if(shp.name()==='line-group'){
       // let selectorr='.line';
@@ -578,6 +636,9 @@ stage.on('mouseup touchend', (e) => {
   }else{
     tr.nodes(selected);
   }
+  if(selected.length>1){
+    tr.shouldOverdrawWholeArea(true);
+  }
   stage.container().style.cursor = 'default';
 
   sendUIData();
@@ -600,6 +661,7 @@ function onClickEvent(e){
     stage.find('.line-anchor').forEach(la=>{
         la.visible(false);
       });
+    tr.shouldOverdrawWholeArea(false);
     return;
   }
 // console.log(e);
@@ -821,9 +883,11 @@ function createText(id, attrs=null){
       fontFamily: 'JetBrains Mono',
       draggable: true,
       width: 200,
+      height:40,
       fill: color,
       name: "text",
-      id: "m"+id
+      id: "m"+id,
+      alignment: getCurrentAlignment()
     };
   }else{
     attrs["id"] = "m"+id;
@@ -838,12 +902,20 @@ function createText(id, attrs=null){
   textNode.on('transform', function () {
   //   // reset scale, so only with is changing by transformer
     textNode.setAttrs({
-      width: textNode.width() * textNode.scaleX(),
-      height: textNode.height() * textNode.scaleY(),
+      // width: textNode.width() * textNode.scaleX(),
+      // height: textNode.height() * textNode.scaleY(),
       scaleX: 1,
       scaleY: 1,
     });
   });
+  // textNode.on('transformstart',function(){
+  //   tr.shouldOverdrawWholeArea(false);
+  // });
+  textNode.on('transformend',function(){
+    // default top left
+    textNode.setAttrs(calculateOffset(textNode));
+  });
+  textNode.setAttrs(calculateOffset(textNode));
   textNode.on('dragstart',cursorChangeDragstart);
   textNode.on('dragend',cursorChangeDragEnd);
   textNode.on('mouseenter',cursorChangeEnter);
@@ -852,8 +924,8 @@ function createText(id, attrs=null){
     let textPosition = textNode.getAbsolutePosition();
     let stageBox = stage.container().getBoundingClientRect();
     let areaPosition = {
-      x: stageBox.left + textPosition.x,
-      y: stageBox.top + textPosition.y,
+      x: stageBox.left + textPosition.x - textNode.offsetX(),
+      y: stageBox.top + textPosition.y - textNode.offsetY(),
     };
 
     let textarea = document.createElement('textarea');
@@ -1021,4 +1093,42 @@ function cursorChangeDragEnd(e){
 
   stage.container().style.cursor = 'pointer';
 
+}
+
+function calculateOffset(textNode) {
+  let align = textNode.getAttrs().alignment;
+  let offsetAttrs= {
+    offsetY: 0,
+    offsetX: 0,
+  };
+
+  if(!align){return;}
+  const [vertical,hoizon] = align.split("_");
+  switch (hoizon) {
+    case "LEFT":
+      offsetAttrs.offsetX = 0;
+      break;
+    case "CENTER":
+      offsetAttrs.offsetX = Math.floor(textNode.width()/2);
+      break;
+    case "RIGHT":
+      offsetAttrs.offsetX =  Math.floor(textNode.width());
+      break;
+    default:
+      break;
+  }
+  switch (vertical) {
+    case "TOP":
+      offsetAttrs.offsetY = 0;
+      break;
+    case "MIDDLE":
+      offsetAttrs.offsetY = Math.floor(textNode.height()/2);
+      break;
+    case "BOTTOM":
+      offsetAttrs.offsetY =  Math.floor(textNode.height());
+      break;
+    default:
+      break;
+  };
+  return offsetAttrs;
 }
