@@ -153,7 +153,7 @@ export class UIEditorPanel {
               });
             }
             if(shape==='Polyline'){
-   +           let points = block.slice(block.indexOf('['),block.indexOf(']')+1);
+              let points = block.slice(block.indexOf('['),block.indexOf(']')+1);
               let newblock = block.replace(points,'');
               let attrs = newblock.slice(newblock.indexOf("(")+1,newblock.indexOf(")")).split(",").filter(d=>d!=='').map(d=>d.trim());
               uiObjs.push({
