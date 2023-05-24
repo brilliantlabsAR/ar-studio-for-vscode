@@ -1,19 +1,11 @@
-// let h1 = document.querySelector("h1");
 const vscode = acquireVsCodeApi();
-// h1.addEventListener('click',handleClick);
-// function handleClick() {
-//     h1.innerHTML = "Updated";
-//     vscode.postMessage({
-//       command: "hello",
-//       text: "Hey",
-//     });
-// }
+
 let liveUpdate = true;
 window.addEventListener('message', async (event) => {
 
   let uiData = event.data; // The JSON data our extension sent
   liveUpdate = false;
-  console.log(uiData);
+  // console.log(uiData);
   if(await isFontReady()){
     uiData.forEach(ui=>{
       const id = new Date().valueOf();
@@ -58,14 +50,16 @@ const ANCHORS = ['top-left','top-right', 'bottom-left',  'bottom-right','top-cen
 const shapeBtns =document.querySelectorAll('.shape-btn') ; // add a variable for staraight  line 
 const alignBtns =document.querySelectorAll('.alignBtn') ; // add a variable for staraight  line 
 const colorInput = document.getElementById('colorselection');
-const dropDown = document.getElementById("myDropdown");
+const thicknessBtn = document.getElementById("thicknessBtn");
 const deleteButton = document.getElementById('delete');
 const ArrowKeys = ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"];
 var currentSelection = null;
 const DELTA = 4;
 var intention = "click";
 var detectIntention = null;
+const dropDown = {value:1}
 window.addEventListener('keydown', function(event) {
+  document.getElementById('myDropdown').style.display='none'
   const key = event.key; // const {key} = event; ES6+
   if(event.ctrlKey && (key ==='a'|| key==='A')){
     let shapes = stage.find('.rect,.line,.text,.polyline,.polygone');
@@ -181,7 +175,23 @@ window.addEventListener('keydown', function(event) {
     // }
   }
 });
-
+thicknessBtn.addEventListener('click',function(){
+  document.getElementById('myDropdown').style.display='inline-block'
+})
+const allThicknessOptions =  document.querySelectorAll('.t-op');
+allThicknessOptions.forEach(tb=>{
+  tb.addEventListener('click',function(){
+    dropDown.value = parseInt(tb.getAttribute('data-thick'))
+    const selectedValue = dropDown.value;
+      stage.find(".line,.polyline").forEach((l) => {
+        if (l.getParent().find(".line-anchor")[0].visible()) {
+          l.strokeWidth(selectedValue);
+        }
+      });
+      thicknessBtn.querySelector('span').innerHTML = dropDown.value
+      document.getElementById('myDropdown').style.display='none'
+  })
+})
 shapeBtns.forEach(btn=>{
   btn.addEventListener('click',function(){
     currentSelection = btn.value;
@@ -218,24 +228,7 @@ colorInput.addEventListener('change',function(){
     }
   });
 });
-dropDown.addEventListener("change", function () {
-  // Code to execute when the div is clicked
-  const selectedValue = dropDown.value;
-  strokeWidth = parseInt(selectedValue);
 
-  // Do something with the selected value
-  console.log("Selected value: " + selectedValue);
-
-   
-      // tr.nodes().forEach((node) => {
-      //  console.log(node);
-      // });
-      stage.find(".line,.polyline").forEach((l) => {
-        if (l.getParent().find(".line-anchor")[0].visible()) {
-          l.strokeWidth(selectedValue);
-        }
-      });
-});
 alignBtns.forEach(btn=>{
   btn.addEventListener('click',function(){
     let isHz = btn.classList.contains('hz');
@@ -646,6 +639,7 @@ stage.on('mouseup touchend', (e) => {
 
 // clicks should select/deselect shapes
 stage.on('click tap', function (e) {
+  document.getElementById('myDropdown').style.display='none'
   // if we are selecting with rect, do nothing
   if (selectionRectangle.visible()) {
     return;
@@ -908,9 +902,6 @@ function createText(id, attrs=null){
       scaleY: 1,
     });
   });
-  // textNode.on('transformstart',function(){
-  //   tr.shouldOverdrawWholeArea(false);
-  // });
   textNode.on('transformend',function(){
     // default top left
     textNode.setAttrs(calculateOffset(textNode));
