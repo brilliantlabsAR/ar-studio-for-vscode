@@ -174,7 +174,7 @@ export class UIEditorPanel {
                 stroke: "#"+attrs[0].replace("0x",""),
                 strokeWidth: 1,
                 closed:true
-              });
+            });
             }
             if(shape==='Text'){
               let attrs = block.slice(block.indexOf("(")+1,block.indexOf(")")).split(",").map(d=>d.trim());
