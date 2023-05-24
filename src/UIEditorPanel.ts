@@ -59,6 +59,11 @@ export class UIEditorPanel {
         const middle = getUri(webview, extensionUri, ["media", "icons","middle.png"]);
         const bottom = getUri(webview, extensionUri, ["media", "icons","bottom.png"]);
         const right = getUri(webview, extensionUri, ["media", "icons","right.png"]);
+        const rect = getUri(webview, extensionUri, ["media", "icons","rect.png"]);
+        const polygon = getUri(webview, extensionUri, ["media", "icons","polygon.png"]);
+        const line = getUri(webview, extensionUri, ["media", "icons","line.png"]);
+        const polyline = getUri(webview, extensionUri, ["media", "icons","polyline.png"]);
+        const text = getUri(webview, extensionUri, ["media", "icons","text.png"]);
         // const fontUri = getUri(webview, extensionUri, ["media" ,"JetBrains_Mono/JetBrainsMono-VariableFont_wght.ttf"]);
         return /*html*/ `
           <!DOCTYPE html>
@@ -74,12 +79,12 @@ export class UIEditorPanel {
             <body>
               <h6 class="title">Draw to update ${this.screenName}</h6>
               <div class="tools">
-              <button id="rect" class="shape-btn" value="RECT">&#9645;</button>
-              <button id="straightLine" class="shape-btn" value="STRAIGHTLINE">&#9586;</button>
-              <button id="polyLine" class="shape-btn" value="POLYLINE">&#9722;</button>
-              <button id="polygone" class="shape-btn" value="POLYGONE">&#9699;</button>
+              <button id="rect" class="shape-btn" value="RECT"><img src="${rect}" /></button>
+              <button id="straightLine" class="shape-btn" value="STRAIGHTLINE"><img src="${line}" /></button>
+              <button id="polyLine" class="shape-btn" value="POLYLINE"><img src="${polyline}" /></button>
+              <button id="polygone" class="shape-btn" value="POLYGONE"><img src="${polygon}" /></button>
 
-              <button id="addText" class="shape-btn" value="ADDTEXT" style="margin-right:2rem;">T</button>
+              <button id="addText" class="shape-btn" value="ADDTEXT" style="margin-right:2rem;"><img src="${text}" /></button>
               <input type="color" value="#afafaf" name="colorselection" id="colorselection">
               <div class="thickness" >
                 <img height=25 width=25 src="${imageUrl}" />

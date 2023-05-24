@@ -35,18 +35,28 @@
   user-select: none; /* Standard syntax */
     /* align-items: center; */
 }
-.tools button, .tools input{
+.tools button{
     padding: 2px;
-    height: 30px;
-    width: 40px;
+    height: 20px;
+    width: 20px;
     margin-right: 5px;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
-    background-color: var(--vscode-foreground);
+    background-color: transparent;
+    outline: none;
+    border: none;
 }
-
+.tools input{
+  height: 30px;
+  width: 30px;
+  padding: 0;
+  cursor: pointer;
+  background-color: transparent;
+  outline: none;
+  border: none;
+}
 .shape-btn.active{
-    background-color: var(--vscode-disabledForeground);
+    background-color: rgba(0,0,0,0.5) !important;
 }
 
 .alignBtn{
@@ -55,12 +65,7 @@
 .alignBtn.active{
   background-color: rgba(0,0,0,0.5) !important;
 }
-.alignBtn:first-child{
-margin-left: 10px;
-}
-.alignBtn:last-child{
-  margin-right: 10px;
-}
+
 .title{
     font-family: 'JetBrains Mono';
     text-align: center;
@@ -79,13 +84,12 @@ margin-left: 10px;
     width: 40px;
     background:#E0E6E5;
     margin-right: 5px;
+}
 
-   }
-
-   .thickness{
+.thickness{
     border: 1px solid black;
     text-align: left;
     background-color: gray;
-   }
+}
 
    
