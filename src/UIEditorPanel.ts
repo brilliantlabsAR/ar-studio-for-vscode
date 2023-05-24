@@ -52,7 +52,7 @@ export class UIEditorPanel {
         const nonce = getNonce();
         const stylesMainUri = getUri(webview, extensionUri, ["media" ,"main.css"]);
         // const fontawesomeUri = getUri(webview, extensionUri, ["media" ,"fontawesome.css"]);
-        const imageUrl = getUri(webview, extensionUri, ["media", "thickness_icon.png"]);
+        const thickness = getUri(webview, extensionUri, ["media","icons", "thickness_icon.png"]);
         const top = getUri(webview, extensionUri, ["media", "icons","top.png"]);
         const left = getUri(webview, extensionUri, ["media", "icons","left.png"]);
         const center = getUri(webview, extensionUri, ["media", "icons","center.png"]);
@@ -77,7 +77,7 @@ export class UIEditorPanel {
              
           
             <body>
-              <h6 class="title">Draw to update ${this.screenName}</h6>
+              <div class="main">
               <div class="tools">
               <button id="rect" class="shape-btn" value="RECT"><img src="${rect}" /></button>
               <button id="straightLine" class="shape-btn" value="STRAIGHTLINE"><img src="${line}" /></button>
@@ -86,19 +86,22 @@ export class UIEditorPanel {
 
               <button id="addText" class="shape-btn" value="ADDTEXT" style="margin-right:2rem;"><img src="${text}" /></button>
               <input type="color" value="#afafaf" name="colorselection" id="colorselection">
-              <div class="thickness" >
-                <img height=25 width=25 src="${imageUrl}" />
-                <select id="myDropdown" >
-                <option value="1"> 1</option>
-                <option value="2"> 2</option>
-                <option value="3"> 3</option>
-                <option value="4"> 4</option>
-                <option value="5"> 5</option>
-                <option value="6"> 6</option>
-                <option value="7"> 7</option>
-                <option value="8"> 8</option>
-                <option value="9"> 9</option>
-              </select>
+              <button class="thickness" id="thicknessBtn" >
+                <img src="${thickness}" />
+                <span>1</span>
+              </button>
+              <div id="myDropdown" style="display: none;">
+                <ul>
+                  <li class="t-op" data-thick="1"> 1</li>
+                  <li class="t-op" data-thick="2"> 2</li>
+                  <li class="t-op" data-thick="3"> 3</li>
+                  <li class="t-op" data-thick="4"> 4</li>
+                  <li class="t-op" data-thick="5"> 5</li>
+                  <li class="t-op" data-thick="6"> 6</li>
+                  <li class="t-op" data-thick="7"> 7</li>
+                  <li class="t-op" data-thick="8"> 8</li>
+                  <li class="t-op" data-thick="9"> 9</li>
+                </ul>
               </div>
               <button id="alignLeft" value="LEFT" class="alignBtn active hz"><img src="${left}" /></button>
               <button id="alignCenter" value="CENTER" class="alignBtn hz"><img src="${center}" /></button>
@@ -108,7 +111,6 @@ export class UIEditorPanel {
               <button id="alignBottom" value="BOTTOM" class="alignBtn vt"><img src="${bottom}" /></button> 
               <button id="delete" >&#10761;</button>
               </div>
-              <div class="main">
                 <div id="container"></div>
               </div>
               <script type="text/javaScript" nonce="${nonce}" src="${webviewUri}"></script>
