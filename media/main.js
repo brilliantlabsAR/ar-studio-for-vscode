@@ -1,5 +1,21 @@
 const vscode = acquireVsCodeApi();
-
+const CUSTOMCOLOR = {
+  RED: '#ad2323',
+  GREEN: '#1d6914',
+  BLUE: '#2a4bd7',
+  CYAN: '#29d0d0',
+  MAGENTA: '#8126c0',
+  YELLOW: '#ffee33',
+  WHITE: '#ffffff',
+  GRAY1: '#1c1c1c',
+  GRAY2: '#383838',
+  GRAY3: '#555555',
+  GRAY4: '#717171',
+  GRAY5: '#8d8d8d',
+  GRAY6: '#aaaaaa',
+  GRAY7: '#c6c6c6',
+  GRAY8: '#e2e2e2',
+};
 let liveUpdate = true;
 window.addEventListener('message', async (event) => {
   let uiData = event.data; // The JSON data our extension sent
@@ -60,7 +76,28 @@ const alignBtns = document.querySelectorAll('.alignBtn'); // add a variable for 
 const colorInput = document.getElementById('colorselection');
 const thicknessBtn = document.getElementById('thicknessBtn');
 const deleteButton = document.getElementById('delete');
-const ArrowKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+
+document
+  .getElementById('selected_color')
+  .addEventListener('click', function () {
+    document.getElementById('pigment_pick').classList.add('pickbox_show');
+  });
+document
+  .querySelectorAll('#pigment_pick .item .pigment_box')
+  .forEach(function (el) {
+    el.addEventListener('click', function () {
+      let color = el.getAttribute('style');
+      // console.log(color);
+      document.getElementById('selected_color').setAttribute('style', color);
+      document.getElementById('pigment_pick').classList.remove('pickbox_show');
+      updateColor(
+        CUSTOMCOLOR[el.getAttribute('data-color')],
+        el.getAttribute('data-color')
+      );
+    });
+  });
+
+const arrowKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
 var currentSelection = null;
 const DELTA = 4;
 var intention = 'click';
@@ -103,7 +140,7 @@ window.addEventListener('keydown', function (event) {
     return;
   }
   let offset = DELTA;
-  if (event.ctrlKey && ArrowKeys.includes(key)) {
+  if (event.ctrlKey && arrowKeys.includes(key)) {
     offset = 1;
   }
   if (key === 'ArrowLeft') {
@@ -225,31 +262,10 @@ shapeBtns.forEach((btn) => {
 
 colorInput.addEventListener('change', function () {
   let color = this.value;
-  tr.nodes().forEach((node) => {
-    if (node.name() === 'line-group') {
-      node.findOne('.line')?.stroke(color);
-      node.findOne('.polyline')?.stroke(color);
-      node.findOne('.polygone')?.fill(color);
-    } else if (['line', 'polyline'].includes(node.name())) {
-      node.stroke(color);
-    } else if (node.name() === 'polygone') {
-      node.fill(color);
-      node.stroke(color);
-    } else {
-      node.fill(color);
-    }
-  });
-  stage.find('.line,.polyline').forEach((l) => {
-    if (l.getParent().find('.line-anchor')[0].visible()) {
-      l.stroke(color);
-    }
-  });
-  stage.find('.polygone').forEach((l) => {
-    if (l.getParent().find('.line-anchor')[0].visible()) {
-      l.fill(color);
-      l.stroke(color);
-    }
-  });
+  document
+    .getElementById('selected_color_custom')
+    .setAttribute('style', 'background-color:' + color + ';');
+  updateColor(color);
 });
 
 alignBtns.forEach((btn) => {
@@ -374,7 +390,6 @@ stage.on('mousedown touchstart', (e) => {
     if (movingId) {
       const shp = stage.findOne('#m' + movingId);
       let line = shp.findOne('.' + selectorr);
-
       // let anchors  = shp.find('.line-anchor');
       // anchors[anchors.length-1].setAttrs({
       //   x:x2,
@@ -1030,6 +1045,7 @@ function createText(id, attrs = null) {
     });
 
     function handleOutsideClick(e) {
+      yk;
       if (e.target !== textarea) {
         textNode.text(textarea.value);
         removeTextarea();
@@ -1166,3 +1182,41 @@ stage.on('wheel', (e) => {
   };
   stage.position(newPos);
 });
+
+function updateColor(color, colorname = false) {
+  tr.nodes().forEach((node) => {
+    if (node.name() === 'line-group') {
+      let nd =
+        node.findOne('.line') ||
+        node.findOne('.polyline') ||
+        node.findOne('.polygone');
+      // node.findOne('.line')?.stroke(color);
+      // node.findOne('.polyline')?.stroke(color);
+      // node.findOne('.polygone')?.fill(color);
+      nd.stroke(color);
+      nd.fill(color);
+      nd.setAttrs({ colorname });
+    } else if (['line', 'polyline'].includes(node.name())) {
+      node.stroke(color);
+      node.setAttrs({ colorname });
+    } else if (node.name() === 'polygone') {
+      node.fill(color);
+      node.stroke(color);
+    } else {
+      node.fill(color);
+    }
+  });
+  stage.find('.line,.polyline').forEach((l) => {
+    if (l.getParent().find('.line-anchor')[0].visible()) {
+      l.stroke(color);
+      l.setAttrs({ colorname });
+    }
+  });
+  stage.find('.polygone').forEach((l) => {
+    if (l.getParent().find('.line-anchor')[0].visible()) {
+      l.fill(color);
+      l.stroke(color);
+      l.setAttrs({ colorname });
+    }
+  });
+}
