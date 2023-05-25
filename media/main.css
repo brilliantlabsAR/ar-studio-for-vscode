@@ -2,6 +2,7 @@
   font-family: 'JetBrains Mono';
   src: url(./JetBrains_Mono/JetBrainsMono-VariableFont_wght.ttf);
 }
+
 /* root {
   --vscode-foreground: #cccccc;
   --vscode-disabledForeground: rgba(204, 204, 204, 0.5);
@@ -17,130 +18,274 @@
   --vscode-textBlockQuote-border: rgba(255, 255, 255, 0.08);
   --vscode-textCodeBlock-background: rgba(110, 118, 129, 0.4);
 } */
+body {
+  background-color: rgb(70, 70, 70);
+}
+
 .main {
   padding: 10px;
   /* height: 100vh;
   width: 100vw; */
   display: flex;
   align-items: center;
-  justify-content: center ;
+  justify-content: center;
   flex-direction: column;
   /* background: black; */
 }
-.tools{
+
+.tools {
   display: flex;
-  justify-content: flex-start;
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE 10 and IE 11 */
-  user-select: none; /* Standard syntax */
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  -webkit-user-select: none;
+  /* Safari */
+  -ms-user-select: none;
+  /* IE 10 and IE 11 */
+  user-select: none;
+  /* Standard syntax */
   /* align-items: center; */
   margin-bottom: 10px;
+  max-width: 1280px;
+  width: 100%;
 }
-.tools button{
+
+.tools span.tool_title {
+  display: block;
+  color: #E0E6E5;
+  margin: 8px 0;
+  text-align: left;
+  font-family: 'JetBrains Mono';
+  font-size: 14px;
+  text-transform: capitalize;
+}
+
+.tools .tools_items,
+.tools .shape_items {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -7px;
+  align-items: center;
+}
+
+.tools .tools_items .item,
+.tools .shape_items .item {
+  padding: 7px;
+}
+
+.tools button {
   padding: 2px;
-  height: 20px;
-  width: 20px;
-  margin-right: 7px;
+  height: 35px;
+  width: 35px;
   font-size: 14px;
   cursor: pointer;
   background-color: transparent;
   outline: none;
   border: none;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 5px;
+  transition: 0.3s all;
 }
-.tools img{
-width: 100% !important;
+
+.tools img {
+  width: auto;
+  height: 16px;
 }
-.tools input{
-/* height: 30px;
+
+.tools input {
+  /* height: 30px;
 width: 30px; */
-/* padding: 2px; */
-height: 26px;
-width: 26px;
-cursor: pointer;
-background-color: transparent;
-outline: none;
-border: none;
-margin-right: 7px;
-margin-top: -2px;
-}
-.shape-btn.active{
-  background-color: rgba(0,0,0,0.5) !important;
+  /* padding: 2px; */
+  height: 26px;
+  width: 26px;
+  cursor: pointer;
+  background-color: transparent;
+  outline: none;
+  border: none;
 }
 
-.alignBtn{
-background-color:  transparent !important;
+.shape-btn.active {
+  background-color: rgba(0, 0, 0, 0.5) !important;
 }
-.alignBtn img{
-height: 100%;
+
+.alignBtn {
+  background-color: transparent !important;
 }
-.alignBtn.active{
-background-color: rgba(0,0,0,0.5) !important;
+
+.alignBtn.active {
+  background-color: rgba(0, 0, 0, 0.5) !important;
 }
-#myDropdown{
-display: inline-block;
-position: absolute;
-left: 49%;
-top: 48px;
-z-index: 1000;
+
+.thickness_dropdown {
+  position: relative;
+}
+
+#myDropdown {
+  display: inline-block;
+  position: absolute;
+  left: 0;
+  top: 35px;
+  width: 100%;
+  z-index: 1000;
 
 }
-#myDropdown ul{
-list-style: none;
-background: white;
-margin: 0;
-padding: 5px;
-width: 30px;
-text-align: center;
-border-radius: 5px;
+
+#myDropdown ul {
+  list-style: none;
+  background: #333;
+  margin: 0;
+  padding: 5px;
+  width: 30px;
+  text-align: center;
+  border-radius: 5px;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.9);
 }
-#myDropdown ul li{
-padding: 5px;
-margin: 0;
-border-radius: 3px;
-color: rgb(23, 22, 22);
-font-family: 'JetBrains Mono';
+
+#myDropdown ul li {
+  padding: 5px;
+  margin: 0;
+  border-radius: 3px;
+  /* color: rgb(23, 22, 22); */
+  color: #ccc;
+  font-family: 'JetBrains Mono';
+  transition: 0.3s all;
+  background: transparent;
 }
-li.t-op:hover{
-cursor: pointer;
-background-color: #c4c1c1 !important;
+
+li.t-op:hover {
+  cursor: pointer;
+  background-color: #111 !important;
 }
-.title{
+
+.title {
   font-family: 'JetBrains Mono';
   text-align: center;
   font-size: 14px;
   margin: 0;
   color: #E0E6E5;
   margin-bottom: 0.6rem;
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE 10 and IE 11 */
-  user-select: none; /* Standard syntax */
+  -webkit-user-select: none;
+  /* Safari */
+  -ms-user-select: none;
+  /* IE 10 and IE 11 */
+  user-select: none;
+  /* Standard syntax */
 
 }
+
 .box {
-  -webkit-clip-path:polygon(0 0, 100% 35%, 100% 65%, 0% 100%);
-  clip-path:polygon(0 0, 100% 35%, 100% 65%, 0% 100%);
+  -webkit-clip-path: polygon(0 0, 100% 35%, 100% 65%, 0% 100%);
+  clip-path: polygon(0 0, 100% 35%, 100% 65%, 0% 100%);
   height: 30px;
   width: 40px;
-  background:#E0E6E5;
+  background: #E0E6E5;
   margin-right: 5px;
 }
-.thickness{
-width: 40px !important;
-}
-.thickness img{
-width: 50% !important;
+
+.thickness {
+  width: 40px !important;
 }
 
-.thickness span{
-color: #E0E6E5;
-font-size: 16px;
-margin-left: 2px;
-font-family: 'JetBrains Mono';
+.thickness img {
+  width: 50% !important;
 }
+
+.thickness span {
+  color: #E0E6E5;
+  font-size: 16px;
+  margin-left: 2px;
+  font-family: 'JetBrains Mono';
+}
+
 /* .thickness{
   border: 1px solid black;
   text-align: left;
   background-color: gray;
 } */
+.color_picker_box {
+  position: relative;
+}
 
- 
+.color_picker_box .color_pick {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.color_picker_box .picker_box {
+  position: absolute;
+  width: 200px;
+  height: auto;
+  display: flex;
+  flex-wrap: wrap;
+  background: #0c0a0a;  
+  border-radius: 10px;
+  right: 0;
+  /* transform: translateX(-50%); */
+  top: 30px;
+  transition: 0.3s all;
+  opacity: 0;
+  visibility: hidden;
+  padding: 7px;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.9);
+}
+
+.pickbox_show {
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 1000;
+}
+
+.color_picker_box .picker_box .item {
+  width: 25%;
+  height: 50%;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.color_picker_box .picker_box .item .pigment_box {
+  margin: 7px;
+  width: 35px;
+  height: 35px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.colorselection {
+  /* display: none; */
+}
+
+.cpic-box{
+  position: relative;
+    z-index: 1;
+    margin-right: 8px;
+}
+
+  .img_brush{
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    opacity: 0;
+
+  }
+
+
+.d-flex {
+  display: flex;
+}
+
+.color_picker_box .d-flex img {
+  height: 20px;
+  margin-right: 8px;
+}
+
+.aic {
+  align-items: center;
+}
