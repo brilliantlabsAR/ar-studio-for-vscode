@@ -61,13 +61,13 @@
 .tools .shape_items {
   display: flex;
   flex-wrap: wrap;
-  margin: 0 -7px;
+  margin: 0 -5px;
   align-items: center;
 }
 
 .tools .tools_items .item,
 .tools .shape_items .item {
-  padding: 7px;
+  padding: 5px;
 }
 
 .tools button {

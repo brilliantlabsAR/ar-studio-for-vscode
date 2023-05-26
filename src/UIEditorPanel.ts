@@ -1,6 +1,22 @@
 import * as vscode from "vscode";
 import { isPathExist } from "./extension";
-
+const CUSTOMCOLOR:any = {
+  RED: '#ad2323',
+  GREEN: '#1d6914',
+  BLUE: '#2a4bd7',
+  CYAN: '#29d0d0',
+  MAGENTA: '#8126c0',
+  YELLOW: '#ffee33',
+  WHITE: '#ffffff',
+  GRAY1: '#1c1c1c',
+  GRAY2: '#383838',
+  GRAY3: '#555555',
+  GRAY4: '#717171',
+  GRAY5: '#8d8d8d',
+  GRAY6: '#aaaaaa',
+  GRAY7: '#c6c6c6',
+  GRAY8: '#e2e2e2',
+};
 export class UIEditorPanel {
   public static currentPanel: UIEditorPanel | undefined;
   private readonly _panel: vscode.WebviewPanel;
@@ -316,14 +332,20 @@ export class UIEditorPanel {
             .slice(block.indexOf("(") + 1, block.indexOf(")"))
             .split(",")
             .map((d) => d.trim());
+          let colorname = String(attrs[4]).includes("d.")?String(attrs[4]).replace("d.",""):false;
+          let colorvalue = "#" + attrs[4].replace("0x", "");
+          if(colorname){
+            colorvalue= CUSTOMCOLOR[colorname];
+          }
           uiObjs.push({
             name: "rect",
             x: parseInt(attrs[0]),
             y: parseInt(attrs[1]),
             width: parseInt(attrs[2]) - parseInt(attrs[0]),
             height: parseInt(attrs[3]) - parseInt(attrs[1]),
-            fill: "#" + attrs[4].replace("0x", ""),
+            fill:colorvalue,
             draggable: true,
+            colorname
           });
         }
         if (shape === "Line") {
@@ -331,6 +353,11 @@ export class UIEditorPanel {
             .slice(block.indexOf("(") + 1, block.indexOf(")"))
             .split(",")
             .map((d) => d.trim());
+          let colorname = String(attrs[4]).includes("d.")?String(attrs[4]).replace("d.",""):false;
+          let colorvalue = "#" + attrs[4].replace("0x", "");
+          if(colorname){
+            colorvalue= CUSTOMCOLOR[colorname];
+          }
           uiObjs.push({
             name: "line",
             points: [
@@ -339,10 +366,11 @@ export class UIEditorPanel {
               parseInt(attrs[2]),
               parseInt(attrs[3]),
             ],
-            stroke: "#" + attrs[4].replace("0x", ""),
+            stroke: colorvalue,
             strokeWidth: parseInt(
               attrs[5].replaceAll(" ", "").replace("thickness=", "")
             ),
+            colorname
           });
         }
         if (shape === "Polyline") {
@@ -353,13 +381,19 @@ export class UIEditorPanel {
             .split(",")
             .filter((d) => d !== "")
             .map((d) => d.trim());
+          let colorname = String(attrs[0]).includes("d.")?String(attrs[4]).replace("d.",""):false;
+          let colorvalue = "#" + attrs[0].replace("0x", "");
+          if(colorname){
+            colorvalue= CUSTOMCOLOR[colorname];
+          }
           uiObjs.push({
             name: "polyline",
             points: JSON.parse(points),
-            stroke: "#" + attrs[0].replace("0x", ""),
+            stroke: colorvalue,
             strokeWidth: parseInt(
               attrs[1].replaceAll(" ", "").replace("thickness=", "")
             ),
+            colorname
           });
         }
         if (shape === "Polygon") {
@@ -370,13 +404,19 @@ export class UIEditorPanel {
             .split(",")
             .filter((d) => d !== "")
             .map((d) => d.trim());
+          let colorname = String(attrs[0]).includes("d.")?String(attrs[4]).replace("d.",""):false;
+          let colorvalue = "#" + attrs[0].replace("0x", "");
+          if(colorname){
+            colorvalue= CUSTOMCOLOR[colorname];
+          }
           uiObjs.push({
             name: "polygone",
             points: JSON.parse(points),
-            fill: "#" + attrs[0].replace("0x", ""),
-            stroke: "#" + attrs[0].replace("0x", ""),
+            fill: colorvalue,
+            stroke: colorvalue,
             strokeWidth: 1,
             closed: true,
+            colorname
           });
         }
         if (shape === "Text") {
@@ -384,14 +424,20 @@ export class UIEditorPanel {
             .slice(block.indexOf("(") + 1, block.indexOf(")"))
             .split(",")
             .map((d) => d.trim());
+            let colorname = String(attrs[3]).includes("d.")?String(attrs[4]).replace("d.",""):false;
+            let colorvalue = "#" + attrs[3].replace("0x", "");
+            if(colorname){
+              colorvalue= CUSTOMCOLOR[colorname];
+            }
           uiObjs.push({
             name: "text",
             text: attrs[0].slice(1, attrs[0].length - 1),
             x: parseInt(attrs[1]),
             y: parseInt(attrs[2]),
-            fill: "#" + attrs[3].replace("0x", ""),
+            fill: colorvalue,
             alignment: attrs[4].replaceAll(" ", "").replace("justify=d.", ""),
             draggable: true,
+            colorname
           });
         }
       });
@@ -448,6 +494,16 @@ function gUItoPython(data: object[], screenName: string) {
     finalPyString += initialMessage + "class " + screenName + ":\n\tblocks=[";
   }
   data.forEach((uiElement: any, index: number) => {
+    let colorname= uiElement.colorname||undefined;
+    let colorvalue = '';
+    if(uiElement.name==='line' || uiElement.name==='polyline'){
+      colorvalue = "0x"+uiElement.stroke.replace("#","");
+    }else{
+      colorvalue = "0x"+uiElement.fill.replace("#","");
+    }
+    if(colorname){
+      colorvalue = "d."+colorname;
+    }
     if (uiElement.name === "rect") {
       finalPyString += `\n\t\td.Rectangle(${Math.round(
         uiElement.x
@@ -455,37 +511,31 @@ function gUItoPython(data: object[], screenName: string) {
         uiElement.x + uiElement.width
       )}, ${Math.round(
         uiElement.y + uiElement.height
-      )}, 0x${uiElement.fill.replace("#", "")}),`;
+      )}, ${colorvalue}),`;
     }
     if (uiElement.name === "line") {
       finalPyString += `\n\t\td.Line(${Math.round(
         uiElement.points[0]
       )}, ${Math.round(uiElement.points[1])}, ${Math.round(
         uiElement.points[2]
-      )}, ${Math.round(uiElement.points[3])}, 0x${uiElement.stroke.replace(
-        "#",
-        ""
-      )}, thickness=${uiElement.strokeWidth}),`;
+      )}, ${Math.round(uiElement.points[3])}, ${colorvalue}, thickness=${uiElement.strokeWidth}),`;
     }
     if (uiElement.name === "polyline") {
       finalPyString += `\n\t\td.Polyline([${uiElement.points
         .map((point: number) => Math.round(point))
-        .join(",")}], 0x${uiElement.stroke.replace("#", "")}, thickness=${
+        .join(",")}], ${colorvalue}, thickness=${
         uiElement.strokeWidth
       }),`;
     }
     if (uiElement.name === "polygone") {
       finalPyString += `\n\t\td.Polygon([${uiElement.points
         .map((point: number) => Math.round(point))
-        .join(",")}], 0x${uiElement.fill.replace("#", "")}),`;
+        .join(",")}], ${colorvalue}),`;
     }
     if (uiElement.name === "text") {
       finalPyString += `\n\t\td.Text('${uiElement.text}', ${Math.round(
         uiElement.x
-      )}, ${Math.round(uiElement.y)}, 0x${uiElement.fill.replace(
-        "#",
-        ""
-      )}, justify=d.${uiElement.alignment}),`;
+      )}, ${Math.round(uiElement.y)}, ${colorvalue}, justify=d.${uiElement.alignment}),`;
     }
   });
   if (data.length !== 0) {

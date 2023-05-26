@@ -1199,11 +1199,14 @@ function updateColor(color, colorname = false) {
     } else if (['line', 'polyline'].includes(node.name())) {
       node.stroke(color);
       node.setAttrs({ colorname });
+      
     } else if (node.name() === 'polygone') {
       node.fill(color);
       node.stroke(color);
+      node.setAttrs({ colorname });
     } else {
       node.fill(color);
+      node.setAttrs({ colorname });
     }
   });
   stage.find('.line,.polyline').forEach((l) => {
