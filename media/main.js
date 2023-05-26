@@ -1199,7 +1199,6 @@ function updateColor(color, colorname = false) {
     } else if (['line', 'polyline'].includes(node.name())) {
       node.stroke(color);
       node.setAttrs({ colorname });
-      
     } else if (node.name() === 'polygone') {
       node.fill(color);
       node.stroke(color);
@@ -1222,4 +1221,5 @@ function updateColor(color, colorname = false) {
       l.setAttrs({ colorname });
     }
   });
+  sendUIData();
 }
