@@ -381,7 +381,7 @@ export class UIEditorPanel {
             .split(",")
             .filter((d) => d !== "")
             .map((d) => d.trim());
-          let colorname = String(attrs[0]).includes("d.")?String(attrs[4]).replace("d.",""):false;
+          let colorname = String(attrs[0]).includes("d.")?String(attrs[0]).replace("d.",""):false;
           let colorvalue = "#" + attrs[0].replace("0x", "");
           if(colorname){
             colorvalue= CUSTOMCOLOR[colorname];
@@ -404,7 +404,7 @@ export class UIEditorPanel {
             .split(",")
             .filter((d) => d !== "")
             .map((d) => d.trim());
-          let colorname = String(attrs[0]).includes("d.")?String(attrs[4]).replace("d.",""):false;
+          let colorname = String(attrs[0]).includes("d.")?String(attrs[0]).replace("d.",""):false;
           let colorvalue = "#" + attrs[0].replace("0x", "");
           if(colorname){
             colorvalue= CUSTOMCOLOR[colorname];
@@ -424,7 +424,7 @@ export class UIEditorPanel {
             .slice(block.indexOf("(") + 1, block.indexOf(")"))
             .split(",")
             .map((d) => d.trim());
-            let colorname = String(attrs[3]).includes("d.")?String(attrs[4]).replace("d.",""):false;
+            let colorname = String(attrs[3]).includes("d.")?String(attrs[3]).replace("d.",""):false;
             let colorvalue = "#" + attrs[3].replace("0x", "");
             if(colorname){
               colorvalue= CUSTOMCOLOR[colorname];

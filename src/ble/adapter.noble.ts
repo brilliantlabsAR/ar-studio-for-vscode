@@ -304,6 +304,10 @@
             },
             writeCharacteristic: function(handle, dataView, completeFn, errorFn) {
                 var buffer = dataViewToBuffer(dataView);
+                this.characteristicHandles[handle].write(buffer, false, checkForError(errorFn, completeFn));
+            },
+            writeCharacteristicWithoutResponse: function(handle, dataView, completeFn, errorFn) {
+                var buffer = dataViewToBuffer(dataView);
                 this.characteristicHandles[handle].write(buffer, true, checkForError(errorFn, completeFn));
             },
             enableNotify: function(handle, notifyFn, completeFn, errorFn) {

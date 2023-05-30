@@ -496,7 +496,7 @@
 
             var arrayBuffer = bufferSource.buffer || bufferSource;
             var dataView = new DataView(arrayBuffer);
-            adapter.writeCharacteristic(this._handle, dataView, function() {
+            adapter.writeCharacteristicWithoutResponse(this._handle, dataView, function() {
                 this.value = dataView;
                 resolve();
             }.bind(this), wrapReject(reject, "writeValue error"));
