@@ -7,8 +7,6 @@ import {
 import { outputChannel } from "./extension";
 import { request } from "@octokit/request";
 import { disconnect, isConnected } from "./bluetooth";
-import * as vscode from "vscode";
-import { btoa } from "buffer";
 let fetch = require("node-fetch");
 
 export let micropythonGit: any = {};
@@ -30,10 +28,9 @@ async function getUpdateInfo() {
   // Check nRF firmware
   let response: any = await replSend("import device;print(device.VERSION)");
   if (response.includes("Error")) {
-    return (
-      "Could not detect the firmware version. You may have to update" +
+    return "Could not detect the firmware version. You may have to update" +
       " manually. Try typing: import update;update.micropython()"
-    );
+    ;
   }
   let currentVersion = response.substring(
     response.indexOf("v"),
@@ -86,7 +83,7 @@ async function getUpdateInfo() {
   }
   return "";
 }
-let fpgaUpdateInProgress: any = false;
+
 export async function startFirmwareUpdate() {
   await replRawMode(true);
   await replSend(
@@ -103,33 +100,8 @@ export async function startFirmwareUpdate() {
   await ensureConnected();
 }
 
-export async function startFpgaUpdate(binPath?: vscode.Uri) {
-  if (!isConnected()) {
-    return Promise.reject("Connect to Monocle first");
-  }
 
-  if (fpgaUpdateInProgress === true) {
-    return Promise.reject("FPGA update already in progress");
-  }
-
-  await replRawMode(true).catch((error) => {
-    return Promise.reject(error);
-  });
-  let file: ArrayBuffer;
-  if (!binPath) {
-    file = await downloadLatestFpgaImage();
-  } else {
-    file = await vscode.workspace.fs.readFile(binPath);
-  }
-
-  fpgaUpdateInProgress = true;
-  await updateFPGA(file);
-  fpgaUpdateInProgress = false;
-
-  await replRawMode(false);
-}
-
-async function updateFPGA(file: ArrayBuffer) {
+export async function updateFPGA(file: ArrayBuffer) {
   outputChannel.appendLine("Starting FPGA update");
   outputChannel.appendLine(
     "Converting " + file.byteLength + " bytes of file to base64"
@@ -168,7 +140,7 @@ async function updateFPGA(file: ArrayBuffer) {
   outputChannel.appendLine("Completed FPGA update. Resetting");
 }
 
-async function downloadLatestFpgaImage() {
+export async function downloadLatestFpgaImage() {
   outputChannel.appendLine(
     "Downloading latest release from: github.com/" +
       fpgaGit.owner +

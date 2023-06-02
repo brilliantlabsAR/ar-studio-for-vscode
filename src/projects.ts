@@ -171,13 +171,13 @@ export class GitOperation {
 			};
 	}
 	onError(err:any){
-		vscode.window.showErrorMessage(String(err));
+		console.log(err);
+		// vscode.window.showErrorMessage("could");
 	}
 }
 
 
-// import * as vscode from 'vscode';
-import * as path from 'path';
+
 import { spawn } from 'child_process';
 
 export function cloneAndOpenRepo(repoUrl:string,uri:vscode.Uri): void {

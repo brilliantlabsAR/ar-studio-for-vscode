@@ -1,13 +1,14 @@
 import { isConnected, replDataTxQueue,connect,disconnect } from './bluetooth';
-import { checkForUpdates, startFirmwareUpdate, startFpgaUpdate } from "./update";
+import { checkForUpdates, startFirmwareUpdate, downloadLatestFpgaImage, updateFPGA } from "./update";
 import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus } from './extension';
 import { startNordicDFU } from './nordicdfu'; 
 import * as vscode from 'vscode';
-import { resolve } from 'path';
-import { time, timeEnd } from 'console';
 let util = require('util');
-let cursorPosition = 0;
-let replRawModeEnabled = false;
+let prevPerc = 0;
+let updateInProgress:boolean = false;
+let fpgaUpdateInProgress: any = false;
+let progressReport:any;
+export let replRawModeEnabled = false;
 let rawReplResponseString = '';
 let rawReplResponseCallback:any;
 let fileWriteStart = false;
@@ -86,6 +87,7 @@ let initializedWorkspace = false;
 export async function ensureConnected() {
     
     if (isConnected() === true) {
+        updateStatusBarItem("connected");
         return;
     }
     updateStatusBarItem("progress");
@@ -95,23 +97,57 @@ export async function ensureConnected() {
         if (connectionResult === "dfu connected") {
             // infoText.innerHTML = "Starting firmware update..";
             updateStatusBarItem("connected","$(cloud-download) Updating");
-            await startNordicDFU()
-                .catch((error) => {
-                    console.log(error);
+            updateInProgress = true;
+            prevPerc = 0;
+            vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                cancellable: true,
+                title: 'Updating firmware',
+            }, async (progress,canceled) => {
+                canceled.onCancellationRequested(()=>{
                     disconnect();
-                    throw Error("Bluetooth error. Reconnect or check console for details");
+                    vscode.window.showErrorMessage("Cancelled firmware update! connect to monocle after few moments \n or connect now to again update")
                 });
-            await disconnect();
-            vscode.window.showInformationMessage("Firmware Update done");
-            updateStatusBarItem("progress");
-            // after 2 sec try to connect;
-            setTimeout(ensureConnected,2000);
+                progress.report({message:"updating",increment:0});
+                progressReport = progress;
+                await new Promise(r => {
+                    let clearIntervalId = setInterval(()=>{
+                        if(updateInProgress===false){
+                            clearInterval(clearIntervalId);
+                            progressReport = null;
+                            r("");
+                        }
+                    });
+                });
+
+            });
+            let updateStatus = await startNordicDFU();
+            if(updateStatus==='completed'){
+                updateInProgress = false;
+                await disconnect();
+                vscode.window.showInformationMessage("Firmware Update done");
+                updateStatusBarItem("progress");
+                // after 2 sec try to connect;
+                setTimeout(ensureConnected,2000);
+            }else{
+                console.log(updateStatus);
+                vscode.window.showErrorMessage("firmware update failed");
+                updateInProgress = false;
+                disconnect();
+            }
+            progressReport = null;
+            prevPerc = 0;
             
             // return;
         }
 
         if (connectionResult === "repl connected") {
-            updatePublishStatus();
+            try {
+                updatePublishStatus();
+            } catch (error) {
+                
+            }
+           
             // infoText.innerHTML = "Connected";
             // replResetConsole();
             vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', true);
@@ -145,9 +181,14 @@ export async function ensureConnected() {
                     vscode.commands.executeCommand('setContext', 'monocle.fpgaAvailable', newFpga);
                 }else{
                     vscode.window.showInformationMessage(updateMsg.value);
+                    await replRawMode(false);
                 }
             }
-            await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
+            try {
+                await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
+            } catch (error) {
+                
+            }
             let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
             if(allTerminals.length>0){
                 allTerminals[0].show();
@@ -163,9 +204,10 @@ export async function ensureConnected() {
         if (error.message && error.message.includes("cancelled")) {
             return;
         }
+        vscode.window.showErrorMessage(error);
         // infoText.innerHTML = error;
         // console.error(error);
-        updateStatusBarItem("Disconnected");
+        updateStatusBarItem("disconnected");
     }
 }
 
@@ -217,26 +259,89 @@ export async function sendFileUpdate(update:any){
   
 }
 export function onDisconnect() {
-    
+     prevPerc = 0;
+     updateInProgress = false;
+     replRawModeEnabled = false;
+     fileWriteStart = false;
+     internalOperation = false;
+     progressReport =null;
     vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', false);
     updateStatusBarItem("disconnected");
-	writeEmitter.fire("Disconnected \r\n");
+	writeEmitter.fire("\r\nDisconnected \r\n");
 }
+
 
 export function reportUpdatePercentage(perc:number){
     updateStatusBarItem("updating", perc.toFixed(2));
-    
+    progressReport?.report({message: perc.toFixed(2),increment:perc- prevPerc});
+    prevPerc = perc;
 }
 export function receiveRawData(data:any){
     console.log(data);
 }
 
 export async function triggerFpgaUpdate(binPath?:vscode.Uri){
+    if (!isConnected()) {
+       vscode.window.showWarningMessage("Connect to Monocle first");
+       return ;
+    }
+    if (fpgaUpdateInProgress === true) {
+       vscode.window.showWarningMessage("FPGA update already in progress");
+       return;
+    }
+    
     updateStatusBarItem("connected","$(cloud-download) Updating");
-    await startFpgaUpdate(binPath).catch(err=>{
-        vscode.window.showErrorMessage(err);
+    updateInProgress = true;
+    prevPerc = 0;
+    vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        cancellable: true,
+        title: 'Updating FPGA',
+    }, async (progress,canceled) => {
+        canceled.onCancellationRequested(()=>{
+            disconnect();
+            ensureConnected();
+            // vscode.window.showErrorMessage("Cancelled FPGA update! connect to monocle after few moments \n or connect now to again update");
+        });
+        progress.report({message:"updating",increment:0});
+        progressReport = progress;
+        await new Promise(r => {
+            let clearIntervalId = setInterval(()=>{
+                if(updateInProgress===false){
+                    clearInterval(clearIntervalId);
+                    progressReport = null;
+                    r("");
+                }
+            });
+        });
+
     });
-    vscode.window.showInformationMessage("FPGA Update done");
+      try {
+        await replRawMode(true).catch((error) => {
+            return Promise.reject(error);
+          });
+    
+          let file: ArrayBuffer;
+          if (!binPath) {
+            file = await downloadLatestFpgaImage();
+          } else {
+            file = await vscode.workspace.fs.readFile(binPath);
+          }
+        
+        fpgaUpdateInProgress = true;
+        await updateFPGA(file);
+        fpgaUpdateInProgress = false;
+    
+        await replRawMode(false);
+        vscode.window.showInformationMessage("FPGA Update done");
+      } catch (error) {
+        fpgaUpdateInProgress = false;
+        console.log(error);
+        vscode.window.showInformationMessage("FPGA Update failed");
+      }
+     
+    updateInProgress = false;
+    prevPerc = 0;
     updateStatusBarItem("connected");
 }
 

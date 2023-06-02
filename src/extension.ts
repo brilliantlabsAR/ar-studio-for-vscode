@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs'; // In NodeJS: 'const fs = require('fs')'
 
 import { isConnected,disconnect } from './bluetooth';
-import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate} from './repl';
+import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate,replRawModeEnabled} from './repl';
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
 import { SnippetProvider } from './snippets/provider';
 import { UIEditorPanel } from "./UIEditorPanel";
@@ -82,7 +82,11 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 		close: () => { /* noop*/ },
 		handleInput: (data: string) => {
 			// console.log(data);
-			terminalHandleInput(data);
+			if(!replRawModeEnabled){
+				terminalHandleInput(data);
+			}else{
+				vscode.window.showWarningMessage("Device Busy!");
+			}
 
 		}
 	};
@@ -508,7 +512,7 @@ export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
 	let bgColorWarning = new vscode.ThemeColor('statusBarItem.warningBackground');
 	let bgColorError = new vscode.ThemeColor('statusBarItem.errorBackground');
 	statusBarItemBle.command = "brilliant-ar-studio.connect";
-	if(status==="connected"){
+	if(status==="connected" && isConnected()){
 		// statusBarItemBle.color = "#13f81a";
 		statusBarItemBle.tooltip = "Connected";
 		statusBarItemBle.command = "brilliant-ar-studio.disconnect";
@@ -526,7 +530,14 @@ export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
 		statusBarItemBle.text = "$(cloud-download) Updating "+msg+"%";
 		statusBarItemBle.command = undefined;
 	
+	}else if (!isConnected()){
+		statusBarItemBle.tooltip = "Disconnected";
+		// statusBarItemBle.color = "#D90404";
+		statusBarItemBle.command = "brilliant-ar-studio.connect";
+		statusBarItemBle.backgroundColor =  bgColorError;
+		statusBarItemBle.text = "$(debug-disconnect) "+msg;
 	}else{
+		statusBarItemBle.command = "brilliant-ar-studio.connect";
 		statusBarItemBle.tooltip = "Disconnected";
 		// statusBarItemBle.color = "#D90404";
 		statusBarItemBle.backgroundColor =  bgColorError;

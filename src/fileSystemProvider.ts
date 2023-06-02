@@ -83,9 +83,9 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 		const basename = path.posix.basename(devicePath);
 		let file = await vscode.workspace.fs.stat(uri);
 		let thisTreeItem = this.data.get(devicePath);
-		if(thisTreeItem){
-			deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: true });
-		}
+		// if(thisTreeItem){
+		// 	deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: true });
+		// }
 		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess',true );
 		if(file.type===vscode.FileType.Directory){
 			//  here needs to create directory in monocle
@@ -98,25 +98,25 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 				this.refresh();
 			}
 		}
-		if(thisTreeItem){
-			deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: false });
-		}
+		// if(thisTreeItem){
+		// 	deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: false });
+		// }
 		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess', false);
 	}
 	async updateFile(uri:vscode.Uri,devicePath:string){
 		let thisTreeItem = this.data.get(devicePath);
-		if(thisTreeItem){
-			deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: true });
-		}
+		// if(thisTreeItem){
+		// 	deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: true });
+		// }
 		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess',true );
 		
 			if(await creatUpdateFileDevice(uri, devicePath)){
 				
 			}
 		
-		if(thisTreeItem){
-			deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: false });
-		}
+		// if(thisTreeItem){
+		// 	deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: false });
+		// }
 		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess', false);
 	}
 	async updateFileBulk(files:vscode.Uri[],devicePath:string){

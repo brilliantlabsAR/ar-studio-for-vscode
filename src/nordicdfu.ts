@@ -5,21 +5,27 @@ import { transmitNordicDfuControlData, transmitNordicDfuPacketData } from "./blu
 import { outputChannel } from "./extension";
 import { micropythonGit } from "./update";
 import { reportUpdatePercentage } from "./repl";
+import * as vscode from 'vscode';
 import { request } from "@octokit/request";
 let JSZIP = require("jszip");
 let fetch = require('node-fetch');
 let controlResponseCallback:any;
 
 export async function startNordicDFU() {
+    try {
+        
+        outputChannel.appendLine('Entering nRF52 DFU');
 
-    outputChannel.appendLine('Entering nRF52 DFU');
+        let files:any = await obtainFiles();
 
-    let files:any = await obtainFiles();
+        await transferFile(files.dat, 'init');
+        await transferFile(files.bin, 'image');
 
-    await transferFile(files.dat, 'init');
-    await transferFile(files.bin, 'image');
-
-    outputChannel.appendLine('Leaving nRF52 DFU');
+        outputChannel.appendLine('Leaving nRF52 DFU');
+        return Promise.resolve("completed");
+    } catch (error) {
+        return Promise.resolve(error);
+    }
 }
 
 export async function nordicDfuSendControl(bytes:any) {
@@ -63,10 +69,14 @@ async function obtainFiles() {
 
     outputChannel.appendLine("Downloading latest release from: github.com/" +
     micropythonGit.owner + "/" + micropythonGit.repo);
-
+    let headers = {
+        authorization: "token "+ (await vscode.authentication.getSession('github',['read:user', 'user:email', 'repo', 'workflow'],{createIfNone:true})).accessToken,
+          'X-GitHub-Api-Version': '2022-11-28'
+        };
     let response:any = await request("GET /repos/{owner}/{repo}/releases/latest", {
         owner: micropythonGit.owner,
-        repo: micropythonGit.repo
+        repo: micropythonGit.repo,
+        headers
     });
 
     let assetId;
@@ -79,7 +89,8 @@ async function obtainFiles() {
     response = await request("GET /repos/{owner}/{repo}/releases/assets/{assetId}", {
         owner: micropythonGit.owner,
         repo: micropythonGit.repo,
-        assetId: assetId
+        assetId: assetId,
+        headers
     });
 
     // Annoyingly we have to fetch the data via a cors proxy
@@ -173,7 +184,11 @@ async function transferFile(file:any, type:any) {
             fileOffset += fileSlice.byteLength;
 
             await nordicDfuSendPacket(fileSlice);
-            reportUpdatePercentage(Math.round((100 / fileSize) * fileOffset));
+            // .report({  increment: Math.round((100 / fileSize) * fileOffset) });
+            if(type==="image"){
+                reportUpdatePercentage((100 / fileSize) * fileOffset);
+
+            }
         }
 
         // Calculate CRC
