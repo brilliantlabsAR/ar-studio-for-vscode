@@ -166,12 +166,6 @@
         "icon": "$(explorer-view-icon)"
       },
       {
-        "command": "brilliant-ar-studio.stopProgress",
-        "title": "Brilliant AR Studio: In Progress",
-        "icon": "$(sync~spin)",
-        "enablement": "true"
-      },
-      {
         "command": "brilliant-ar-studio.uploadFilesToDevice",
         "title": "Brilliant AR Studio: Upload File To Device",
         "icon": "$(save)",
@@ -209,11 +203,6 @@
           "command": "brilliant-ar-studio.openUIEditor",
           "when": "view == screens",
           "group": "navigation@0"
-        },
-        {
-          "command": "brilliant-ar-studio.stopProgress",
-          "when": "view == fileExplorer && monocle.deviceConnected && monocle.fileInProgess",
-          "group": "navigation@1"
         }
       ],
       "view/item/context": [

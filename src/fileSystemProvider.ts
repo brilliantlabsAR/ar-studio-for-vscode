@@ -82,64 +82,60 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 	async addFile(uri:vscode.Uri,devicePath:string){
 		const basename = path.posix.basename(devicePath);
 		let file = await vscode.workspace.fs.stat(uri);
-		let thisTreeItem = this.data.get(devicePath);
-		// if(thisTreeItem){
-		// 	deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: true });
-		// }
-		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess',true );
-		if(file.type===vscode.FileType.Directory){
-			//  here needs to create directory in monocle
-			if(await createDirectoryDevice(devicePath)){
-				this.refresh();
+	
+		vscode.window.withProgress({
+			location: {viewId:"fileExplorer"},
+			cancellable: false,
+		}, async (progress,canceled) => {
+			if(file.type===vscode.FileType.Directory){
+				//  here needs to create directory in monocle
+				if(await createDirectoryDevice(devicePath)){
+					this.refresh();
+				}
+			}else if(file.type===vscode.FileType.File){
+				//  here needs to create file in monocle
+				if(await creatUpdateFileDevice(uri, devicePath)){
+					this.refresh();
+				}
 			}
-		}else if(file.type===vscode.FileType.File){
-			//  here needs to create file in monocle
-			if(await creatUpdateFileDevice(uri, devicePath)){
-				this.refresh();
-			}
-		}
-		// if(thisTreeItem){
-		// 	deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: false });
-		// }
-		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess', false);
+		});
 	}
 	async updateFile(uri:vscode.Uri,devicePath:string){
-		let thisTreeItem = this.data.get(devicePath);
-		// if(thisTreeItem){
-		// 	deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: true });
-		// }
-		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess',true );
-		
+		vscode.window.withProgress({
+			location: {viewId:"fileExplorer"},
+			cancellable: false,
+		}, async (progress,canceled) => {
 			if(await creatUpdateFileDevice(uri, devicePath)){
 				
 			}
-		
-		// if(thisTreeItem){
-		// 	deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: false });
-		// }
-		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess', false);
+		});
 	}
 	async updateFileBulk(files:vscode.Uri[],devicePath:string){
-		if(await uploadFileBulkDevice(files,devicePath)){
-			this.refresh();
-		};
+		vscode.window.withProgress({
+			location: {viewId:"fileExplorer"},
+			cancellable: false,
+		}, async (progress,canceled) => {
+			if(await uploadFileBulkDevice(files,devicePath)){
+				this.refresh();
+			};
+		});
+		
 	}
 	async renameFile (oldDevicePath:string,newDevicePath:string){
-		let thisTreeItem = this.data.get(oldDevicePath);
-		if(thisTreeItem){
-			deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: true });
-		}
-		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess',true);
-		if(await renameFileDevice(oldDevicePath, newDevicePath)){
-			this.refresh();
-		}
-		if(thisTreeItem){
-			deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: false });
-		}
-		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess', false);
+		vscode.window.withProgress({
+			location: {viewId:"fileExplorer"},
+			cancellable: false,
+		}, async (progress,canceled) => {
+			if(await renameFileDevice(oldDevicePath, newDevicePath)){
+				this.refresh();
+			}
+		});
+		
+		
 	}
 	
 	async readFile (devicePath:string):Promise<string>{
+		
 		let data = await readFileDevice(devicePath);
 		if(typeof data ==='string'){
 			return data;
@@ -151,19 +147,17 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 	}
 
 	async deleteFile(devicePath:string){
-		let thisTreeItem = this.data.get(devicePath);
-		if(thisTreeItem){
-			deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: true });
-		}
-		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess',true);
-		if(await deleteFilesDevice(devicePath)){
-			this.data.delete(devicePath);
-			this.refresh();
-		}
-		if(thisTreeItem){
-			deviceTreeProvider.reveal(thisTreeItem, { focus: false, select: false });
-		}
-		vscode.commands.executeCommand('setContext', 'monocle.fileInProgess', false);
+
+		vscode.window.withProgress({
+			location: {viewId:"fileExplorer"},
+			cancellable: false,
+		}, async (progress,canceled) => {
+			if(await deleteFilesDevice(devicePath)){
+				this.data.delete(devicePath);
+				this.refresh();
+			}
+		});
+		
 	}
 	async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
 		// simply invoke cowsay, use uri-path as text

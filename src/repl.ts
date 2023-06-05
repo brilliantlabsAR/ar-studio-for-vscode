@@ -273,7 +273,7 @@ export function onDisconnect() {
 
 export function reportUpdatePercentage(perc:number){
     updateStatusBarItem("updating", perc.toFixed(2));
-    progressReport?.report({message: perc.toFixed(2),increment:perc- prevPerc});
+    progressReport?.report({message: perc.toFixed(2)+" %",increment:perc- prevPerc});
     prevPerc = perc;
 }
 export function receiveRawData(data:any){
