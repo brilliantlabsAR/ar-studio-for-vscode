@@ -9,6 +9,7 @@ import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate,rep
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
 import { SnippetProvider } from './snippets/provider';
 import { UIEditorPanel } from "./UIEditorPanel";
+import {snippets} from "./snippets";
 const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
 import { DeviceFs, MonocleFile,ScreenProvider } from './fileSystemProvider';
@@ -121,6 +122,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 		
 	}
+	// deviceTreeProvider/
 	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
 	const snippetprovider = new SnippetProvider();
 	const projectProvider =  new ProjectProvider();
@@ -159,7 +161,70 @@ export async function activate(context: vscode.ExtensionContext) {
 	
 	// vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse(myscheme+':/'), name: myscheme });
 	const alldisposables = vscode.Disposable.from(
-
+		// for completions 
+		vscode.languages.registerCompletionItemProvider(
+			'python',
+			{
+				provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+	
+					// get all text until the `position` and check if it reads `console.`
+					// and if so then complete if `log`, `warn`, and `error`
+					const linePrefix = document.lineAt(position).text.substr(0, position.character);
+					let snippList:vscode.CompletionItem[]=[];
+					Object.keys(snippets).forEach(it=>{
+						if (linePrefix.endsWith(it+'.')) {
+							Object.keys(snippets[it]).forEach(ke=>{
+								const snippetCompletion = new vscode.CompletionItem(ke);
+								snippetCompletion.insertText = new vscode.SnippetString(snippets[it][ke].body.replace(it+'.',''));
+								if(ke === ke.toUpperCase()){
+									snippetCompletion.kind = vscode.CompletionItemKind.Enum;
+								}else if(ke[0] === ke[0].toUpperCase()){
+									snippetCompletion.kind = vscode.CompletionItemKind.Class;
+								}else if(ke === ke.toLowerCase()){
+									snippetCompletion.kind = vscode.CompletionItemKind.Method;
+								}
+								
+								snippList.push(snippetCompletion);
+							});
+						}
+					});
+					
+					if(snippList.length!==0){
+						return snippList;
+					}else{
+						return [];
+					}
+				}
+			},
+			'.' // triggered whenever a '.' is being typed
+		),
+		vscode.languages.registerCompletionItemProvider(
+			'python',
+			{
+				provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+	
+					// get all text until the `position` and check if it reads `console.`
+					// and if so then complete if `log`, `warn`, and `error`
+					// const linePrefix = document.lineAt(position).text.substr(0, position.character);
+					let snippList:vscode.CompletionItem[]=[];
+					Object.keys(snippets).forEach(it=>{
+						// if (linePrefix.endsWith(it+'.')) {
+							// Object.keys(snippets[it]).forEach(ke=>{
+						const snippetCompletion = new vscode.CompletionItem(it);
+						snippetCompletion.kind = vscode.CompletionItemKind.Module;
+						snippetCompletion.insertText = it;
+	
+						snippList.push(snippetCompletion);
+					});
+					
+					if(snippList.length!==0){
+						return snippList;
+					}else{
+						return [];
+					}
+				}
+			},
+		),	
 		vscode.languages.registerDocumentDropEditProvider('python', {
 			provideDocumentDropEdits(document, position, dataTransfer, token) {
 				let itemValue:any;
