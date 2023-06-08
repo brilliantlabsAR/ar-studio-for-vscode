@@ -42,7 +42,6 @@ export function isConnected() {
 }
 
 export async function connect() {
-
     if (!bluetooth) {
         return Promise.reject("This browser doesn't support WebBluetooth. " +
             "Make sure you're on Chrome Desktop/Android or BlueFy iOS.")
