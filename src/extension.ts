@@ -21,7 +21,7 @@ export const writeEmitter = new vscode.EventEmitter<string>();
 const gitOper = new GitOperation();
 export const myscheme = "monocle";
 export var outputChannel:vscode.OutputChannel;
-
+export var outputChannelData:vscode.OutputChannel;
 export var deviceTreeProvider:vscode.TreeView<MonocleFile>;
 
 export const isPathExist = async (uri:vscode.Uri):Promise<boolean>=>{
@@ -144,7 +144,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// ouput channel to see RAW-REPl logs
 	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
+	outputChannelData = vscode.window.createOutputChannel("RAW-DATA","plaintext"); 
 	outputChannel.clear();
+	outputChannelData.clear();
 	statusBarItemBle.command = "brilliant-ar-studio.connect";
 	statusBarItemBle.show();
 	if(isConnected()){
@@ -613,4 +615,8 @@ export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export async function deactivate() {
+	await disconnect()
+	console.log("closed")
+	await new Promise(r => setTimeout(r, 1000));
+}

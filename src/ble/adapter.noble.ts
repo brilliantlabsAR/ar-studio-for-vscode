@@ -117,10 +117,11 @@
                 if(! await this.adapter.isPowered()){
                     errorFn("Adaptor powered off");return;
                 }
-                if (this.initialised) return continueFn();
                 if(!await this.adapter.isDiscovering()){
                     await this.adapter.startDiscovery()
                 }
+                if (this.initialised) return continueFn();
+                
                
                 this.initialised = true;
                 continueFn();
@@ -139,8 +140,12 @@
                         });
                     };
                     let deviceFound = await this.adapter.devices();
-                    deviceFound.forEach(async dMac=>{
+                    deviceFound.forEach(async function(dMac){
+                     
                         let dev = await this.adapter.getDevice(dMac)
+                           if(await dev.helper.prop('Connected')){
+                            await dev.disconnect()
+                           }
                         let deviceInfo = {}
                         try {
                              deviceInfo = {
@@ -201,7 +206,7 @@
                                 rssi: deviceInfo.rssi
                             }
                         });
-                    });
+                    }.bind(this));
                 }.bind(this), errorFn);
             },
             stopScan: async function(errorFn) {
@@ -212,20 +217,55 @@
                 
             },
             connect: async function(handle, connectFn, disconnectFn, errorFn) {
-                var baseDevice = this.deviceHandles[handle].device;
-                baseDevice.on("connect", connectFn);
-                baseDevice.on("disconnect", function() {
-                    this.serviceHandles = {};
-                    this.characteristicHandles = {};
-                    this.descriptorHandles = {};
-                    this.charNotifies = {};
-                    disconnectFn();
-                }.bind(this));
-                baseDevice.connect();
-                checkForError(errorFn)
+                try {
+                    var baseDevice = this.deviceHandles[handle].device;
+                    baseDevice.on("connect", connectFn);
+                    baseDevice.on("disconnect", function() {
+                            Object.keys(this.charNotifies).forEach(async chandle=>{
+                                try {
+                                
+                                    this.characteristicHandles[chandle].removeAllListeners('valuechanged')
+                                    await this.characteristicHandles[chandle].stopNotifications()
+                                } catch (error) {
+                                    console.log(error)
+                                }
+                        })
+                        this.deviceHandles[handle].device.removeAllListeners('connect')
+                        this.deviceHandles[handle].device.removeAllListeners('disconnect')
+                        this.serviceHandles = {};
+                        this.characteristicHandles = {};
+                        this.descriptorHandles = {};
+                        this.charNotifies = {};
+                        disconnectFn();
+                    }.bind(this));
+                    await baseDevice.connect();
+                    checkForError(errorFn)
+                } catch (error) {
+                    console.log(error)
+                }
+                
             },
-            disconnect: function(handle, errorFn) {
-                this.deviceHandles[handle].device.disconnect(checkForError(errorFn));
+            disconnect: async function(handle, errorFn) {
+              try {
+                Object.keys(this.charNotifies).forEach(async chandle=>{
+                        try {
+                        
+                            this.characteristicHandles[chandle].removeAllListeners('valuechanged')
+                            await this.characteristicHandles[chandle].stopNotifications()
+                        } catch (error) {
+                            console.log(error)
+                        }
+                })
+                this.deviceHandles[handle].device.removeAllListeners('connect')
+                this.deviceHandles[handle].device.removeAllListeners('disconnect')
+                if(await this.deviceHandles[handle].device.isConnected()){
+                    await this.deviceHandles[handle].device.disconnect().catch(checkForError(errorFn));
+                }
+                await this.stopScan()
+              } catch (error) {
+                console.log(error)
+              }
+               
             },
             discoverServices:  async function(handle, serviceUUIDs, completeFn, errorFn) {
                 var baseDevice = this.deviceHandles[handle];
@@ -283,8 +323,9 @@
                         // if (characteristicUUIDs.length === 0 || characteristicUUIDs.indexOf(charUUID) >= 0) {
                             characteristicInfo = await serviceInfo.getCharacteristic(characteristicInfo)
                             if (!this.characteristicHandles[charUUID]){
-                                this.characteristicHandles[charUUID] = characteristicInfo
+                                this.characteristicHandles[charUUID] = characteristicInfo;
                             };
+                            
                             let flags = await characteristicInfo.getFlags()
                             discovered.push({
                                 _handle: charUUID,
@@ -302,13 +343,7 @@
                                 }
                             });
 
-                            characteristicInfo.on('valuechanged', function(data) {
-                                if (typeof this.charNotifies[charUUID] === "function") {
-                                    var dataView = bufferToDataView(data);
-                                    this.charNotifies[charUUID](dataView);
-                                }
-                            }.bind(this));
-                        // }
+                            
                         if(characteristics.length===(index+1)){
                             completeFn(discovered)
                            }
@@ -343,22 +378,31 @@
             },
             writeCharacteristic: async function(handle, dataView, completeFn, errorFn) {
                 var buffer = dataViewToBuffer(dataView);
-                await this.characteristicHandles[handle].writeValue(buffer).catch(checkForError(errorFn, completeFn));
-                checkForError(errorFn, completeFn)()
+                await this.characteristicHandles[handle].writeValueWithResponse(buffer).catch(checkForError(errorFn, completeFn));
+                completeFn()
             },
             writeCharacteristicWithoutResponse: async function(handle, dataView, completeFn, errorFn) {
                 var buffer = dataViewToBuffer(dataView);
-                await this.characteristicHandles[handle].writeValueWithResponse(buffer).catch(checkForError(errorFn, completeFn));
+                await this.characteristicHandles[handle].writeValueWithoutResponse(buffer).catch(checkForError(errorFn, completeFn));
                 checkForError(errorFn, completeFn)()
             },
             enableNotify: async function(handle, notifyFn, completeFn, errorFn) {
-                if (this.charNotifies[handle]) {
+                if (await this.characteristicHandles[handle].isNotifying()) {
                     this.charNotifies[handle] = notifyFn;
-                    return completeFn();
+                     completeFn();
+                     return;
                 }
                await this.characteristicHandles[handle].startNotifications()
                if(await this.characteristicHandles[handle].isNotifying()){
-                this.charNotifies[handle] = notifyFn;
+                    this.charNotifies[handle] = notifyFn;
+                    await this.characteristicHandles[handle].on('valuechanged', function(data) {
+                    if (typeof this.charNotifies[handle] === "function") {
+                        var dataView = bufferToDataView(data);
+                        this.charNotifies[handle](dataView);
+                    }
+                }.bind(this));
+            // }
+               
                 completeFn();
                }
             },

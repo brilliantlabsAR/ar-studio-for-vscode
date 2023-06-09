@@ -1,6 +1,6 @@
 import { isConnected, replDataTxQueue,connect,disconnect } from './bluetooth';
 import { checkForUpdates, startFirmwareUpdate, downloadLatestFpgaImage, updateFPGA } from "./update";
-import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus } from './extension';
+import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus,outputChannelData } from './extension';
 import { startNordicDFU } from './nordicdfu'; 
 import * as vscode from 'vscode';
 let util = require('util');
@@ -276,8 +276,12 @@ export function reportUpdatePercentage(perc:number){
     progressReport?.report({message: perc.toFixed(2)+" %",increment:perc- prevPerc});
     prevPerc = perc;
 }
+
 export function receiveRawData(data:any){
-    console.log(data);
+    // console.log(data);
+    let rep = Buffer.from(data.target.value.buffer).toString('hex')
+    let rep2 = Buffer.from(data.target.value.buffer).toString('ascii')
+    outputChannelData.appendLine(rep +' '+rep2)
 }
 
 export async function triggerFpgaUpdate(binPath?:vscode.Uri){
