@@ -180,12 +180,23 @@
         "command": "brilliant-ar-studio.editUIEditor",
         "title": "Brilliant AR Studio:Edit GUI Screen",
         "icon": "$(edit)"
+      },
+      {
+        "command": "brilliant-ar-studio.sendRawData",
+        "title": "Brilliant AR Studio: Send Raw Data",
+        "icon": "$(play)",
+        "enablement": "monocle.deviceConnected"
       }
     ],
     "menus": {
       "view/title": [
         {
           "command": "brilliant-ar-studio.refreshDeviceFiles",
+          "when": "view == fileExplorer && monocle.deviceConnected",
+          "group": "navigation@1"
+        },
+        {
+          "command": "brilliant-ar-studio.sendRawData",
           "when": "view == fileExplorer && monocle.deviceConnected",
           "group": "navigation@0"
         },
@@ -204,6 +215,7 @@
           "when": "view == screens",
           "group": "navigation@0"
         }
+        
       ],
       "view/item/context": [
         {
@@ -346,6 +358,7 @@
     "@octokit/request": "^6.2.3",
     "froala-editor": "^4.0.18",
     "jszip": "^3.10.1",
-    "noble-winrt": "^0.1.1"
+    "noble-winrt": "^0.1.1",
+    "node-ble": "^1.9.0"
   }
 }

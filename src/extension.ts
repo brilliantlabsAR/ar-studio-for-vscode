@@ -4,7 +4,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs'; // In NodeJS: 'const fs = require('fs')'
 
-import { isConnected,disconnect } from './bluetooth';
+import { isConnected,disconnect,sendRawData } from './bluetooth';
 import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate,replRawModeEnabled} from './repl';
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
 import { SnippetProvider } from './snippets/provider';
@@ -21,7 +21,7 @@ export const writeEmitter = new vscode.EventEmitter<string>();
 const gitOper = new GitOperation();
 export const myscheme = "monocle";
 export var outputChannel:vscode.OutputChannel;
-
+export var outputChannelData:vscode.OutputChannel;
 export var deviceTreeProvider:vscode.TreeView<MonocleFile>;
 
 export const isPathExist = async (uri:vscode.Uri):Promise<boolean>=>{
@@ -144,7 +144,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// ouput channel to see RAW-REPl logs
 	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
+	outputChannelData = vscode.window.createOutputChannel("RAW-DATA","plaintext"); 
 	outputChannel.clear();
+	outputChannelData.clear();
 	statusBarItemBle.command = "brilliant-ar-studio.connect";
 	statusBarItemBle.show();
 	if(isConnected()){
@@ -533,6 +535,15 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 			
 		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.sendRawData', async () => {
+			if(isConnected()){
+				let dataToSend = await vscode.window.showInputBox({title:"Enter data to send",prompt:"Data"});
+				if(dataToSend){
+					await sendRawData(dataToSend);
+				}
+			}
+			
+		}),
 		// disconnect devcie
 		vscode.commands.registerCommand('brilliant-ar-studio.disconnect', async () => {
 			
@@ -613,4 +624,10 @@ export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export async function deactivate() {
+	if(isConnected()){
+		await disconnect();
+		await new Promise(r => setTimeout(r, 1000));
+	}
+	
+}

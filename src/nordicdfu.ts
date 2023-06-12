@@ -70,13 +70,13 @@ async function obtainFiles() {
     outputChannel.appendLine("Downloading latest release from: github.com/" +
     micropythonGit.owner + "/" + micropythonGit.repo);
     let headers = {
-        authorization: "token "+ (await vscode.authentication.getSession('github',['read:user', 'user:email', 'repo', 'workflow'],{createIfNone:true})).accessToken,
+        // authorization: "token "+ (await vscode.authentication.getSession('github',['read:user', 'user:email', 'repo', 'workflow'],{createIfNone:true})).accessToken,
           'X-GitHub-Api-Version': '2022-11-28'
         };
     let response:any = await request("GET /repos/{owner}/{repo}/releases/latest", {
         owner: micropythonGit.owner,
         repo: micropythonGit.repo,
-        headers
+        // headers
     });
 
     let assetId;
@@ -90,7 +90,7 @@ async function obtainFiles() {
         owner: micropythonGit.owner,
         repo: micropythonGit.repo,
         assetId: assetId,
-        headers
+        // headers
     });
 
     // Annoyingly we have to fetch the data via a cors proxy

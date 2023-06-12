@@ -1,6 +1,6 @@
 import { isConnected, replDataTxQueue,connect,disconnect } from './bluetooth';
 import { checkForUpdates, startFirmwareUpdate, downloadLatestFpgaImage, updateFPGA } from "./update";
-import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus } from './extension';
+import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus,outputChannelData, deviceTreeProvider } from './extension';
 import { startNordicDFU } from './nordicdfu'; 
 import * as vscode from 'vscode';
 let util = require('util');
@@ -258,7 +258,7 @@ export async function sendFileUpdate(update:any){
     fileWriteStart  = false;
   
 }
-export function onDisconnect() {
+export async function onDisconnect() {
      prevPerc = 0;
      updateInProgress = false;
      replRawModeEnabled = false;
@@ -268,6 +268,7 @@ export function onDisconnect() {
     vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', false);
     updateStatusBarItem("disconnected");
 	writeEmitter.fire("\r\nDisconnected \r\n");
+    await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
 }
 
 
@@ -276,9 +277,7 @@ export function reportUpdatePercentage(perc:number){
     progressReport?.report({message: perc.toFixed(2)+" %",increment:perc- prevPerc});
     prevPerc = perc;
 }
-export function receiveRawData(data:any){
-    console.log(data);
-}
+
 
 export async function triggerFpgaUpdate(binPath?:vscode.Uri){
     if (!isConnected()) {

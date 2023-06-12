@@ -1,6 +1,9 @@
-import { receiveRawData } from "./repl";
+
 import { replHandleResponse,onDisconnect } from "./repl";
-import { nordicDfuHandleControlResponse } from './nordicdfu.js';
+import { nordicDfuHandleControlResponse } from './nordicdfu';
+import {outputChannelData} from './extension';
+import * as vscode from 'vscode';
+
 var util = require('util');
 let device:any = null;
 var bluetooth = require('./ble/index').webbluetooth;
@@ -40,9 +43,9 @@ export function isConnected() {
 
     return false;
 }
-
+let currentSelectionTimeout:any;
 export async function connect() {
-
+    
     if (!bluetooth) {
         return Promise.reject("This browser doesn't support WebBluetooth. " +
             "Make sure you're on Chrome Desktop/Android or BlueFy iOS.")
@@ -55,12 +58,41 @@ export async function connect() {
             }
 
         },10000);
+        const quickPick = vscode.window.createQuickPick();
+        quickPick.items = [];
+        let allDevices:any = {};
         device = await bluetooth.requestDevice({
             filters: [
                 { services: [replDataServiceUuid] },
                 { services: [nordicDfuServiceUuid] },
             ],
-            optionalServices: [rawDataServiceUuid]
+            optionalServices: [rawDataServiceUuid],
+            deviceFound:  function(bleDevice:any,selectFn:any){
+                allDevices[bleDevice.id.toUpperCase()] = bleDevice;
+                quickPick.items = [...quickPick.items, {label:bleDevice.name +' RSSI: '+bleDevice.adData.rssi||"can't detect",description:bleDevice.id.toUpperCase()}];
+                quickPick.onDidChangeSelection(selection => {
+                    if(selection[0] && selection[0].description){
+                        selectFn(allDevices[selection[0]?.description]);
+                        quickPick.dispose();
+                    }
+                });
+                quickPick.onDidHide(() =>{
+                    quickPick.dispose();
+                });
+                if(currentSelectionTimeout){
+                    clearTimeout(currentSelectionTimeout);
+                }
+                currentSelectionTimeout = setTimeout(()=>{
+                    if(Object.keys(allDevices).length>1){
+                        quickPick.show();
+                        
+                    }else if(Object.keys(allDevices).length===1){
+                        selectFn(allDevices[Object.keys(allDevices)[0]].device);
+                    }
+                    clearTimeout(currentSelectionTimeout);
+                },3000);
+                
+            }
         });
     // }
 
@@ -164,5 +196,36 @@ async function transmitReplData() {
             }
         });
 
+}
+
+function bufferToHex (buffer:ArrayBuffer) {
+    return [...new Uint8Array (buffer)]
+        .map (b => b.toString (16).padStart (2, "0"))
+        .join (" ");
+}
+
+export function receiveRawData(data:any){
+    // console.log(data);
+    let rep2 = Buffer.from(data.target.value.buffer).toString('ascii');
+    outputChannelData.appendLine("HEX ⬇️: "+bufferToHex(data.target.value.buffer));
+    outputChannelData.appendLine("ASCII ⬇️: "+rep2);
+}
+
+
+export async function sendRawData(data:string) {
+    // let buffer = Buffer.from(data,'utf-8').buffer;
+    const encoder = new util.TextEncoder('utf-8');
+    let chars:any =[];
+    chars.push.apply(chars, encoder.encode(data));
+    await rawDataRxCharacteristic.writeValueWithoutResponse(new Uint8Array(chars))
+        .then(() => {
+            console.log("Sent: ", data);
+            // let rep2 = Buffer.from(buffer).toString('ascii');
+            outputChannelData.appendLine("HEX ⬆️: "+bufferToHex(chars));
+            outputChannelData.appendLine("ASCII ⬆️: "+data);
+        })
+        .catch((error:any) => {
+            return Promise.reject(error);
+        });
 }
 
