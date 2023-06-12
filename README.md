@@ -29,28 +29,33 @@ Browse community projects, or publish your own:
 ### UI instructions
 
 1. Make sure a project is initialized (you can see 'device files' in File Explorer)
-   if not setup, do with command 'Brilliant AR Studio: Brilliant AR Studio: Initialize new project folder'
+   if not setup, do with command `Brilliant AR Studio: Initialize new project folder`
    choose project name and directory and you are good to go.
 
 2. connect monocle from one of the ways
-   1. command 'Brilliant AR Studio: Connect'
-   2. status bar button 'monocle'
+   1. command `Brilliant AR Studio: Connect`
+   2. status bar button `Monocle`
    3. file explorer -> Brilliant AR Studio: device files -> connect
 
-3. after connect you can see REPL and all files listed in file explorer -> Brilliant AR Studio: device files
+3. after connect you can see REPL and all files listed in `file explorer` -> `Brilliant AR Studio: device files`
 
 4. Now open main.py and edit and after save it will be uploaded to Device.
    you can create any file or directory and it will be transferred to device
-   make sure all file remains in 'device files'. you can also upload files/dir from 'device files' dir by
-   right click and 'Brilliant AR Studio: Upload File To Device'
+   make sure all file remains in 'device files'. you can also upload files/dir from `device files` dir by
+   right click and `Brilliant AR Studio: Upload File To Device`
 
-5. Auto run: it means as soon as you save all files will be transferred and main.py will run. default is always on you turn off by button at right corner of editor or command 'Brilliant AR Studio: Stop auto run'.
-   to start again click on play button at right corner of editor or 'Brilliant AR Studio: start auto run'
+5. Auto run: it means as soon as you save all files will be transferred and main.py will run. default is always on you turn off by button at right corner of editor or command `Brilliant AR Studio: Stop auto run`.
+   to start again click on play button at right corner of editor or `Brilliant AR Studio: start auto run`
 
 6. Run in Device: with this all file will be transferred and excuted at REPL run time
    quite useful to test files without uploading.
-   use with button at at right corner of editor or 'Brilliant AR Studio: Run in Device'
+   use with button at at right corner of editor or `Brilliant AR Studio: Run in Device`
 
+7. Two output channels are there 
+   1. RAW-REPL: for REPL internal communication (allows to debug issues)
+   2. RAW-DATA: for RAW data communication over data service ( such as you can send microphone bytes to this service)
+
+8. Send Raw Data: data can be  directly send  at data service to monocle. This data can be received inside monocle by `bluetooth.receive_callback()`. To use the play button at title bar of  `file explorer` -> `Brilliant AR Studio: device files` or command `Brilliant AR Studio: Send Raw Data`
 Create and Edit display screens with DRAG-DROP UI:
 
 ![Drag Drop UI](./media/vscode-ext-drag-drop-GUI.png)
@@ -83,6 +88,12 @@ Create and Edit display screens with DRAG-DROP UI:
 - Windows or MacOS
 - Bluetooth hardware correctly installed on your system.
 
-## Known Issues
+#### for MacOS
+- Make Sure OSX is installed and all bluetooth permissions are given to vs code
 
-- Bluetooth not yet working on Linux.
+#### for Linux (currently tested on Debian)
+-  Make sure bluetooth is on and the user have permissions to access Bluetooth
+- To give permissions you try adding user to bluetooth group with following command
+```sudo usermod -aG bluetooth $USER
+```
+- then log off/log on or try a reboot

@@ -4,7 +4,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs'; // In NodeJS: 'const fs = require('fs')'
 
-import { isConnected,disconnect } from './bluetooth';
+import { isConnected,disconnect,sendRawData } from './bluetooth';
 import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate,replRawModeEnabled} from './repl';
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
 import { SnippetProvider } from './snippets/provider';
@@ -535,6 +535,15 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 			
 		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.sendRawData', async () => {
+			if(isConnected()){
+				let dataToSend = await vscode.window.showInputBox({title:"Enter data to send",prompt:"Data"});
+				if(dataToSend){
+					await sendRawData(dataToSend);
+				}
+			}
+			
+		}),
 		// disconnect devcie
 		vscode.commands.registerCommand('brilliant-ar-studio.disconnect', async () => {
 			
@@ -616,7 +625,9 @@ export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
 
 // This method is called when your extension is deactivated
 export async function deactivate() {
-	await disconnect()
-	console.log("closed")
-	await new Promise(r => setTimeout(r, 1000));
+	if(isConnected()){
+		await disconnect();
+		await new Promise(r => setTimeout(r, 1000));
+	}
+	
 }

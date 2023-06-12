@@ -10,6 +10,7 @@ import {
 	uploadFileBulkDevice
 } from './repl';
 import {deviceTreeProvider, isPathExist, monocleFolder,screenFolder} from './extension';
+import { isConnected } from './bluetooth';
 
 export class File extends vscode.TreeItem implements vscode.FileStat {
 
@@ -76,6 +77,7 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 	readonly onDidChangeTreeData: vscode.Event<MonocleFile | undefined | void> = this._onDidChangeTreeData.event;
 	
 	refresh(): void {
+		this.data = new Map();
 		this._onDidChangeTreeData.fire();
 	}
 
@@ -218,7 +220,12 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 			files.push(entry);
 			this.data.set(rootPath,entry);
 		});
-		return files;
+		if(isConnected()){
+			return files;
+		}else{
+			return [];
+		}
+		
 	}
 
 }

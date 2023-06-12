@@ -207,6 +207,7 @@
                             }
                         });
                     }.bind(this));
+                    completeFn();
                 }.bind(this), errorFn);
             },
             stopScan: async function(errorFn) {
