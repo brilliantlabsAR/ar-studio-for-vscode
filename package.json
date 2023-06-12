@@ -7,7 +7,7 @@
     "url": "https://github.com/brilliantlabsAR/ar-studio-for-vscode"
   },
   "icon": "media/brilliant.png",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "engines": {
     "vscode": "^1.76.0"
   },
@@ -215,7 +215,6 @@
           "when": "view == screens",
           "group": "navigation@0"
         }
-        
       ],
       "view/item/context": [
         {
