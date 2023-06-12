@@ -36,6 +36,7 @@ Browse community projects, or publish your own:
    1. command `Brilliant AR Studio: Connect`
    2. status bar button `Monocle`
    3. file explorer -> Brilliant AR Studio: device files -> connect
+   4. (optional)  If multiple device present select your device from the dropdown that appears after scan. more value of  RSSI with negative sign means device is farther and vice versa
 
 3. after connect you can see REPL and all files listed in `file explorer` -> `Brilliant AR Studio: device files`
 
