@@ -57,3 +57,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - snippets more like intellisense
 
 ## [1.12.0] - 2023-06-06
+
+### ADDED
+
+- LINUX support,
+- RAW DATA log, RAW DATA send options
+- Select from multiple monocle
+
+## [1.13.0] - 2023-06-12
