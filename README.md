@@ -95,6 +95,5 @@ Create and Edit display screens with DRAG-DROP UI:
 #### for Linux (currently tested on Debian)
 -  Make sure bluetooth is on and the user have permissions to access Bluetooth
 - To give permissions you try adding user to bluetooth group with following command
-```sudo usermod -aG bluetooth $USER
-```
+`sudo usermod -aG bluetooth $USER`
 - then log off/log on or try a reboot
