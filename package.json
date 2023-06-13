@@ -357,7 +357,6 @@
     "@octokit/request": "^6.2.3",
     "froala-editor": "^4.0.18",
     "jszip": "^3.10.1",
-    "noble-winrt": "^0.1.1",
-    "node-ble": "^1.9.0"
+    "noble-winrt": "^0.1.1"
   }
 }
