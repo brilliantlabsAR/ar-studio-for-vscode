@@ -7,7 +7,7 @@
         "url": "https://github.com/brilliantlabsAR/ar-studio-for-vscode"
     },
     "icon": "media/brilliant.png",
-    "version": "1.12.0",
+    "version": "1.14.0",
     "engines": {
         "vscode": "^1.76.0"
     },
@@ -20,14 +20,17 @@
     "main": "./out/extension.js",
     "contributes": {
         "viewsContainers": {
-            "activitybar": [{
-                "id": "brilliantsar",
-                "title": "Brilliant AR Studio",
-                "icon": "media/Monocle_Icon.svg"
-            }]
+            "activitybar": [
+                {
+                    "id": "brilliantsar",
+                    "title": "Brilliant AR Studio",
+                    "icon": "media/Monocle_Icon.svg"
+                }
+            ]
         },
         "views": {
-            "brilliantsar": [{
+            "brilliantsar": [
+                {
                     "id": "snippetTemplates",
                     "name": "Code templates",
                     "icon": "media/Monocle_Icon.svg"
@@ -48,13 +51,16 @@
                     "icon": "media/Monocle_Icon.svg"
                 }
             ],
-            "explorer": [{
-                "id": "fileExplorer",
-                "name": "Brilliant AR Studio: Device Files",
-                "icon": "media/Monocle_Icon.svg"
-            }]
+            "explorer": [
+                {
+                    "id": "fileExplorer",
+                    "name": "Brilliant AR Studio: Device Files",
+                    "icon": "media/Monocle_Icon.svg"
+                }
+            ]
         },
-        "viewsWelcome": [{
+        "viewsWelcome": [
+            {
                 "view": "fpga",
                 "contents": "[Update FPGA](command:brilliant-ar-studio.fpgaUpdate)",
                 "when": "monocle.fpgaAvailable || !monocle.deviceConnected"
@@ -69,7 +75,8 @@
                 "when": "!monocle.deviceConnected"
             }
         ],
-        "commands": [{
+        "commands": [
+            {
                 "command": "brilliant-ar-studio.openDeviceFile",
                 "title": "Brilliant AR Studio: Open Device file in editor",
                 "enablement": "monocle.deviceConnected"
@@ -182,7 +189,8 @@
             }
         ],
         "menus": {
-            "view/title": [{
+            "view/title": [
+                {
                     "command": "brilliant-ar-studio.refreshDeviceFiles",
                     "when": "view == fileExplorer && monocle.deviceConnected",
                     "group": "navigation@1"
@@ -207,9 +215,9 @@
                     "when": "view == screens",
                     "group": "navigation@0"
                 }
-
             ],
-            "view/item/context": [{
+            "view/item/context": [
+                {
                     "command": "brilliant-ar-studio.copyProject",
                     "when": "view == projects",
                     "group": "inline"
@@ -220,7 +228,8 @@
                     "group": "inline"
                 }
             ],
-            "editor/title": [{
+            "editor/title": [
+                {
                     "when": "resourceLangId == python && monocle.deviceConnected",
                     "command": "brilliant-ar-studio.runFile",
                     "group": "navigation@0"
@@ -236,12 +245,15 @@
                     "group": "navigation"
                 }
             ],
-            "explorer/context": [{
-                "command": "brilliant-ar-studio.uploadFilesToDevice",
-                "group": "navigation@0"
-            }]
+            "explorer/context": [
+                {
+                    "command": "brilliant-ar-studio.uploadFilesToDevice",
+                    "group": "navigation@0"
+                }
+            ]
         },
-        "snippets": [{
+        "snippets": [
+            {
                 "language": "python",
                 "path": "./snippets/bluetooth.json"
             },
