@@ -1,364 +1,350 @@
 {
-  "name": "brilliant-ar-studio",
-  "displayName": "Brilliant AR Studio",
-  "description": "Develop AR applications for Monocle within the Brilliant AR Studio.",
-  "publisher": "brilliantlabs",
-  "repository": {
-    "url": "https://github.com/brilliantlabsAR/ar-studio-for-vscode"
-  },
-  "icon": "media/brilliant.png",
-  "version": "1.12.0",
-  "engines": {
-    "vscode": "^1.76.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
-  "main": "./out/extension.js",
-  "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "brilliantsar",
-          "title": "Brilliant AR Studio",
-          "icon": "media/Monocle_Icon.svg"
-        }
-      ]
+    "name": "brilliant-ar-studio",
+    "displayName": "Brilliant AR Studio",
+    "description": "Develop AR applications for Monocle within the Brilliant AR Studio.",
+    "publisher": "brilliantlabs",
+    "repository": {
+        "url": "https://github.com/brilliantlabsAR/ar-studio-for-vscode"
     },
-    "views": {
-      "brilliantsar": [
-        {
-          "id": "snippetTemplates",
-          "name": "Code templates",
-          "icon": "media/Monocle_Icon.svg"
-        },
-        {
-          "id": "screens",
-          "name": "screens",
-          "icon": "media/Monocle_Icon.svg"
-        },
-        {
-          "id": "fpga",
-          "name": "FPGA",
-          "icon": "media/Monocle_Icon.svg"
-        },
-        {
-          "id": "projects",
-          "name": "Community projects",
-          "icon": "media/Monocle_Icon.svg"
-        }
-      ],
-      "explorer": [
-        {
-          "id": "fileExplorer",
-          "name": "Brilliant AR Studio: Device Files",
-          "icon": "media/Monocle_Icon.svg"
-        }
-      ]
+    "icon": "media/brilliant.png",
+    "version": "1.12.0",
+    "engines": {
+        "vscode": "^1.76.0"
     },
-    "viewsWelcome": [
-      {
-        "view": "fpga",
-        "contents": "[Update FPGA](command:brilliant-ar-studio.fpgaUpdate)",
-        "when": "monocle.fpgaAvailable || !monocle.deviceConnected"
-      },
-      {
-        "view": "fpga",
-        "contents": "[Custom FPGA](command:brilliant-ar-studio.fpgaUpdateCustom)"
-      },
-      {
-        "view": "fileExplorer",
-        "contents": "[Connect](command:brilliant-ar-studio.connect)",
-        "when": "!monocle.deviceConnected"
-      }
+    "categories": [
+        "Other"
     ],
-    "commands": [
-      {
-        "command": "brilliant-ar-studio.openDeviceFile",
-        "title": "Brilliant AR Studio: Open Device file in editor",
-        "enablement": "monocle.deviceConnected"
-      },
-      {
-        "command": "fileExplorer.openFile",
-        "title": "Brilliant AR Studio: openFile",
-        "enablement": "monocle.deviceConnected"
-      },
-      {
-        "command": "brilliant-ar-studio.disconnect",
-        "title": "Brilliant AR Studio: Disconnect",
-        "enablement": "monocle.deviceConnected"
-      },
-      {
-        "command": "brilliant-ar-studio.connect",
-        "title": "Brilliant AR Studio: Connect",
-        "enablement": "!monocle.deviceConnected"
-      },
-      {
-        "command": "brilliant-ar-studio.runFile",
-        "title": "Brilliant AR Studio: Run in Device",
-        "icon": "$(play-circle)",
-        "enablement": "monocle.deviceConnected"
-      },
-      {
-        "command": "brilliant-ar-studio.refreshDeviceFiles",
-        "title": "Brilliant AR Studio: Refresh",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "brilliant-ar-studio.syncFiles",
-        "title": "Brilliant AR Studio: Start auto run",
-        "icon": "$(play-circle)",
-        "enablement": "monocle.deviceConnected"
-      },
-      {
-        "command": "brilliant-ar-studio.deleteDeviceFile",
-        "title": "Brilliant AR Studio: Delete file from device",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "brilliant-ar-studio.syncStop",
-        "title": "Brilliant AR Studio: Stop auto run",
-        "icon": "$(debug-stop)"
-      },
-      {
-        "command": "brilliant-ar-studio.fpgaUpdate",
-        "title": "Brilliant AR Studio: FPGA Update",
-        "icon": "$(cloud)",
-        "enablement": "monocle.deviceConnected"
-      },
-      {
-        "command": "brilliant-ar-studio.fpgaUpdateCustom",
-        "title": "Brilliant AR Studio: Custom FPGA Update",
-        "icon": "$(cloud)",
-        "enablement": "monocle.deviceConnected"
-      },
-      {
-        "command": "brilliant-ar-studio.getPublicApps",
-        "title": "Brilliant AR Studio: Get public apps",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "brilliant-ar-studio.publishMonocleApp",
-        "title": "Brilliant AR Studio: Publish app",
-        "icon": "$(cloud-upload)"
-      },
-      {
-        "command": "brilliant-ar-studio.UnPublishMonocleApp",
-        "title": "Brilliant AR Studio: Unpublish app",
-        "icon": "$(star-full)"
-      },
-      {
-        "command": "brilliant-ar-studio.forkProject",
-        "title": "Brilliant AR Studio: Fork to Edit",
-        "icon": "$(repo-forked)"
-      },
-      {
-        "command": "brilliant-ar-studio.copyProject",
-        "title": "Brilliant AR Studio: Copy To Local",
-        "icon": "$(explorer-view-icon)"
-      },
-      {
-        "command": "brilliant-ar-studio.setDeviceLocalPath",
-        "title": "Brilliant AR Studio: Initialize new project folder",
-        "icon": "$(explorer-view-icon)"
-      },
-      {
-        "command": "brilliant-ar-studio.uploadFilesToDevice",
-        "title": "Brilliant AR Studio: Upload File To Device",
-        "icon": "$(save)",
-        "enablement": "monocle.deviceConnected"
-      },
-      {
-        "command": "brilliant-ar-studio.openUIEditor",
-        "title": "Brilliant AR Studio: Open New GUI Screen",
-        "icon": "$(plus)"
-      },
-      {
-        "command": "brilliant-ar-studio.editUIEditor",
-        "title": "Brilliant AR Studio:Edit GUI Screen",
-        "icon": "$(edit)"
-      },
-      {
-        "command": "brilliant-ar-studio.sendRawData",
-        "title": "Brilliant AR Studio: Send Raw Data",
-        "icon": "$(play)",
-        "enablement": "monocle.deviceConnected"
-      }
+    "activationEvents": [
+        "onStartupFinished"
     ],
-    "menus": {
-      "view/title": [
-        {
-          "command": "brilliant-ar-studio.refreshDeviceFiles",
-          "when": "view == fileExplorer && monocle.deviceConnected",
-          "group": "navigation@1"
+    "main": "./out/extension.js",
+    "contributes": {
+        "viewsContainers": {
+            "activitybar": [{
+                "id": "brilliantsar",
+                "title": "Brilliant AR Studio",
+                "icon": "media/Monocle_Icon.svg"
+            }]
         },
-        {
-          "command": "brilliant-ar-studio.sendRawData",
-          "when": "view == fileExplorer && monocle.deviceConnected",
-          "group": "navigation@0"
+        "views": {
+            "brilliantsar": [{
+                    "id": "snippetTemplates",
+                    "name": "Code templates",
+                    "icon": "media/Monocle_Icon.svg"
+                },
+                {
+                    "id": "screens",
+                    "name": "screens",
+                    "icon": "media/Monocle_Icon.svg"
+                },
+                {
+                    "id": "fpga",
+                    "name": "FPGA",
+                    "icon": "media/Monocle_Icon.svg"
+                },
+                {
+                    "id": "projects",
+                    "name": "Community projects",
+                    "icon": "media/Monocle_Icon.svg"
+                }
+            ],
+            "explorer": [{
+                "id": "fileExplorer",
+                "name": "Brilliant AR Studio: Device Files",
+                "icon": "media/Monocle_Icon.svg"
+            }]
         },
-        {
-          "command": "brilliant-ar-studio.publishMonocleApp",
-          "when": "view == projects && workspaceFolderCount !=0 && !monocle.published",
-          "group": "navigation@3"
+        "viewsWelcome": [{
+                "view": "fpga",
+                "contents": "[Update FPGA](command:brilliant-ar-studio.fpgaUpdate)",
+                "when": "monocle.fpgaAvailable || !monocle.deviceConnected"
+            },
+            {
+                "view": "fpga",
+                "contents": "[Custom FPGA](command:brilliant-ar-studio.fpgaUpdateCustom)"
+            },
+            {
+                "view": "fileExplorer",
+                "contents": "[Connect](command:brilliant-ar-studio.connect)",
+                "when": "!monocle.deviceConnected"
+            }
+        ],
+        "commands": [{
+                "command": "brilliant-ar-studio.openDeviceFile",
+                "title": "Brilliant AR Studio: Open Device file in editor",
+                "enablement": "monocle.deviceConnected"
+            },
+            {
+                "command": "fileExplorer.openFile",
+                "title": "Brilliant AR Studio: openFile",
+                "enablement": "monocle.deviceConnected"
+            },
+            {
+                "command": "brilliant-ar-studio.disconnect",
+                "title": "Brilliant AR Studio: Disconnect",
+                "enablement": "monocle.deviceConnected"
+            },
+            {
+                "command": "brilliant-ar-studio.connect",
+                "title": "Brilliant AR Studio: Connect",
+                "enablement": "!monocle.deviceConnected"
+            },
+            {
+                "command": "brilliant-ar-studio.runFile",
+                "title": "Brilliant AR Studio: Run in Device",
+                "icon": "$(play-circle)",
+                "enablement": "monocle.deviceConnected"
+            },
+            {
+                "command": "brilliant-ar-studio.refreshDeviceFiles",
+                "title": "Brilliant AR Studio: Refresh",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "brilliant-ar-studio.syncFiles",
+                "title": "Brilliant AR Studio: Start auto run",
+                "icon": "$(play-circle)",
+                "enablement": "monocle.deviceConnected"
+            },
+            {
+                "command": "brilliant-ar-studio.deleteDeviceFile",
+                "title": "Brilliant AR Studio: Delete file from device",
+                "icon": "$(trash)"
+            },
+            {
+                "command": "brilliant-ar-studio.syncStop",
+                "title": "Brilliant AR Studio: Stop auto run",
+                "icon": "$(debug-stop)"
+            },
+            {
+                "command": "brilliant-ar-studio.fpgaUpdate",
+                "title": "Brilliant AR Studio: FPGA Update",
+                "icon": "$(cloud)",
+                "enablement": "monocle.deviceConnected"
+            },
+            {
+                "command": "brilliant-ar-studio.fpgaUpdateCustom",
+                "title": "Brilliant AR Studio: Custom FPGA Update",
+                "icon": "$(cloud)",
+                "enablement": "monocle.deviceConnected"
+            },
+            {
+                "command": "brilliant-ar-studio.getPublicApps",
+                "title": "Brilliant AR Studio: Get public apps",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "brilliant-ar-studio.publishMonocleApp",
+                "title": "Brilliant AR Studio: Publish app",
+                "icon": "$(cloud-upload)"
+            },
+            {
+                "command": "brilliant-ar-studio.UnPublishMonocleApp",
+                "title": "Brilliant AR Studio: Unpublish app",
+                "icon": "$(star-full)"
+            },
+            {
+                "command": "brilliant-ar-studio.forkProject",
+                "title": "Brilliant AR Studio: Fork to Edit",
+                "icon": "$(repo-forked)"
+            },
+            {
+                "command": "brilliant-ar-studio.copyProject",
+                "title": "Brilliant AR Studio: Copy To Local",
+                "icon": "$(explorer-view-icon)"
+            },
+            {
+                "command": "brilliant-ar-studio.setDeviceLocalPath",
+                "title": "Brilliant AR Studio: Initialize new project folder",
+                "icon": "$(explorer-view-icon)"
+            },
+            {
+                "command": "brilliant-ar-studio.uploadFilesToDevice",
+                "title": "Brilliant AR Studio: Upload File To Device",
+                "icon": "$(save)",
+                "enablement": "monocle.deviceConnected"
+            },
+            {
+                "command": "brilliant-ar-studio.openUIEditor",
+                "title": "Brilliant AR Studio: Open New GUI Screen",
+                "icon": "$(plus)"
+            },
+            {
+                "command": "brilliant-ar-studio.editUIEditor",
+                "title": "Brilliant AR Studio:Edit GUI Screen",
+                "icon": "$(edit)"
+            },
+            {
+                "command": "brilliant-ar-studio.sendRawData",
+                "title": "Brilliant AR Studio: Send Raw Data",
+                "icon": "$(play)",
+                "enablement": "monocle.deviceConnected"
+            }
+        ],
+        "menus": {
+            "view/title": [{
+                    "command": "brilliant-ar-studio.refreshDeviceFiles",
+                    "when": "view == fileExplorer && monocle.deviceConnected",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "brilliant-ar-studio.sendRawData",
+                    "when": "view == fileExplorer && monocle.deviceConnected",
+                    "group": "navigation@0"
+                },
+                {
+                    "command": "brilliant-ar-studio.publishMonocleApp",
+                    "when": "view == projects && workspaceFolderCount !=0 && !monocle.published",
+                    "group": "navigation@3"
+                },
+                {
+                    "command": "brilliant-ar-studio.UnPublishMonocleApp",
+                    "when": "view == projects && workspaceFolderCount !=0 && monocle.published==true",
+                    "group": "navigation@3"
+                },
+                {
+                    "command": "brilliant-ar-studio.openUIEditor",
+                    "when": "view == screens",
+                    "group": "navigation@0"
+                }
+
+            ],
+            "view/item/context": [{
+                    "command": "brilliant-ar-studio.copyProject",
+                    "when": "view == projects",
+                    "group": "inline"
+                },
+                {
+                    "command": "brilliant-ar-studio.forkProject",
+                    "when": "view == projects",
+                    "group": "inline"
+                }
+            ],
+            "editor/title": [{
+                    "when": "resourceLangId == python && monocle.deviceConnected",
+                    "command": "brilliant-ar-studio.runFile",
+                    "group": "navigation@0"
+                },
+                {
+                    "when": "resourceLangId == python && monocle.deviceConnected && !monocle.sync",
+                    "command": "brilliant-ar-studio.syncFiles",
+                    "group": "navigation"
+                },
+                {
+                    "when": "resourceLangId == python && monocle.deviceConnected && monocle.sync",
+                    "command": "brilliant-ar-studio.syncStop",
+                    "group": "navigation"
+                }
+            ],
+            "explorer/context": [{
+                "command": "brilliant-ar-studio.uploadFilesToDevice",
+                "group": "navigation@0"
+            }]
         },
-        {
-          "command": "brilliant-ar-studio.UnPublishMonocleApp",
-          "when": "view == projects && workspaceFolderCount !=0 && monocle.published==true",
-          "group": "navigation@3"
-        },
-        {
-          "command": "brilliant-ar-studio.openUIEditor",
-          "when": "view == screens",
-          "group": "navigation@0"
-        }
-        
-      ],
-      "view/item/context": [
-        {
-          "command": "brilliant-ar-studio.copyProject",
-          "when": "view == projects",
-          "group": "inline"
-        },
-        {
-          "command": "brilliant-ar-studio.forkProject",
-          "when": "view == projects",
-          "group": "inline"
-        }
-      ],
-      "editor/title": [
-        {
-          "when": "resourceLangId == python && monocle.deviceConnected",
-          "command": "brilliant-ar-studio.runFile",
-          "group": "navigation@0"
-        },
-        {
-          "when": "resourceLangId == python && monocle.deviceConnected && !monocle.sync",
-          "command": "brilliant-ar-studio.syncFiles",
-          "group": "navigation"
-        },
-        {
-          "when": "resourceLangId == python && monocle.deviceConnected && monocle.sync",
-          "command": "brilliant-ar-studio.syncStop",
-          "group": "navigation"
-        }
-      ],
-      "explorer/context": [
-        {
-          "command": "brilliant-ar-studio.uploadFilesToDevice",
-          "group": "navigation@0"
-        }
-      ]
+        "snippets": [{
+                "language": "python",
+                "path": "./snippets/bluetooth.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/camera.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/device.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/display.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/fpga.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/gc.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/led.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/logic.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/loops.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/math.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/time.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/touch.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/uhashlib.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/ujson.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/update.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/urandom.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/ure.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/uselect.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/ustruct.json"
+            }
+        ]
     },
-    "snippets": [
-      {
-        "language": "python",
-        "path": "./snippets/bluetooth.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/camera.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/device.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/display.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/fpga.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/gc.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/led.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/logic.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/loops.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/math.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/time.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/touch.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/uhashlib.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/ujson.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/update.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/urandom.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/ure.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/uselect.json"
-      },
-      {
-        "language": "python",
-        "path": "./snippets/ustruct.json"
-      }
-    ]
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
-  },
-  "devDependencies": {
-    "@types/glob": "^8.1.0",
-    "@types/mocha": "^10.0.1",
-    "@types/node": "16.x",
-    "@types/vscode": "^1.76.0",
-    "@typescript-eslint/eslint-plugin": "^5.53.0",
-    "@typescript-eslint/parser": "^5.53.0",
-    "@vscode/test-electron": "^2.2.3",
-    "eslint": "^8.34.0",
-    "glob": "^8.1.0",
-    "mocha": "^10.2.0",
-    "typescript": "^4.9.5"
-  },
-  "dependencies": {
-    "@abandonware/noble": "^1.9.2-20",
-    "@octokit/request": "^6.2.3",
-    "froala-editor": "^4.0.18",
-    "jszip": "^3.10.1",
-    "noble-winrt": "^0.1.1",
-    "node-ble": "^1.9.0"
-  }
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/glob": "^8.1.0",
+        "@types/mocha": "^10.0.1",
+        "@types/node": "16.x",
+        "@types/vscode": "^1.76.0",
+        "@typescript-eslint/eslint-plugin": "^5.53.0",
+        "@typescript-eslint/parser": "^5.53.0",
+        "@vscode/test-electron": "^2.2.3",
+        "eslint": "^8.34.0",
+        "glob": "^8.1.0",
+        "mocha": "^10.2.0",
+        "typescript": "^4.9.5"
+    },
+    "dependencies": {
+        "@octokit/request": "^6.2.3",
+        "froala-editor": "^4.0.18",
+        "jszip": "^3.10.1",
+        "noble-winrt": "^0.1.1",
+        "node-ble": "^1.9.0"
+    }
 }
