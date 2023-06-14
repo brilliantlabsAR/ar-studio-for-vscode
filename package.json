@@ -186,6 +186,12 @@
         "title": "Brilliant AR Studio: Send Raw Data",
         "icon": "$(play)",
         "enablement": "monocle.deviceConnected"
+      },
+      {
+        "command": "brilliant-ar-studio.syncAllFiles",
+        "title": "Brilliant AR Studio: Sync Files",
+        "icon": "$(sync)",
+        "enablement": "monocle.deviceConnected"
       }
     ],
     "menus": {
@@ -252,6 +258,13 @@
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "brilliant-ar-studio.syncAllFiles",
+        "key": "ctrl+shift+b",
+        "when": "monocle.deviceConnected"
+      }
+    ],
     "snippets": [
       {
         "language": "python",

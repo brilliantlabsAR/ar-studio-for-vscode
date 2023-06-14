@@ -1,5 +1,5 @@
 
-import { replHandleResponse,onDisconnect } from "./repl";
+import { replHandleResponse,onDisconnect,colorText } from "./repl";
 import { nordicDfuHandleControlResponse } from './nordicdfu';
 import {outputChannelData} from './extension';
 import * as vscode from 'vscode';
@@ -46,10 +46,6 @@ export function isConnected() {
 let currentSelectionTimeout:any;
 export async function connect() {
     
-    if (!bluetooth) {
-        return Promise.reject("This browser doesn't support WebBluetooth. " +
-            "Make sure you're on Chrome Desktop/Android or BlueFy iOS.")
-    }
         setTimeout(()=>{
             bluetooth.cancelRequest();
             if(!isConnected()){
@@ -192,7 +188,7 @@ async function transmitReplData() {
                 // Discard data on other types of error
                 replDataTxQueue.splice(0, payload.length);
                 replDataTxInProgress = false;
-                return Promise.reject(error);
+                // return Promise.reject(error);
             }
         });
 
@@ -200,15 +196,24 @@ async function transmitReplData() {
 
 function bufferToHex (buffer:ArrayBuffer) {
     return [...new Uint8Array (buffer)]
-        .map (b => b.toString (16).padStart (2, "0"))
-        .join (" ");
+        .map (b => b.toString (16).padStart (2, "0"));
+}
+function hexArrayToAscii(hexArray:string[]) {
+    let result = "";
+    for (let i = 0; i < hexArray.length; i++) {
+        let code = parseInt(hexArray[i], 16);
+        if (code >= 32 && code <= 126) {
+            result += String.fromCharCode(code);
+        } else {
+            result += "�";
+        }
+    }
+    return result;
 }
 
 export function receiveRawData(data:any){
     // console.log(data);
-    let rep2 = Buffer.from(data.target.value.buffer).toString('ascii');
-    outputChannelData.appendLine("HEX ⬇️: "+bufferToHex(data.target.value.buffer));
-    outputChannelData.appendLine("ASCII ⬇️: "+rep2);
+    printToRawChannel(data.target.value.buffer);
 }
 
 
@@ -219,13 +224,26 @@ export async function sendRawData(data:string) {
     chars.push.apply(chars, encoder.encode(data));
     await rawDataRxCharacteristic.writeValueWithoutResponse(new Uint8Array(chars))
         .then(() => {
-            console.log("Sent: ", data);
-            // let rep2 = Buffer.from(buffer).toString('ascii');
-            outputChannelData.appendLine("HEX ⬆️: "+bufferToHex(chars));
-            outputChannelData.appendLine("ASCII ⬆️: "+data);
+            printToRawChannel(chars,false);
         })
         .catch((error:any) => {
-            return Promise.reject(error);
+            // return Promise.reject(error);
         });
 }
 
+const printToRawChannel = function(buff:ArrayBuffer,rx=true){
+    let buffArray = bufferToHex(buff);
+    let outputmsg = 'RX  ';
+    if(!rx){outputmsg='TX  ';}
+
+    for (let row = 0; row < buffArray.length; row +=8) {
+        const thisRow = buffArray.slice(row,row+8);
+        if(row!==0){
+            outputmsg +='    ';
+        }
+        outputmsg += thisRow.join(' ');
+        outputmsg += '  '+' '.repeat((8-thisRow.length)*3)+hexArrayToAscii(thisRow)+'\n';
+        
+    }
+    outputChannelData.appendLine(outputmsg);
+};

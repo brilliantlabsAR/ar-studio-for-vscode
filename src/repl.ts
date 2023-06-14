@@ -1,6 +1,6 @@
 import { isConnected, replDataTxQueue,connect,disconnect } from './bluetooth';
 import { checkForUpdates, startFirmwareUpdate, downloadLatestFpgaImage, updateFPGA } from "./update";
-import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus,outputChannelData, deviceTreeProvider } from './extension';
+import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus,outputChannelData, deviceTreeProvider, monocleFolder } from './extension';
 import { startNordicDFU } from './nordicdfu'; 
 import * as vscode from 'vscode';
 let util = require('util');
@@ -316,9 +316,7 @@ export async function triggerFpgaUpdate(binPath?:vscode.Uri){
 
     });
       try {
-        await replRawMode(true).catch((error) => {
-            return Promise.reject(error);
-          });
+        await replRawMode(true);
     
           let file: ArrayBuffer;
           if (!binPath) {
@@ -328,7 +326,7 @@ export async function triggerFpgaUpdate(binPath?:vscode.Uri){
           }
         
         fpgaUpdateInProgress = true;
-        await updateFPGA(file);
+        await updateFPGA(file).catch(console.log);
         fpgaUpdateInProgress = false;
     
         await replRawMode(false);
@@ -404,13 +402,33 @@ del(os,l,d)`;
     }
     return [];
 }
+export function colorText(text: string, colorIndex=4): string {
+	let output = '';
+	// let colorIndex = 4;
+	for (let i = 0; i < text.length; i++) {
+		const char = text.charAt(i);
+		if (char === ' ' || char === '\r' || char === '\n') {
+			output += char;
+		} else {
+			output += `\x1b[3${colorIndex}m${text.charAt(i)}\x1b[0m`;
+			if (colorIndex > 6) {
+				colorIndex = 1;
+			}
+		}
+	}
+	return output;
+}
+const updateToTerminal = function (msg:string,colorIndex=4){
+    writeEmitter.fire('\n\r'+colorText(msg,colorIndex));
 
+};
 //  create directory recursively
 export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
    
     if(!await enterRawReplInternal()){return false;};
     let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}');del(md,os)`;
     let response:any = await replSend(dirMakeCmd);
+    updateToTerminal(`Creating  ${devicePath} `);
     await exitRawReplInternal();
     if(response && !response.includes("Error")){
         return true;
@@ -422,50 +440,69 @@ export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
 export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string):Promise<boolean>{
     
     if(!await enterRawReplInternal()){return false;};
-    let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}')`;
-    await replSend(dirMakeCmd);
+    // if(devicePath!==''){
+        let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}')`;
+        await replSend(dirMakeCmd);
+    // }
 
-    await new Promise((res,rej)=>{
-        uris.forEach(async (uri:vscode.Uri,index:number)=>{
-            let absPath = uri.path.replaceAll("\\","/");
-            let dPath = absPath.slice(absPath.indexOf(devicePath));
-            let segments = dPath.split('/');
-            let fileWriteCmd = "";
-            if(segments.length>1){
-                let newDirTocreate = segments.slice(0,segments.length-1).join("/");
-                if(newDirTocreate!==devicePath){
-                    fileWriteCmd += `md('${newDirTocreate}')\n`;
+    await new Promise(async (res,rej)=>{
+        for (let index = 0; index < uris.length; index++) {
+            const uri = uris[index];
+            
+        // uris.forEach(async (uri:vscode.Uri,index:number)=>{
+            try {
+                let absPath = uri.path.replaceAll("\\","/");
+                let dPath = absPath.slice(absPath.indexOf(devicePath)+1);
+                if(devicePath===''){
+                    dPath = absPath.slice(absPath.indexOf(monocleFolder)+monocleFolder.length+1);
                 }
-            }
-            let fileData = await vscode.workspace.fs.readFile(uri);
-    
-            if(fileData.byteLength===0){
-                fileWriteCmd += "f = open('"+ devicePath +"', 'w');f.write('');f.close()";
-                 let response:any = await replSend(fileWriteCmd);
-                 if(response &&  response.includes("Error")){
-                    vscode.window.showInformationMessage('File Transfer failed for '+uri.path);
-                };
-            }
-            if(fileData.byteLength<=FILE_WRITE_MAX){
-                fileWriteCmd +=`f=open('${dPath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`;
-                let response:any = await replSend(fileWriteCmd);
-               
-                if(response &&  response.includes("Error")){
-                    vscode.window.showInformationMessage('File Transfer failed for '+uri.path);
-                };
-            }else{   
-                vscode.window.showInformationMessage('Please keep files smaller. Meanwhile we are wroking to allow larger files :'+uri.path);
+                
+                let segments = dPath.split('/');
+                let fileWriteCmd = "";
+                if(segments.length>1){
+                    let newDirTocreate = segments.slice(0,segments.length-1).join("/");
+                    if(newDirTocreate!==devicePath){
+                        fileWriteCmd += `md('${newDirTocreate}')\n`;
+                    }
+                }
+                let fileData = await vscode.workspace.fs.readFile(uri);
         
+                if(fileData.byteLength===0){
+                    
+                    fileWriteCmd += "f = open('"+ devicePath +"', 'w');f.write('');f.close()";
+                    let response:any = await replSend(fileWriteCmd);
+                    updateToTerminal(`Creating  ${devicePath} `);
+                    if(response &&  response.includes("Error")){
+                        vscode.window.showInformationMessage('File Transfer failed for '+uri.path);
+                    };
+                }
+                if(fileData.byteLength<=FILE_WRITE_MAX && fileData.byteLength>0){
+                    
+                    fileWriteCmd +=`f=open('${dPath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`;
+                    let response:any = await replSend(fileWriteCmd);
+                    updateToTerminal(`Updating  ${dPath} `);
+                    if(response &&  response.includes("Error")){
+                        vscode.window.showInformationMessage('File Transfer failed for '+uri.path);
+                    };
+                }
+                if(index===(uris.length-1)){
+                    res("");
+                }
+            } catch (error) {
+                console.log(error);
+                if(index===(uris.length-1)){
+                    res("");
+                }
+                continue;
             }
-            if(index===(uris.length-1)){
-                res("");
-            }
-        });
+            
+        }
        
     });
     await replSend("del(md,os,f)");
-    await replSend(RESET_CMD);
     await exitRawReplInternal();
+    updateToTerminal(`Applying Reset (ctrl-D)`,3);
+    await replSend(RESET_CMD);
     return true;
 }
 //  create or update individual file on device
@@ -485,7 +522,9 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
     let fileData = await vscode.workspace.fs.readFile(uri);
 
     if(fileData.byteLength===0){
+        
          let response:any = await replSend("f = open('"+ devicePath +"', 'w');f.write('');f.close()");
+         updateToTerminal(`Creating  ${devicePath} `);
         await exitRawReplInternal();
         if(response &&  !response.includes("Error")){return true;};
     }
@@ -515,9 +554,12 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
         //     await replSend("f.close();f = open('"+devicePath+"','a')");
         // }
         // response = await replSend("f.close();del(f,ubinascii,bluetooth)");
+        updateToTerminal(`Updating  ${devicePath} `);
         let response:any = await replSend(`f=open('${devicePath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`);
-        await replSend(RESET_CMD);
+      
         await exitRawReplInternal();
+        updateToTerminal(`Applying Reset (ctrl-D)`,3);
+        await replSend(RESET_CMD);
         if(response &&  !response.includes("Error")){return true;};
     }else{
         await exitRawReplInternal();
@@ -531,12 +573,16 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
 export async function renameFileDevice(oldDevicePath:string, newDevicePath:string):Promise<boolean>{
     
     if(!await enterRawReplInternal()){return false;};
-
+    
     let cmd = `import os;
 os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
     let response:any = await replSend(cmd);
-    await replSend(RESET_CMD);
+    updateToTerminal(`Renaming ${oldDevicePath} To ${newDevicePath} `);
+    
+
     await exitRawReplInternal();
+    updateToTerminal(`Applying Reset (ctrl-D)`,3);
+    await replSend(RESET_CMD);
     if(response &&  !response.includes("Error")){return true;};
     return false;
 }
@@ -557,7 +603,7 @@ export async function readFileDevice(devicePath:string):Promise<boolean|string>{
 export async function deleteFilesDevice(devicePath:string):Promise<boolean>{
 
     if(!await enterRawReplInternal()){return false;};
-
+    updateToTerminal(`Deleting  ${devicePath} `);
     let cmd = `import os;
 def rm(d):
     try:
@@ -572,8 +618,10 @@ def rm(d):
         print("rm of '%s' failed" % d,e)
 rm('${devicePath}'); del(os);del(rm)`;
     let response:any = await replSend(cmd);
-    await replSend(RESET_CMD);
+    
     await exitRawReplInternal();
+    updateToTerminal(`Applying Reset (ctrl-D)`,3);
+    await replSend(RESET_CMD);
     if(response &&  !response.includes("failed")){return true;};
     return false;
 }

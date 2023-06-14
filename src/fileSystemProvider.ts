@@ -136,13 +136,14 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 		
 	}
 	
-	async readFile (devicePath:string):Promise<string>{
+	async readFile (devicePath:string):Promise<string|boolean>{
 		
 		let data = await readFileDevice(devicePath);
 		if(typeof data ==='string'){
 			return data;
 		}else{
-			throw Error("Couldn't read file");
+			
+			return false;
 		}
 		
 		
@@ -167,7 +168,8 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 		if(typeof data === 'string'){
 			return data;
 		}else{
-			throw Error("Couldn't read file");
+			vscode.window.showErrorMessage('couldn\'t read file');
+			return "NOTFOUND";
 		}
 	}
 	getTreeItem(element: MonocleFile): vscode.TreeItem {
