@@ -102,13 +102,15 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 			}
 		});
 	}
-	async updateFile(uri:vscode.Uri,devicePath:string){
+	async updateFile(uri:vscode.Uri,devicePath:string,refresh=false){
 		vscode.window.withProgress({
 			location: {viewId:"fileExplorer"},
 			cancellable: false,
 		}, async (progress,canceled) => {
 			if(await creatUpdateFileDevice(uri, devicePath)){
-				
+				if(refresh){
+					this.refresh();
+				}
 			}
 		});
 	}
@@ -136,13 +138,14 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 		
 	}
 	
-	async readFile (devicePath:string):Promise<string>{
+	async readFile (devicePath:string):Promise<string|boolean>{
 		
 		let data = await readFileDevice(devicePath);
 		if(typeof data ==='string'){
 			return data;
 		}else{
-			throw Error("Couldn't read file");
+			
+			return false;
 		}
 		
 		
@@ -167,7 +170,8 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 		if(typeof data === 'string'){
 			return data;
 		}else{
-			throw Error("Couldn't read file");
+			vscode.window.showErrorMessage('couldn\'t read file');
+			return "NOTFOUND";
 		}
 	}
 	getTreeItem(element: MonocleFile): vscode.TreeItem {

@@ -50,3 +50,18 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Drag and Drop UI for screen code generation
 
 ## [1.8.0] - 2023-05-16
+
+### IMPROVEMENT
+
+- dfu and FPGA with proper progress, file updating loader, block terminal while background process,
+- snippets more like intellisense
+
+## [1.12.0] - 2023-06-06
+
+### ADDED
+
+- LINUX support,
+- RAW DATA log, RAW DATA send options
+- Select from multiple monocle
+
+## [1.13.0] - 2023-06-12

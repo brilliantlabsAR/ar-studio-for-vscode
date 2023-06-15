@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs'; // In NodeJS: 'const fs = require('fs')'
 
 import { isConnected,disconnect,sendRawData } from './bluetooth';
-import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate,replRawModeEnabled} from './repl';
+import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate,replRawModeEnabled,colorText} from './repl';
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
 import { SnippetProvider } from './snippets/provider';
 import { UIEditorPanel } from "./UIEditorPanel";
@@ -63,7 +63,7 @@ export const updatePublishStatus = async ()=>{
 		}
 	}
 };
-
+let prevByte = 0;
 // create a terminal and start connect
 function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 	let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
@@ -84,6 +84,27 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 		handleInput: (data: string) => {
 			// console.log(data);
 			if(!replRawModeEnabled){
+				let byteData = encoder.encode(data);
+				if(byteData.length===1){
+					
+					switch (byteData[0]) {
+						case 1:
+							writeEmitter.fire(colorText('\r\nCtrl-A was pressed',3));
+							break;
+						case 2:
+							writeEmitter.fire(colorText('\r\nCtrl-B was pressed',3));
+							break;
+						case 3:
+							writeEmitter.fire(colorText('\r\nCtrl-C was pressed',3));
+							break;
+						case 4:
+							writeEmitter.fire(colorText('\r\nCtrl-D was pressed. Press Ctrl-C to break',3));
+							break;
+						default:
+							break;
+					}
+					prevByte = byteData[0];
+				}
 				terminalHandleInput(data);
 			}else{
 				vscode.window.showWarningMessage("Device Busy!");
@@ -243,40 +264,43 @@ export async function activate(context: vscode.ExtensionContext) {
 		  },
 		}),
     // file and directory operation events
-		vscode.workspace.onDidRenameFiles((e:vscode.FileRenameEvent)=>{
-			console.log(e);
-			e.files.forEach((e)=>{
-				if(currentSyncPath!==null &&  e.newUri.fsPath.includes(currentSyncPath.fsPath)){
-					let newDevicePath =  e.newUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-					let oldDevicePath =  e.oldUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+		vscode.workspace.onDidRenameFiles(async (e:vscode.FileRenameEvent)=>{
+			for (let index = 0; index < e.files.length; index++) {
+				const ef = e.files[index];
+				if(currentSyncPath!==null &&  ef.newUri.fsPath.includes(currentSyncPath.fsPath)){
+					let newDevicePath =  ef.newUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+					let oldDevicePath =  ef.oldUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
 					
-					memFs.renameFile(oldDevicePath,newDevicePath);
+					await memFs.renameFile(oldDevicePath,newDevicePath);
 				}
-			});
+			}
 		}),
-		vscode.workspace.onDidCreateFiles((e:vscode.FileCreateEvent)=>{
-			e.files.forEach((e:vscode.Uri)=>{
-				if(currentSyncPath!==null && e.fsPath.includes(currentSyncPath.fsPath)){
-					let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-					memFs.addFile(e,devicePath);
+		vscode.workspace.onDidCreateFiles( async (e:vscode.FileCreateEvent)=>{
+			for (let index = 0; index < e.files.length; index++) {
+				const ef = e.files[index];
+		
+				if(currentSyncPath!==null && ef.fsPath.includes(currentSyncPath.fsPath)){
+					let devicePath = ef.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+					await memFs.addFile(ef,devicePath);
 				}
-			});
+			}
 			
 		}),
-		vscode.workspace.onDidDeleteFiles((e:vscode.FileDeleteEvent)=>{
-			e.files.forEach((e:vscode.Uri)=>{
-				if(currentSyncPath!==null && e.fsPath.includes(currentSyncPath.fsPath)){
-					let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");;
-					memFs.deleteFile(devicePath);
+		vscode.workspace.onDidDeleteFiles(async (e:vscode.FileDeleteEvent)=>{
+			for (let index = 0; index < e.files.length; index++) {
+				const ef = e.files[index];
+				if(currentSyncPath!==null && ef.fsPath.includes(currentSyncPath.fsPath)){
+					let devicePath = ef.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");;
+					await memFs.deleteFile(devicePath);
 				}
-			});
+			}
 			
 		}),
     // event capture on file changes 
-		fsWatcher.onDidChange((e)=>{
+		fsWatcher.onDidChange(async (e)=>{
 			if(currentSyncPath!==null && e.path.includes(currentSyncPath.path)){
-				let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");;
-				memFs.updateFile(e,devicePath);
+				let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+				await memFs.updateFile(e,devicePath);
 			}
 		
 		}),
@@ -295,7 +319,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			if(editor){
 				let fileData = await vscode.workspace.fs.readFile(editor.document.uri);
 				if(fileData.byteLength!==0){
-					sendFileUpdate(fileData);
+					await sendFileUpdate(fileData);
 				}
 			}
 			
@@ -316,10 +340,14 @@ export async function activate(context: vscode.ExtensionContext) {
 						await vscode.window.showTextDocument(doc);
 						return;
 					}else{
-						vscode.workspace.fs.writeFile(localPath,Buffer.from(await memFs.readFile(thiscontext?.path)));
-						let doc = await vscode.workspace.openTextDocument(localPath);
-						await vscode.window.showTextDocument(doc);
-						return;
+						let content = await memFs.readFile(thiscontext?.path);
+						if(content!=='NOTFOUND' && typeof content!=='boolean'){
+							vscode.workspace.fs.writeFile(localPath,Buffer.from(content));
+							let doc = await vscode.workspace.openTextDocument(localPath);
+							await vscode.window.showTextDocument(doc);
+							return;
+						}
+						
 					}
 				}else{
 					vscode.window.showWarningMessage("Project not Initialized");
@@ -349,13 +377,28 @@ export async function activate(context: vscode.ExtensionContext) {
 	
 				if(projectPath!==null && e.path.includes(projectPath.path)){
 					let devicePath = e.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
+					if(devicePath.startsWith('/')){
+						devicePath = devicePath.slice(1,devicePath.length);
+					}
 					if((await vscode.workspace.fs.stat(e)).type===vscode.FileType.File){
-						await memFs.updateFile(e, devicePath);
-						memFs.refresh();
+						await memFs.updateFile(e, devicePath,true);
 					}else if((await vscode.workspace.fs.stat(e)).type===vscode.FileType.Directory){
 						let files = await vscode.workspace.findFiles(new vscode.RelativePattern(e,'**'));
 						memFs.updateFileBulk(files,devicePath);
 					}
+				}
+			}
+			
+		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.syncAllFiles', async (e:vscode.Uri) => {
+			if(vscode.workspace.workspaceFolders){
+				let rootUri = vscode.workspace.workspaceFolders[0].uri;
+				let projectPath = vscode.Uri.joinPath(rootUri,monocleFolder);
+	
+				if(await isPathExist(projectPath)){
+					vscode.commands.executeCommand('brilliant-ar-studio.uploadFilesToDevice',projectPath);
+				}else{
+					vscode.window.showWarningMessage("Project diretory not found");
 				}
 			}
 			
@@ -626,7 +669,7 @@ export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
 // This method is called when your extension is deactivated
 export async function deactivate() {
 	if(isConnected()){
-		await disconnect();
+		// await disconnect();
 		await new Promise(r => setTimeout(r, 1000));
 	}
 	

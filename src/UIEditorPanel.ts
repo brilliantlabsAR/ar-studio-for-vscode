@@ -548,7 +548,7 @@ function gUItoPython(data: object[], screenName: string) {
     screenName +
     "_screen import " +
     screenName +
-    "\n" +
+    "\nif __name__=='__main__':\n\t" +
     screenName +
     "()";
   return finalPyString;

@@ -124,7 +124,7 @@ async function transferFile(file:any, type:any) {
             break;
 
         default:
-            return Promise.reject('Invalid file type');
+           break;
     }
 
     const fileSize = file.byteLength;
@@ -199,7 +199,8 @@ async function transferFile(file:any, type:any) {
         outputChannel.appendLine("returnedOffset: " + returnedOffset + ", returnedCrc: " + returnedCrc);
 
         if (returnedCrc !== chunkCrc) {
-            return Promise.reject('CRC mismatch after sending this chunk. Expected: ' + chunkCrc);
+             vscode.window.showErrorMessage('CRC mismatch after sending this chunk. Expected: ' + chunkCrc);
+             return Promise.resolve('')
         }
 
         // Execute command
