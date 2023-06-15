@@ -83,13 +83,13 @@ export async function connect() {
                         quickPick.show();
                         
                     }else if(Object.keys(allDevices).length===1){
-                        selectFn(allDevices[Object.keys(allDevices)[0]].device);
+                        selectFn(allDevices[Object.keys(allDevices)[0]]);
                     }
                     clearTimeout(currentSelectionTimeout);
                 },3000);
                 
             }
-        });
+        }).catch(console.log);
     // }
 
     const server = await device.gatt.connect();

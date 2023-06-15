@@ -452,7 +452,7 @@ export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string)
         // uris.forEach(async (uri:vscode.Uri,index:number)=>{
             try {
                 let absPath = uri.path.replaceAll("\\","/");
-                let dPath = absPath.slice(absPath.indexOf(devicePath)+1);
+                let dPath = absPath.slice(absPath.indexOf(devicePath));
                 if(devicePath===''){
                     dPath = absPath.slice(absPath.indexOf(monocleFolder)+monocleFolder.length+1);
                 }
@@ -499,7 +499,7 @@ export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string)
         }
        
     });
-    await replSend("del(md,os,f)");
+    await replSend("\x03");
     await exitRawReplInternal();
     updateToTerminal(`Applying Reset (ctrl-D)`,3);
     await replSend(RESET_CMD);
@@ -526,41 +526,26 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
          let response:any = await replSend("f = open('"+ devicePath +"', 'w');f.write('');f.close()");
          updateToTerminal(`Creating  ${devicePath} `);
         await exitRawReplInternal();
-        if(response &&  !response.includes("Error")){return true;};
+        if(response &&  !response.includes("Error")){
+            return true;
+        }
+        else{
+            vscode.window.showErrorMessage(response);
+        };
     }
     if(fileData.byteLength<=FILE_WRITE_MAX){
-        // TODO: transfer files in chunks once file size  bug is fixed over firmware
-        // if file size less write in one attempt
-        // attempt to write larger file
-        // let asciiFile =Buffer.from(fileData).toString('base64');
-        // await replSend('import ubinascii, bluetooth');
-        // let response:any = await replSend(`f=open('${devicePath}', 'w');print(bluetooth.max_length())`);
-        // const maxMtu = parseInt(response.match(/\d/g).join(''), 10);
-        // let chunksize = (Math.floor(Math.floor((maxMtu - 100) / 3) / 4) * 4 * 3);
-        // let chunks = Math.ceil(asciiFile.length / chunksize);
-        // outputChannel.appendLine("Chunk size = " + chunksize + ". Total chunks = " + chunks);
-
-        // for (let chk = 0; chk < chunks; chk++) {
-        //     response = await replSend("f.write(ubinascii.a2b_base64('" +
-        //         asciiFile.slice(chk * chunksize, (chk * chunksize) + chunksize)
-        //         + "'))");
-    
-        //     if (response && response.includes("Error")) {
-        //         outputChannel.appendLine("Retrying this chunk");
-        //         chk--;
-        //     }else if(response===null){
-        //         return  Promise.reject("Not responding");
-        //     }
-        //     await replSend("f.close();f = open('"+devicePath+"','a')");
-        // }
-        // response = await replSend("f.close();del(f,ubinascii,bluetooth)");
-        updateToTerminal(`Updating  ${devicePath} `);
-        let response:any = await replSend(`f=open('${devicePath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`);
+        updateToTerminal(`Updating  ${dPath} `);
+        let response:any = await replSend(`f=open('${dPath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`);
       
         await exitRawReplInternal();
         updateToTerminal(`Applying Reset (ctrl-D)`,3);
-        await replSend(RESET_CMD);
-        if(response &&  !response.includes("Error")){return true;};
+        replSend(RESET_CMD);
+        if(response &&  !response.includes("Error")){
+            return true;
+        }
+        else{
+            vscode.window.showErrorMessage(response);
+        };
     }else{
         await exitRawReplInternal();
         vscode.window.showInformationMessage('Please keep files smaller. Meanwhile we are wroking to allow larger files');
@@ -582,7 +567,7 @@ os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
 
     await exitRawReplInternal();
     updateToTerminal(`Applying Reset (ctrl-D)`,3);
-    await replSend(RESET_CMD);
+    replSend(RESET_CMD);
     if(response &&  !response.includes("Error")){return true;};
     return false;
 }
@@ -621,7 +606,7 @@ rm('${devicePath}'); del(os);del(rm)`;
     
     await exitRawReplInternal();
     updateToTerminal(`Applying Reset (ctrl-D)`,3);
-    await replSend(RESET_CMD);
+    replSend(RESET_CMD);
     if(response &&  !response.includes("failed")){return true;};
     return false;
 }

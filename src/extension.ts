@@ -299,7 +299,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // event capture on file changes 
 		fsWatcher.onDidChange(async (e)=>{
 			if(currentSyncPath!==null && e.path.includes(currentSyncPath.path)){
-				let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");;
+				let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
 				await memFs.updateFile(e,devicePath);
 			}
 		
@@ -377,9 +377,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	
 				if(projectPath!==null && e.path.includes(projectPath.path)){
 					let devicePath = e.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
+					if(devicePath.startsWith('/')){
+						devicePath = devicePath.slice(1,devicePath.length);
+					}
 					if((await vscode.workspace.fs.stat(e)).type===vscode.FileType.File){
-						await memFs.updateFile(e, devicePath);
-						memFs.refresh();
+						await memFs.updateFile(e, devicePath,true);
 					}else if((await vscode.workspace.fs.stat(e)).type===vscode.FileType.Directory){
 						let files = await vscode.workspace.findFiles(new vscode.RelativePattern(e,'**'));
 						memFs.updateFileBulk(files,devicePath);
