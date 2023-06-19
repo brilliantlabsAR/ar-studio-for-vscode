@@ -3,7 +3,7 @@
 
 import * as vscode from 'vscode';
 import * as fs from 'fs'; // In NodeJS: 'const fs = require('fs')'
-
+import * as path from 'path';
 import { isConnected,disconnect,sendRawData } from './bluetooth';
 import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate,replRawModeEnabled,colorText} from './repl';
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
@@ -18,10 +18,11 @@ export const screenFolder ="screens";
 let statusBarItemBle:vscode.StatusBarItem;
 
 export const writeEmitter = new vscode.EventEmitter<string>();
+export const writeEmitterRaw = new vscode.EventEmitter<string>();
 const gitOper = new GitOperation();
 export const myscheme = "monocle";
 export var outputChannel:vscode.OutputChannel;
-export var outputChannelData:vscode.OutputChannel;
+// export var outputChannelData:vscode.OutputChannel;
 export var deviceTreeProvider:vscode.TreeView<MonocleFile>;
 
 export const isPathExist = async (uri:vscode.Uri):Promise<boolean>=>{
@@ -112,8 +113,43 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 
 		}
 	};
-	
+	const ptyRaw = {
+		onDidWrite: writeEmitterRaw.event,
+		open: async () => await ensureConnected(),
+		close: () => { /* noop*/ },
+		handleInput: (data: string) => {
+			// console.log(data);
+			// if(!replRawModeEnabled){
+				// let byteData = encoder.encode(data);
+				// if(byteData.length===1){
+					
+				// 	switch (byteData[0]) {
+				// 		case 1:
+				// 			writeEmitter.fire(colorText('\r\nCtrl-A was pressed',3));
+				// 			break;
+				// 		case 2:
+				// 			writeEmitter.fire(colorText('\r\nCtrl-B was pressed',3));
+				// 			break;
+				// 		case 3:
+				// 			writeEmitter.fire(colorText('\r\nCtrl-C was pressed',3));
+				// 			break;
+				// 		case 4:
+				// 			writeEmitter.fire(colorText('\r\nCtrl-D was pressed. Press Ctrl-C to break',3));
+				// 			break;
+				// 		default:
+				// 			break;
+				// 	}
+				// 	prevByte = byteData[0];
+				// }
+				// terminalHandleInputRaw(data);
+			// }else{
+			// 	vscode.window.showWarningMessage("Device Busy!");
+			// }
+
+		}
+	};
 	const terminal = vscode.window.createTerminal({ name: `REPL`, pty });
+	const terminalRaw = vscode.window.createTerminal({ name: `DATA`, pty:ptyRaw });
 	
 	return new Promise((resolve,reject)=>{
 		terminal.show();
@@ -125,10 +161,10 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 export async function activate(context: vscode.ExtensionContext) {
 	// path of local, after this path files will be uploaded to local
 	var currentSyncPath:vscode.Uri|null = null;
-
+	
 	const memFs = new DeviceFs();
 	const screenProvider = new ScreenProvider();
-	const deviceTreeProvider = vscode.window.createTreeView('fileExplorer', { treeDataProvider:memFs });
+	const deviceTreeProvider = vscode.window.createTreeView('fileExplorer', { treeDataProvider:memFs,dragAndDropController:memFs });
 	const screenTreeprovider =  vscode.window.createTreeView('screens',{treeDataProvider:screenProvider});
 	async function startSyncing(){
 		if(vscode.workspace.workspaceFolders){
@@ -165,9 +201,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// ouput channel to see RAW-REPl logs
 	outputChannel = vscode.window.createOutputChannel("RAW-REPL","python"); 
-	outputChannelData = vscode.window.createOutputChannel("RAW-DATA","plaintext"); 
+	// outputChannelData = vscode.window.createOutputChannel("RAW-DATA","plaintext"); 
 	outputChannel.clear();
-	outputChannelData.clear();
+	// outputChannelData.clear();
 	statusBarItemBle.command = "brilliant-ar-studio.connect";
 	statusBarItemBle.show();
 	if(isConnected()){
@@ -327,6 +363,47 @@ export async function activate(context: vscode.ExtensionContext) {
 		//  refresh device files forcefully to fileExplorer tree
 		vscode.commands.registerCommand('brilliant-ar-studio.refreshDeviceFiles', async (thiscontext) => {
 			memFs.refresh();
+		}),
+		//  delete device files forcefully to fileExplorer tree
+		vscode.commands.registerCommand('brilliant-ar-studio.deleteDeviceFile', async (thiscontext) => {
+			vscode.window.showQuickPick(['Confirm Delete','Cancel']).then(async resp=>{
+				if(resp==='Confirm Delete'){
+					await memFs.deleteFile(thiscontext.path);
+				}
+			});
+			
+		}),
+		vscode.commands.registerCommand('brilliant-ar-studio.renameDeviceFile', async (thiscontext) => {
+			let newpath = await vscode.window.showInputBox({title:"Rename", value:thiscontext.path});
+			if(newpath){
+				await memFs.renameFile(thiscontext.path,newpath);
+			}
+		}),
+		//open any device file to local or in virtual path
+		vscode.commands.registerCommand('brilliant-ar-studio.downloadDeviceFile', async (thiscontext) => {
+			if(vscode.workspace.workspaceFolders){
+				let rootUri = vscode.workspace.workspaceFolders[0].uri;
+				let downloadDir = await vscode.window.showOpenDialog({canSelectFiles:false,canSelectFolders:true,canSelectMany:false,title:"Select Directory where to donload",defaultUri:rootUri,openLabel:"Download Here"});
+				let projectPath = vscode.Uri.joinPath(rootUri,monocleFolder);
+				if(downloadDir && await isPathExist(downloadDir[0])){
+					let segments = thiscontext?.path.split('/');
+					const basename = segments[segments.length-1];
+					let localPath = vscode.Uri.joinPath(downloadDir[0],basename);
+					let content = await memFs.readFile(thiscontext?.path);
+					if(content!=='NOTFOUND' && typeof content!=='boolean'){
+						vscode.workspace.fs.writeFile(localPath,Buffer.from(content));
+						let doc = await vscode.workspace.openTextDocument(localPath);
+						await vscode.window.showTextDocument(doc);
+						return;
+					}
+				}else{
+					vscode.window.showWarningMessage("Not valid path");
+				}
+			}
+			let localPath = vscode.Uri.parse(myscheme+':' + thiscontext?.path);
+			let doc = await vscode.workspace.openTextDocument(localPath);
+			await vscode.window.showTextDocument(doc);
+			
 		}),
 		//open any device file to local or in virtual path
 		vscode.commands.registerCommand('brilliant-ar-studio.openDeviceFile', async (thiscontext) => {
@@ -541,7 +618,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('brilliant-ar-studio.syncFiles', async (thiscontext) => {
 			// launch.json configuration
 			if(vscode.workspace.workspaceFolders){
-				await startSyncing();
+				// await startSyncing();
 				 
 			}else{
 				// let pickOptions = vscode.
@@ -572,7 +649,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			if(!isConnected()){
 				// await vscode.commands.executeCommand('brilliant-ar-studio.syncFiles');
 				if(vscode.workspace.workspaceFolders){
-					await startSyncing();
+					// await startSyncing();
 				}
 				selectTerminal().then();
 			}

@@ -1,6 +1,6 @@
 import { isConnected, replDataTxQueue,connect,disconnect } from './bluetooth';
 import { checkForUpdates, startFirmwareUpdate, downloadLatestFpgaImage, updateFPGA } from "./update";
-import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus,outputChannelData, deviceTreeProvider, monocleFolder } from './extension';
+import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus, deviceTreeProvider, monocleFolder } from './extension';
 import { startNordicDFU } from './nordicdfu'; 
 import * as vscode from 'vscode';
 let util = require('util');

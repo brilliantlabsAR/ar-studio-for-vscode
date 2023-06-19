@@ -192,6 +192,18 @@
         "title": "Brilliant AR Studio: Sync Files",
         "icon": "$(sync)",
         "enablement": "monocle.deviceConnected"
+      },
+      {
+        "command": "brilliant-ar-studio.renameDeviceFile",
+        "title": "Brilliant AR Studio: Rename Device File",
+        "icon": "$(sync)",
+        "enablement": "monocle.deviceConnected"
+      },
+      {
+        "command": "brilliant-ar-studio.downloadDeviceFile",
+        "title": "Brilliant AR Studio: Download Device File",
+        "icon": "$(cloud-download)",
+        "enablement": "monocle.deviceConnected"
       }
     ],
     "menus": {
@@ -232,6 +244,21 @@
           "command": "brilliant-ar-studio.forkProject",
           "when": "view == projects",
           "group": "inline"
+        },
+        {
+          "command": "brilliant-ar-studio.downloadDeviceFile",
+          "when": "view == fileExplorer",
+          "group": "navigation@0"
+        },
+        {
+          "command": "brilliant-ar-studio.renameDeviceFile",
+          "when": "view == fileExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "brilliant-ar-studio.deleteDeviceFile",
+          "when": "view == fileExplorer",
+          "group": "navigation@2"
         }
       ],
       "editor/title": [
@@ -239,16 +266,6 @@
           "when": "resourceLangId == python && monocle.deviceConnected",
           "command": "brilliant-ar-studio.runFile",
           "group": "navigation@0"
-        },
-        {
-          "when": "resourceLangId == python && monocle.deviceConnected && !monocle.sync",
-          "command": "brilliant-ar-studio.syncFiles",
-          "group": "navigation"
-        },
-        {
-          "when": "resourceLangId == python && monocle.deviceConnected && monocle.sync",
-          "command": "brilliant-ar-studio.syncStop",
-          "group": "navigation"
         }
       ],
       "explorer/context": [
