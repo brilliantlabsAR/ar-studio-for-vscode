@@ -189,7 +189,7 @@
       },
       {
         "command": "brilliant-ar-studio.syncAllFiles",
-        "title": "Brilliant AR Studio: Sync Files",
+        "title": "Brilliant AR Studio: Build",
         "icon": "$(sync)",
         "enablement": "monocle.deviceConnected"
       },

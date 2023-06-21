@@ -7,7 +7,9 @@ import {
 	deleteFilesDevice,
 	renameFileDevice, 
 	readFileDevice,
-	uploadFileBulkDevice
+	uploadFileBulkDevice,
+	FileMaps,
+	buildMappedFiles
 } from './repl';
 import {deviceTreeProvider, isPathExist, monocleFolder,screenFolder} from './extension';
 import { isConnected } from './bluetooth';
@@ -121,6 +123,18 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 			cancellable: false,
 		}, async (progress,canceled) => {
 			if(await creatUpdateFileDevice(uri, devicePath)){
+				if(refresh){
+					this.refresh();
+				}
+			}
+		});
+	}
+	async buildFiles(fileMAps:FileMaps[],refresh=false){
+		vscode.window.withProgress({
+			location: {viewId:"fileExplorer"},
+			cancellable: false,
+		}, async (progress,canceled) => {
+			if(await buildMappedFiles(fileMAps)){
 				if(refresh){
 					this.refresh();
 				}

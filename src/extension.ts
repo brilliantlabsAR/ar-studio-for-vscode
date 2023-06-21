@@ -5,15 +5,17 @@ import * as vscode from 'vscode';
 import * as fs from 'fs'; // In NodeJS: 'const fs = require('fs')'
 import * as path from 'path';
 import { isConnected,disconnect,sendRawData } from './bluetooth';
-import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate,replRawModeEnabled,colorText} from './repl';
+import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate,replRawModeEnabled,colorText, FileMaps} from './repl';
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
 import { SnippetProvider } from './snippets/provider';
 import { UIEditorPanel } from "./UIEditorPanel";
 import {snippets} from "./snippets";
 const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
+const decoder = new util.TextDecoder('utf-8');
 import { DeviceFs, MonocleFile,ScreenProvider } from './fileSystemProvider';
 export const monocleFolder = "device files";
+export const monocleFiles = '.brilliant/device-files.json';
 export const screenFolder ="screens";
 let statusBarItemBle:vscode.StatusBarItem;
 
@@ -30,6 +32,41 @@ export const isPathExist = async (uri:vscode.Uri):Promise<boolean>=>{
 	return exist;
 };
 
+export const configReadUpdate = async  function(dataToupdate?:object):Promise<object>{
+	let workspaces = vscode.workspace.workspaceFolders;
+	let newdata:any = {};
+	if(workspaces){
+		
+		let _configFile = vscode.Uri.joinPath(workspaces[0].uri,monocleFiles);
+		if(!await isPathExist(_configFile)){
+			await vscode.workspace.fs.writeFile(_configFile,Buffer.from(JSON.stringify({}, null, "\t")));
+		}
+	
+		
+		try {
+			let data =  await vscode.workspace.fs.readFile(_configFile);
+			let jsonData = JSON.parse(decoder.decode(data));
+			newdata = {...jsonData};
+
+		} catch (error) {
+			
+		}
+		
+		if(dataToupdate){
+			newdata  = {...newdata,...dataToupdate};
+			Object.keys(newdata).forEach(function(skey){
+				if(newdata[skey]===false){
+					delete newdata[skey];
+				}
+			});
+			await vscode.workspace.fs.writeFile(_configFile,Buffer.from(JSON.stringify(newdata, null, "\t")));
+		}
+		return newdata;
+		
+	}
+	return newdata;
+	
+};
 // initialize main.py and README.md for new project
 const initFiles = async (rootUri:vscode.Uri,projectName:string) => {
 	let monocleUri = vscode.Uri.joinPath(rootUri,monocleFolder+'/main.py');
@@ -301,39 +338,70 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
     // file and directory operation events
 		vscode.workspace.onDidRenameFiles(async (e:vscode.FileRenameEvent)=>{
-			for (let index = 0; index < e.files.length; index++) {
-				const ef = e.files[index];
-				if(currentSyncPath!==null &&  ef.newUri.fsPath.includes(currentSyncPath.fsPath)){
-					let newDevicePath =  ef.newUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-					let oldDevicePath =  ef.oldUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+			if(vscode.workspace.workspaceFolders){
+				let newpathKey:any = await configReadUpdate();
+				let projectPath = vscode.workspace.workspaceFolders[0].uri;
+				for (let index = 0; index < e.files.length; index++) {
+					const ef = e.files[index];
+					// if(currentSyncPath!==null &&  ef.newUri.fsPath.includes(currentSyncPath.fsPath)){
+					// 	let newDevicePath =  ef.newUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+					// 	let oldDevicePath =  ef.oldUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+					if((await vscode.workspace.fs.stat(ef.oldUri)).type===vscode.FileType.Directory){
+						// TODO: if needed to change path recursively on directory change
+					}else{
+						let localDirOld = ef.oldUri.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
+						let localDirnew = ef.newUri.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
+						// 	await memFs.renameFile(oldDevicePath,newDevicePath);
+						// }
+						if(Object.keys(newpathKey).includes(localDirOld)){
+							newpathKey[localDirnew] =newpathKey[localDirOld];
+							newpathKey[localDirOld] = false;
+						}
+					}
 					
-					await memFs.renameFile(oldDevicePath,newDevicePath);
 				}
+				await configReadUpdate(newpathKey);
 			}
 		}),
-		vscode.workspace.onDidCreateFiles( async (e:vscode.FileCreateEvent)=>{
-			for (let index = 0; index < e.files.length; index++) {
-				const ef = e.files[index];
+		// vscode.workspace.onDidCreateFiles( async (e:vscode.FileCreateEvent)=>{
+		// 	for (let index = 0; index < e.files.length; index++) {
+		// 		const ef = e.files[index];
 		
-				if(currentSyncPath!==null && ef.fsPath.includes(currentSyncPath.fsPath)){
-					let devicePath = ef.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-					await memFs.addFile(ef,devicePath);
-				}
-			}
+		// 		if(currentSyncPath!==null && ef.fsPath.includes(currentSyncPath.fsPath)){
+		// 			let devicePath = ef.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+		// 			await memFs.addFile(ef,devicePath);
+		// 		}
+		// 	}
 			
-		}),
+		// }),
 		vscode.workspace.onDidDeleteFiles(async (e:vscode.FileDeleteEvent)=>{
-			for (let index = 0; index < e.files.length; index++) {
-				const ef = e.files[index];
-				if(currentSyncPath!==null && ef.fsPath.includes(currentSyncPath.fsPath)){
-					let devicePath = ef.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");;
-					await memFs.deleteFile(devicePath);
+			if(vscode.workspace.workspaceFolders){
+				let newpathKey:any = await configReadUpdate();
+				let projectPath = vscode.workspace.workspaceFolders[0].uri;
+				for (let index = 0; index < e.files.length; index++) {
+					const ef = e.files[index];
+					// if(currentSyncPath!==null && ef.fsPath.includes(currentSyncPath.fsPath)){
+						// let devicePath = ef.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+						// 	let oldDevicePath =  ef.oldUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+					if((await vscode.workspace.fs.stat(ef)).type===vscode.FileType.Directory){
+						// TODO: if needed to change path recursively on directory change
+					}else{
+						let localDir = ef.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
+						if(Object.keys(newpathKey).includes(localDir)){
+							newpathKey[localDir] =false;
+						}
+					}
+							// }
+						// await memFs.deleteFile(devicePath);
+					// }
 				}
+				await configReadUpdate(newpathKey);
 			}
 			
 		}),
     // event capture on file changes 
 		fsWatcher.onDidChange(async (e)=>{
+			
 			if(currentSyncPath!==null && e.path.includes(currentSyncPath.path)){
 				let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
 				await memFs.updateFile(e,devicePath);
@@ -384,7 +452,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			if(vscode.workspace.workspaceFolders){
 				let rootUri = vscode.workspace.workspaceFolders[0].uri;
 				let downloadDir = await vscode.window.showOpenDialog({canSelectFiles:false,canSelectFolders:true,canSelectMany:false,title:"Select Directory where to donload",defaultUri:rootUri,openLabel:"Download Here"});
-				let projectPath = vscode.Uri.joinPath(rootUri,monocleFolder);
+				// let projectPath = vscode.Uri.joinPath(rootUri,monocleFolder);
 				if(downloadDir && await isPathExist(downloadDir[0])){
 					let segments = thiscontext?.path.split('/');
 					const basename = segments[segments.length-1];
@@ -400,36 +468,10 @@ export async function activate(context: vscode.ExtensionContext) {
 					vscode.window.showWarningMessage("Not valid path");
 				}
 			}
-			let localPath = vscode.Uri.parse(myscheme+':' + thiscontext?.path);
-			let doc = await vscode.workspace.openTextDocument(localPath);
-			await vscode.window.showTextDocument(doc);
 			
 		}),
 		//open any device file to local or in virtual path
 		vscode.commands.registerCommand('brilliant-ar-studio.openDeviceFile', async (thiscontext) => {
-			if(vscode.workspace.workspaceFolders){
-				let rootUri = vscode.workspace.workspaceFolders[0].uri;
-				let projectPath = vscode.Uri.joinPath(rootUri,monocleFolder);
-				if(await isPathExist(projectPath)){
-					let localPath = vscode.Uri.joinPath(rootUri,monocleFolder,thiscontext?.path);
-					if(await isPathExist(localPath)){
-						let doc = await vscode.workspace.openTextDocument(localPath);
-						await vscode.window.showTextDocument(doc);
-						return;
-					}else{
-						let content = await memFs.readFile(thiscontext?.path);
-						if(content!=='NOTFOUND' && typeof content!=='boolean'){
-							vscode.workspace.fs.writeFile(localPath,Buffer.from(content));
-							let doc = await vscode.workspace.openTextDocument(localPath);
-							await vscode.window.showTextDocument(doc);
-							return;
-						}
-						
-					}
-				}else{
-					vscode.window.showWarningMessage("Project not Initialized");
-				}
-			}
 			let localPath = vscode.Uri.parse(myscheme+':' + thiscontext?.path);
 			let doc = await vscode.workspace.openTextDocument(localPath);
 			await vscode.window.showTextDocument(doc);
@@ -449,18 +491,47 @@ export async function activate(context: vscode.ExtensionContext) {
 		// upload file/directory to device
 		vscode.commands.registerCommand('brilliant-ar-studio.uploadFilesToDevice', async (e:vscode.Uri) => {
 			if(vscode.workspace.workspaceFolders){
-				let rootUri = vscode.workspace.workspaceFolders[0].uri;
-				let projectPath = vscode.Uri.joinPath(rootUri,monocleFolder);
-	
+				let currentFilesUploaded:any = await configReadUpdate();
+				let projectPath = vscode.workspace.workspaceFolders[0].uri;
+				// let projectPath = vscode.Uri.joinPath(rootUri,monocleFolder);
+				// let localpath = e.path;
+				let localpath = e.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
+				let newpathKey:any = {};
+				let basename = path.posix.basename(e.path);
+				newpathKey[localpath] = basename;
+				if(!Object.keys(currentFilesUploaded).includes(localpath)){
+					let devicePathInput = await vscode.window.showInputBox({prompt:"Enter Device Path",title:"Device Path", value:basename,placeHolder:"/ (default to root)"});
+					if(devicePathInput && devicePathInput!=='/'){
+						newpathKey[localpath] = devicePathInput;
+						
+					}else{
+						newpathKey[localpath] = basename;
+					}
+				}else{
+					newpathKey[localpath] = currentFilesUploaded[localpath];
+				}
+				
+				
 				if(projectPath!==null && e.path.includes(projectPath.path)){
-					let devicePath = e.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
+					let devicePath = newpathKey[localpath];
 					if(devicePath.startsWith('/')){
 						devicePath = devicePath.slice(1,devicePath.length);
 					}
+					
 					if((await vscode.workspace.fs.stat(e)).type===vscode.FileType.File){
 						await memFs.updateFile(e, devicePath,true);
+						await configReadUpdate(newpathKey);
 					}else if((await vscode.workspace.fs.stat(e)).type===vscode.FileType.Directory){
 						let files = await vscode.workspace.findFiles(new vscode.RelativePattern(e,'**'));
+						let basename = newpathKey[localpath];
+						newpathKey = {};
+						for (let index = 0; index < files.length; index++) {
+							const uri = files[index];
+							let localDir = uri.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
+							let deviceDir =  uri.fsPath.replace(e.fsPath, "").replaceAll("\\","/");
+							 newpathKey[localDir] = basename + deviceDir;
+						}
+						await configReadUpdate(newpathKey);
 						memFs.updateFileBulk(files,devicePath);
 					}
 				}
@@ -469,14 +540,26 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.syncAllFiles', async (e:vscode.Uri) => {
 			if(vscode.workspace.workspaceFolders){
+				let mappedFiles:any = await configReadUpdate();
 				let rootUri = vscode.workspace.workspaceFolders[0].uri;
 				let projectPath = vscode.Uri.joinPath(rootUri,monocleFolder);
-	
-				if(await isPathExist(projectPath)){
-					vscode.commands.executeCommand('brilliant-ar-studio.uploadFilesToDevice',projectPath);
-				}else{
-					vscode.window.showWarningMessage("Project diretory not found");
+				let filesMapped:FileMaps[] = [];
+				for (let source in mappedFiles) {
+					let files = await vscode.workspace.findFiles(new vscode.RelativePattern(rootUri, '*'+source.slice(1)));
+					if(files.length>0){
+						// let dest = mappedFiles[source];
+						filesMapped.push({uri:files[0],devicePath:mappedFiles[source]});
+					}else{
+						vscode.window.showErrorMessage(source+' file doesn\'t exists');
+					}
+					
 				}
+				if(filesMapped.length>0){
+					await memFs.buildFiles(filesMapped);
+				}else{
+					vscode.window.showInformationMessage("No files to build! Upload files one by one");
+				}
+				
 			}
 			
 		}),
