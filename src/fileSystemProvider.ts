@@ -7,7 +7,9 @@ import {
 	deleteFilesDevice,
 	renameFileDevice, 
 	readFileDevice,
-	uploadFileBulkDevice
+	uploadFileBulkDevice,
+	FileMaps,
+	buildMappedFiles
 } from './repl';
 import {deviceTreeProvider, isPathExist, monocleFolder,screenFolder} from './extension';
 import { isConnected } from './bluetooth';
@@ -68,19 +70,32 @@ export class Directory extends vscode.TreeItem implements vscode.FileStat {
 
 export type MonocleFile = File | Directory ;
 
-export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.TextDocumentContentProvider {
-
+export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.TextDocumentContentProvider , vscode.TreeDragAndDropController<MonocleFile> {
+	dropMimeTypes = ['application/vnd.code.workbench.explorer.fileView'];
+	dragMimeTypes = [];
 	root = new Directory('');
 	// --- manage file metadata
 	data:Map<string,MonocleFile> = new Map();
 	private _onDidChangeTreeData: vscode.EventEmitter<MonocleFile | undefined | void> = new vscode.EventEmitter<MonocleFile | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<MonocleFile | undefined | void> = this._onDidChangeTreeData.event;
-	
+	private dragDataEmitter = new vscode.EventEmitter<any>();
+	public readonly onDragData = this.dragDataEmitter.event;
 	refresh(): void {
 		this.data = new Map();
 		this._onDidChangeTreeData.fire();
 	}
-
+	
+	public async handleDrop(target: any, sources: any, token: vscode.CancellationToken): Promise<void> {
+		const transferItem = sources.get('application/vnd.code.tree.explorer');
+		if (!transferItem) {
+			return;
+		}
+	}
+	     //  for drag 
+		public async handleDrag(source: File[], treeDataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): Promise<void> {
+		// treeDataTransfer.set('application/vnd.code.tree.snippettemplates', new vscode.DataTransferItem(source[0].label));
+		return ;
+	}
 	async addFile(uri:vscode.Uri,devicePath:string){
 		const basename = path.posix.basename(devicePath);
 		let file = await vscode.workspace.fs.stat(uri);
@@ -108,6 +123,18 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 			cancellable: false,
 		}, async (progress,canceled) => {
 			if(await creatUpdateFileDevice(uri, devicePath)){
+				if(refresh){
+					this.refresh();
+				}
+			}
+		});
+	}
+	async buildFiles(fileMAps:FileMaps[],refresh=false){
+		vscode.window.withProgress({
+			location: {viewId:"fileExplorer"},
+			cancellable: false,
+		}, async (progress,canceled) => {
+			if(await buildMappedFiles(fileMAps)){
 				if(refresh){
 					this.refresh();
 				}
