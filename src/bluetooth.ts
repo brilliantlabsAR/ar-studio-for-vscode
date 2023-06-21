@@ -1,7 +1,7 @@
 
 import { replHandleResponse,onDisconnect,colorText } from "./repl";
 import { nordicDfuHandleControlResponse } from './nordicdfu';
-import {outputChannelData} from './extension';
+import {writeEmitterRaw} from './extension';
 import * as vscode from 'vscode';
 
 var util = require('util');
@@ -48,7 +48,7 @@ export async function connect() {
     
         setTimeout(()=>{
             bluetooth.cancelRequest();
-            if(!isConnected()){
+            if(!isConnected() && !currentSelectionTimeout){
                 onDisconnect();
                 console.log("couldn't find device");
             }
@@ -198,14 +198,15 @@ function bufferToHex (buffer:ArrayBuffer) {
     return [...new Uint8Array (buffer)]
         .map (b => b.toString (16).padStart (2, "0"));
 }
-function hexArrayToAscii(hexArray:string[]) {
+function hexArrayToAscii(hexArray:string[],colorIndex:number) {
     let result = "";
     for (let i = 0; i < hexArray.length; i++) {
         let code = parseInt(hexArray[i], 16);
         if (code >= 32 && code <= 126) {
-            result += String.fromCharCode(code);
+            result += colorText(String.fromCharCode(code),colorIndex);
+            
         } else {
-            result += "�";
+            result += colorText("�",1);
         }
     }
     return result;
@@ -232,18 +233,24 @@ export async function sendRawData(data:string) {
 }
 
 const printToRawChannel = function(buff:ArrayBuffer,rx=true){
-    let buffArray = bufferToHex(buff);
-    let outputmsg = 'RX  ';
-    if(!rx){outputmsg='TX  ';}
 
+    let buffArray = bufferToHex(buff);
+    let colorIndex = 2;
+    let outputmsg = 'RX  ';
+    if(!rx){
+        colorIndex = 3;
+        outputmsg='TX  ';
+    }
+    outputmsg  = colorText(outputmsg,colorIndex);
     for (let row = 0; row < buffArray.length; row +=8) {
         const thisRow = buffArray.slice(row,row+8);
         if(row!==0){
             outputmsg +='    ';
         }
-        outputmsg += thisRow.join(' ');
-        outputmsg += '  '+' '.repeat((8-thisRow.length)*3)+hexArrayToAscii(thisRow)+'\n';
+        outputmsg += colorText(thisRow.join(' '),colorIndex);
+        outputmsg += '  '+' '.repeat((8-thisRow.length)*3)+hexArrayToAscii(thisRow,colorIndex)+'\r\n';
         
     }
-    outputChannelData.appendLine(outputmsg);
+    // outputChannelData.appendLine(outputmsg);
+    writeEmitterRaw.fire(outputmsg+'\r\n');
 };
