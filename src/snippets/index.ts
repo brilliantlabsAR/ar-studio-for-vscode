@@ -2,6 +2,7 @@ export const snippets:any= {
     bluetooth:require('../../snippets/bluetooth.json'),
     camera: require('../../snippets/camera.json'),
     device:require('../../snippets/device.json'),
+    microphone:require('../../snippets/microphone.json'),
     display: require('../../snippets/display.json'),
     fpga: require('../../snippets/fpga.json'),
     gc:require('../../snippets/gc.json'),

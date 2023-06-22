@@ -145,7 +145,7 @@ export class GitOperation {
 			headers: await this.getHeader()
 		  });
 		  let zip = await JSZIP.loadAsync(resp.data);
-		  console.log(zip);
+		//   console.log(zip);
 		  zip.forEach(async (fileName:any)=>{
 			let filepathname = fileName.split("/").slice(1).join("/");
 			if(!filepathname){return;};
