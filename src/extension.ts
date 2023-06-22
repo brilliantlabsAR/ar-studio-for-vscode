@@ -249,11 +249,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		updateStatusBarItem("disconnected");
 
 	}
-	const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
-	? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
+	// const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
+	// ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
 	
 		
-	const fsWatcher = vscode.workspace.createFileSystemWatcher("**",true,false,true);
+	// const fsWatcher = vscode.workspace.createFileSystemWatcher("**",true,false,true);
 	
 	// vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse(myscheme+':/'), name: myscheme });
 	const alldisposables = vscode.Disposable.from(
@@ -266,9 +266,21 @@ export async function activate(context: vscode.ExtensionContext) {
 					// get all text until the `position` and check if it reads `console.`
 					// and if so then complete if `log`, `warn`, and `error`
 					const linePrefix = document.lineAt(position).text.substr(0, position.character);
+					// for auto import 
+					
+
+					
 					let snippList:vscode.CompletionItem[]=[];
 					Object.keys(snippets).forEach(it=>{
+						
 						if (linePrefix.endsWith(it+'.')) {
+							// let mod = linePrefix.replaceAll('.','');
+							// var regex = new RegExp("import\\s+" + mod + "(\\s+as\\s+\\w+)?|from\\s+" + mod + "\\s+import\\s+(.*)");
+							// if(!regex.test(document.getText())){
+							// 	vscode.window.activeTextEditor?.edit(editerBuilder=>{
+							// 		editerBuilder.insert(new vscode.Position(0,0),'import '+mod+'\n');
+							// 	});
+							// }
 							Object.keys(snippets[it]).forEach(ke=>{
 								const snippetCompletion = new vscode.CompletionItem(ke);
 								snippetCompletion.insertText = new vscode.SnippetString(snippets[it][ke].body.replace(it+'.',''));
@@ -336,6 +348,45 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 		  },
 		}),
+		vscode.languages.registerCodeActionsProvider('python',{
+			provideCodeActions(document, range, context, token) {
+			// const linePrefix = document.lineAt(range).text.substr(0, position.character);
+			// let mod = linePrefix.replaceAll('.','');
+			// var regex = new RegExp("import\\s+" + mod + "(\\s+as\\s+\\w+)?|from\\s+" + mod + "\\s+import\\s+(.*)");
+			// if(!regex.test(document.getText())){
+			// 	vscode.window.activeTextEditor?.edit(editerBuilder=>{
+			// 		editerBuilder.insert(new vscode.Position(0,0),'import '+mod+'\n');
+			// 	});
+			// }
+			let actions:vscode.CodeAction[]=[];
+			if(context.diagnostics.length>0){
+				const linePrefix =document.lineAt(context.diagnostics[0].range.start.line).text.substr(context.diagnostics[0].range.start.character, context.diagnostics[0].range.end.character);
+				
+				Object.keys(snippets).forEach(it=>{
+						
+					if (linePrefix.endsWith(it)) {
+						let mod = linePrefix.replaceAll('.','');
+						var regex = new RegExp("import\\s+" + mod + "(\\s+as\\s+\\w+)?|from\\s+" + mod + "\\s+import\\s+(.*)");
+						if(!regex.test(document.getText())){
+							let codeaction = new vscode.CodeAction("Import "+linePrefix);
+							codeaction.kind = vscode.CodeActionKind.SourceFixAll;
+							codeaction.isPreferred = true;
+							// codeaction.
+							let edit = new vscode.WorkspaceEdit();
+							edit.insert(document.uri, new vscode.Position(0,0),'import '+mod+'\n');
+							codeaction.edit = edit;
+							actions.push(codeaction);
+							// vscode.window.activeTextEditor?.edit(editerBuilder=>{
+							// 	editerBuilder.insert(new vscode.Position(0,0),'import '+mod+'\n');
+							// });
+						}
+					}
+				});
+			}
+				
+				return actions;
+			},
+		}),
     // file and directory operation events
 		vscode.workspace.onDidRenameFiles(async (e:vscode.FileRenameEvent)=>{
 			if(vscode.workspace.workspaceFolders){
@@ -399,15 +450,15 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 			
 		}),
-    // event capture on file changes 
-		fsWatcher.onDidChange(async (e)=>{
+    // // event capture on file changes 
+	// 	fsWatcher.onDidChange(async (e)=>{
 			
-			if(currentSyncPath!==null && e.path.includes(currentSyncPath.path)){
-				let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-				await memFs.updateFile(e,devicePath);
-			}
+	// 		if(currentSyncPath!==null && e.path.includes(currentSyncPath.path)){
+	// 			let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
+	// 			await memFs.updateFile(e,devicePath);
+	// 		}
 		
-		}),
+	// 	}),
 	// register code templates tree
 		vscode.window.createTreeView('snippetTemplates', {
 			treeDataProvider: new SnippetProvider(),
@@ -457,16 +508,23 @@ export async function activate(context: vscode.ExtensionContext) {
 					let segments = thiscontext?.path.split('/');
 					const basename = segments[segments.length-1];
 					let localPath = vscode.Uri.joinPath(downloadDir[0],basename);
-					let content = await memFs.readFile(thiscontext?.path);
-					if(content!=='NOTFOUND' && typeof content!=='boolean'){
-						vscode.workspace.fs.writeFile(localPath,Buffer.from(content));
-						let doc = await vscode.workspace.openTextDocument(localPath);
-						await vscode.window.showTextDocument(doc);
-						return;
+					if(memFs.data.get(thiscontext?.path)?.type===vscode.FileType.File){
+						let content = await memFs.readFile(thiscontext?.path);
+						if(content!=='NOTFOUND' && typeof content!=='boolean'){
+							await vscode.workspace.fs.writeFile(localPath,Buffer.from(content));
+							let doc = await vscode.workspace.openTextDocument(localPath);
+							await vscode.window.showTextDocument(doc);
+							return;
+						}
+					}else{
+						await memFs.downloadDirectory(thiscontext?.path,downloadDir[0]);
 					}
+					
 				}else{
 					vscode.window.showWarningMessage("Not valid path");
 				}
+			}else{
+				vscode.window.showInformationMessage("No workspace found!");
 			}
 			
 		}),

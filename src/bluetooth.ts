@@ -206,7 +206,7 @@ function hexArrayToAscii(hexArray:string[],colorIndex:number) {
             result += colorText(String.fromCharCode(code),colorIndex);
             
         } else {
-            result += colorText("�",1);
+            result += colorText(".",1);
         }
     }
     return result;

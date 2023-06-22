@@ -164,7 +164,33 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 		
 		
 	}
-	
+	private async _dowloadRecursive(devicePath:string, localPath:vscode.Uri){
+		if(this.data.get(devicePath) instanceof Directory){
+			let subDirectory = await listFilesDevice(devicePath);
+			for (let index = 0; index < subDirectory.length; index++) {
+				const dFile:any = subDirectory[index];
+				const rootPath = devicePath+"/"+dFile.name;
+				const _localPath = vscode.Uri.joinPath(localPath, rootPath);
+				if(dFile.file){
+					let content = await this.readFile(rootPath);
+					if(content!=='NOTFOUND' && typeof content!=='boolean'){
+						await vscode.workspace.fs.writeFile(_localPath,Buffer.from(content));
+					}
+				}else{
+					await this._dowloadRecursive(rootPath,localPath);
+				}
+				
+			}
+		}
+	}
+	async downloadDirectory(devicePath:string, localPath:vscode.Uri){
+		vscode.window.withProgress({
+			location: {viewId:"fileExplorer"},
+			cancellable: false,
+		}, async (progress,canceled) => {
+			await this._dowloadRecursive(devicePath,localPath);
+		});
+	}
 	async readFile (devicePath:string):Promise<string|boolean>{
 		
 		let data = await readFileDevice(devicePath);

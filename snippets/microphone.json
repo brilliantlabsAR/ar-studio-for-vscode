@@ -1,0 +1,17 @@
+{
+    "record(sample_rate,seconds)": {
+        "prefix": "record",
+        "body": "microphone.record(sample_rate=${1:16000},seconds=${2:1.0})",
+        "description": "Issues an instruction to the FPGA to start recording audio for a number of seconds. Always clears previously recorded audio, and while recording is ongoing, data can be read out using read()."
+    },
+    "read(samples=127)": {
+        "prefix": "read",
+        "body": "microphone.read(samples=${1:127})",
+        "description": "Reads out a number of recorded audio samples from the FPGA as a list. Samples are signed 16bit values, and up to 127 samples can be read at a time. Once all samples have been read, read() will return None."
+    },
+    "compress(data)": {
+        "prefix": "compress",
+        "body": "microphone.compress(${1:data}",
+        "description": "Compresses a list of signed 16bit sample values into an bytearray using delta compression. The first two bytes represent the first signed 16bit sample value as big endian. Subsequent bytes represent the difference between the previous sample and next sample as signed 8bit values. If a sample in the list provided has a value greater than ±127, then the returned bytearray is truncated before that sample value. This allows for packing multiple compressed packets together, using -128 as a flag to signify a new 16bit starting sample."
+    }
+}
