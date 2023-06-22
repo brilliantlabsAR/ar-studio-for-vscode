@@ -420,7 +420,7 @@ export function colorText(text: string, colorIndex=4): string {
 	return output;
 }
 const updateToTerminal = function (msg:string,colorIndex=4){
-    writeEmitter.fire('\n\r'+colorText(msg,colorIndex));
+    writeEmitter.fire('\n\r'+colorText(msg,colorIndex)+'\n\r>>> ');
 
 };
 //  create directory recursively

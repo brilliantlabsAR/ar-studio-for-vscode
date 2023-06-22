@@ -358,6 +358,10 @@
       {
         "language": "python",
         "path": "./snippets/ustruct.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/microphone.json"
       }
     ]
   },
