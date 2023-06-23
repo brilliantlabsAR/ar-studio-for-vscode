@@ -205,7 +205,7 @@ export async function ensureConnected() {
         if (error.message && error.message.includes("cancelled")) {
             return;
         }
-        vscode.window.showErrorMessage(error);
+        vscode.window.showErrorMessage(String(error));
         // infoText.innerHTML = error;
         // console.error(error);
         updateStatusBarItem("disconnected");
