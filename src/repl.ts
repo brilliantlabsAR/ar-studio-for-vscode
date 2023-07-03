@@ -167,7 +167,7 @@ export async function ensureConnected() {
                 let newFpga = updateInfo?.includes('New FPGA');
                 let items:string[] =["Update Now","Later"] ;
                 const updateMsg = new vscode.MarkdownString(updateInfo);
-               
+                vscode.commands.executeCommand('setContext', 'monocle.fpgaAvailable', newFpga);
                 if(newFirmware){
                     vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
                         if(op==="Update Now"){
@@ -179,7 +179,7 @@ export async function ensureConnected() {
                         }
                     });
                 }else if(newFpga){
-                    vscode.commands.executeCommand('setContext', 'monocle.fpgaAvailable', newFpga);
+                    // vscode.commands.executeCommand('setContext', 'monocle.fpgaAvailable', newFpga);
                 }else{
                     vscode.window.showInformationMessage(updateMsg.value);
                     await replRawMode(false);
