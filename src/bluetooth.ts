@@ -43,9 +43,14 @@ export function isConnected() {
 
     return false;
 }
+let connectionInProgress = false;
 let currentSelectionTimeout:any;
 export async function connect() {
-    
+    try {
+        if(connectionInProgress){
+            return Promise.resolve("inprogress");
+        }
+        connectionInProgress= true;
         setTimeout(()=>{
             bluetooth.cancelRequest();
             if(!isConnected() && !currentSelectionTimeout){
@@ -84,6 +89,7 @@ export async function connect() {
                         
                     }else if(Object.keys(allDevices).length===1){
                         selectFn(allDevices[Object.keys(allDevices)[0]]);
+                        allDevices = {};
                     }
                     clearTimeout(currentSelectionTimeout);
                 },3000);
@@ -106,6 +112,7 @@ export async function connect() {
         nordicDfuPacketCharacteristic = await nordicDfuService.getCharacteristic(nordicDfuPacketCharacteristicUUID);
         await nordicDfuControlCharacteristic.startNotifications();
         nordicDfuControlCharacteristic.addEventListener('characteristicvaluechanged', receiveNordicDfuControlData);
+        connectionInProgress = false;
         return Promise.resolve("dfu connected");
     }
 
@@ -124,7 +131,14 @@ export async function connect() {
         await rawDataTxCharacteristic.startNotifications();
         rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
     }
+    connectionInProgress = false;
     return Promise.resolve("repl connected");
+    } catch (error) {
+        connectionInProgress = false;
+        console.log(error)
+    }
+    
+        
 }
 
 export async function disconnect() {

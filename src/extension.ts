@@ -31,28 +31,38 @@ export const isPathExist = async (uri:vscode.Uri):Promise<boolean>=>{
 	let exist = fs.existsSync(uri.fsPath);
 	return exist;
 };
-
+function isEmpty(obj:object) {
+	for (var prop in obj) {
+	  if (Object.prototype.hasOwnProperty.call(obj, prop)) {
+		return false;
+	  }
+	}
+  
+	return true;
+  }
 export const configReadUpdate = async  function(dataToupdate?:object):Promise<object>{
 	let workspaces = vscode.workspace.workspaceFolders;
 	let newdata:any = {};
 	if(workspaces){
 		
 		let _configFile = vscode.Uri.joinPath(workspaces[0].uri,monocleFiles);
-		if(!await isPathExist(_configFile)){
+		if(dataToupdate && !(await isPathExist(_configFile)) && !isEmpty(dataToupdate)){
 			await vscode.workspace.fs.writeFile(_configFile,Buffer.from(JSON.stringify({}, null, "\t")));
 		}
 	
 		
 		try {
-			let data =  await vscode.workspace.fs.readFile(_configFile);
-			let jsonData = JSON.parse(decoder.decode(data));
-			newdata = {...jsonData};
+			if((await isPathExist(_configFile))){
+				let data =  await vscode.workspace.fs.readFile(_configFile);
+				let jsonData = JSON.parse(decoder.decode(data));
+				newdata = {...jsonData};
+			}
 
 		} catch (error) {
 			
 		}
 		
-		if(dataToupdate){
+		if(dataToupdate && (await isPathExist(_configFile))){
 			newdata  = {...newdata,...dataToupdate};
 			Object.keys(newdata).forEach(function(skey){
 				if(newdata[skey]===false){
@@ -142,6 +152,13 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 							break;
 					}
 					prevByte = byteData[0];
+					if(byteData[0]===21 || byteData[0]===23){ // cmd+Backspace  for mac 21 ; ctrl+ Backspace for windows 23
+						terminalHandleInput(
+							'\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b' +
+							'\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b' +
+							'\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
+						return;
+					}
 				}
 				terminalHandleInput(data);
 			}else{
