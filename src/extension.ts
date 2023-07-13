@@ -79,7 +79,7 @@ export const configReadUpdate = async  function(dataToupdate?:object):Promise<ob
 };
 // initialize main.py and README.md for new project
 const initFiles = async (rootUri:vscode.Uri,projectName:string) => {
-	let monocleUri = vscode.Uri.joinPath(rootUri,monocleFolder+'/main.py');
+	let monocleUri = vscode.Uri.joinPath(rootUri,'/main.py');
 	let readmeUri = vscode.Uri.joinPath(rootUri,'./README.md');
 	if(! await isPathExist(monocleUri)){
 		vscode.workspace.fs.writeFile(monocleUri,Buffer.from("print(\"Hello Monocle from "+projectName+"!\")"));
@@ -856,7 +856,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				let screenName = await vscode.window.showInputBox({prompt:"Enter Screen name"});
 				if(screenName){
 					screenName = screenName.replaceAll(" ","_").replaceAll("/","").replaceAll("\\","").replaceAll("-","_");
-					let screenPath = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,monocleFolder,screenFolder,screenName+"_screen.py");
+					let screenPath = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,screenFolder,screenName+"_screen.py");
 					await vscode.workspace.fs.writeFile(screenPath,Buffer.from('# GENERATED BRILLIANT AR STUDIO Do not modify this file directly\n\nimport display\n\nclass '+screenName+':\n\tpass'));
 					await vscode.commands.executeCommand('vscode.open',screenPath,vscode.ViewColumn.One);
 					UIEditorPanel.render(context.extensionUri,screenName,screenPath);

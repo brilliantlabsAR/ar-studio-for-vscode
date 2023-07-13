@@ -309,10 +309,10 @@ export class ScreenProvider implements vscode.TreeDataProvider<vscode.TreeItem>{
 	private async getAllScreens(){
 		if(vscode.workspace.workspaceFolders){
 			const rootUri = vscode.workspace.workspaceFolders[0].uri;
-			const localFiles = vscode.Uri.joinPath(rootUri,monocleFolder);
+			const localFiles = vscode.Uri.joinPath(rootUri,screenFolder);
 			
 			if(await isPathExist(localFiles)){
-				const screenFiles = new vscode.RelativePattern(localFiles, screenFolder+'/*_screen.py');
+				const screenFiles = new vscode.RelativePattern(localFiles, '*_screen.py');
 				const filesFound = await vscode.workspace.findFiles(screenFiles);
 				if(filesFound.length===0){
 					return [];
@@ -327,7 +327,7 @@ export class ScreenProvider implements vscode.TreeDataProvider<vscode.TreeItem>{
 				}
 			}else{
 				
-				vscode.window.showWarningMessage("Project not initialized!");
+				// vscode.window.showWarningMessage("Project not initialized!");
 				return [];
 			}
 		}else{

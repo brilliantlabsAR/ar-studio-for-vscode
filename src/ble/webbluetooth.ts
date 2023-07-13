@@ -173,8 +173,8 @@
                     });
                 }
 
-                function selectFn() {
-                    complete(bluetoothDevice);
+                function selectFn(newBLeDevice) {
+                    complete(newBLeDevice);
                 }
 
                 // filter devices if filters specified
