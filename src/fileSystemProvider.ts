@@ -390,7 +390,26 @@ export class DeviceInfoProvider implements vscode.WebviewViewProvider{
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<title>Device Status</title>
 				<style>
-				
+				a {
+					color: var(--vscode-button-foreground); background-color: var(--vscode-button-background);
+					box-sizing: border-box;
+					display: flex;
+					width: 100%;
+					padding: 4px;
+					border-radius: 2px;
+					text-align: center;
+					cursor: pointer;
+					justify-content: center;
+					align-items: center;
+					border: 1px solid var(--vscode-button-border,transparent);
+					line-height: 18px;
+					text-decoration: none;
+					max-width: 300px;
+				}
+				a:hover{
+					color: var(--vscode-button-foreground); 
+					background: var(--vscode-button-hoverBackground);
+				}
 				button {
 					width: 80vw;
 					max-width:300px;
@@ -399,7 +418,7 @@ export class DeviceInfoProvider implements vscode.WebviewViewProvider{
 					margin-top:0.3rem;
 					margin-bottom:0.6rem;
 					background: var(--vscode-button-background);
-					border-color:  var(--vscode-button-border);
+					border:  none;
 					color: var(--vscode-button-foreground);
 					cursor: pointer;
 				}
@@ -414,10 +433,10 @@ export class DeviceInfoProvider implements vscode.WebviewViewProvider{
 					Device: <b id="name"></b><br>
 					MAC address: <b id="macAddress"></b><br>
 					Firmware version: <b id="firmwareVersion"></b>
-					<button id="firmwareUpdate"></button>
+					<a href="javascript:void(0)" id="firmwareUpdate" style="display:none"></a>
 					FPGA image: <b id="fpgaVersion"></b>
-					<button id="fpgaUpdate"></button>
-					<button id="customFpga" style="margin-top:1rem">Custom FPGA</button>
+					<a href="javascript:void(0)" id="fpgaUpdate" style="display:none"></a>
+					<a href="javascript:void(0)" id="customFpga" style="margin-top:1rem">Custom FPGA</a>
 				</div>
 				<script>
 				// To retain state
