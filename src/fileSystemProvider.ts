@@ -11,6 +11,7 @@ import {
 	FileMaps,
 	buildMappedFiles
 } from './repl';
+import { startFirmwareUpdate } from './update';
 import {deviceTreeProvider, isPathExist, monocleFolder,screenFolder} from './extension';
 import { isConnected } from './bluetooth';
 
@@ -335,3 +336,143 @@ export class ScreenProvider implements vscode.TreeDataProvider<vscode.TreeItem>{
 		
 	}
 }
+
+
+export class DeviceInfoProvider implements vscode.WebviewViewProvider{
+
+	private _view?: vscode.WebviewView;
+	private _currentInfo:any;
+	constructor(
+		private readonly _extensionUri: vscode.Uri,
+	) {
+		this._extensionUri = _extensionUri;
+	 }
+	public updateValues(data:object){
+		this._view?.webview.postMessage(data);
+		this._currentInfo= data;
+	}
+	
+
+	private _setWebviewMessageListener(webview: vscode.Webview) {
+		webview.onDidReceiveMessage(
+		  (message: any) => {
+			switch (message) {
+				case "fpgaUpdate":
+					vscode.commands.executeCommand('brilliant-ar-studio.fpgaUpdate');
+					break;
+				case "customFpga":
+					vscode.commands.executeCommand('brilliant-ar-studio.fpgaUpdateCustom');
+					break;
+				case "firmwareUpdate":
+					startFirmwareUpdate();
+					break;
+				default:
+					break;
+			}
+		  }
+		);
+	}
+    public  resolveWebviewView (webviewView: vscode.WebviewView,  contextWebview: vscode.WebviewViewResolveContext, _token: vscode.CancellationToken){
+            webviewView.webview.options={
+				enableScripts:true,localResourceRoots: [
+				this._extensionUri,
+			]
+		};
+		let updateScript:string = "";
+		if(this._currentInfo){
+			updateScript = 'updateUi(JSON.parse('+JSON.stringify(this._currentInfo)+'))';
+		}
+			this._view = webviewView;
+            webviewView.webview.html=`<!DOCTYPE html>
+			<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>Device Status</title>
+				<style>
+				
+				button {
+					width: 80vw;
+					max-width:300px;
+					height: 28px;
+					border-radius:2px;
+					margin-top:0.3rem;
+					margin-bottom:0.6rem;
+					background: var(--vscode-button-background);
+					border-color:  var(--vscode-button-border);
+					color: var(--vscode-button-foreground);
+					cursor: pointer;
+				}
+				button:hover{
+					background: var(--vscode-button-hoverBackground);
+				}
+				</style>
+			</head>
+			
+			<body>
+				<div>
+					Device: <b id="name"></b><br>
+					MAC address: <b id="macAddress"></b><br>
+					Firmware version: <b id="firmwareVersion"></b>
+					<button id="firmwareUpdate"></button>
+					FPGA image: <b id="fpgaVersion"></b>
+					<button id="fpgaUpdate"></button>
+					<button id="customFpga" style="margin-top:1rem">Custom FPGA</button>
+				</div>
+				<script>
+				// To retain state
+				const vscode = acquireVsCodeApi();
+				// Check if we have an old state to restore from
+				const previousState = vscode.getState();
+				if(previousState){
+					updateUi(previousState)
+				}
+				window.addEventListener('message', async (event) => {
+					updateUi(event.data)
+					
+				})
+				document.getElementById('firmwareUpdate').addEventListener('click',function(){
+					vscode.postMessage("firmwareUpdate")
+				})
+				document.getElementById('fpgaUpdate').addEventListener('click',function(){
+					vscode.postMessage("fpgaUpdate")
+				})
+				document.getElementById('customFpga').addEventListener('click',function(){
+					vscode.postMessage("customFpga")
+				})
+				function updateUi(data){
+					vscode.setState(data);
+					if(!data){
+						return;
+					}
+					document.getElementById('name').innerHTML = data.name;
+					document.getElementById('macAddress').innerHTML = data.macAddress.toUpperCase();
+					
+					
+					if(data.firmwareUpdate){
+						document.getElementById('firmwareUpdate').innerHTML = 'Update to'+data.firmwareUpdate;
+						document.getElementById('firmwareUpdate').style.display = 'block';
+						document.getElementById('firmwareVersion').innerHTML = data.firmwareVersion;
+					}else{
+						document.getElementById('firmwareVersion').innerHTML = data.firmwareVersion + '(latest)';
+						document.getElementById('firmwareUpdate').style.display = 'none';
+						document.getElementById('firmwareUpdate').innerHTML = "(Latest)";
+					}
+					if(data.fpgaUpdate){
+						document.getElementById('fpgaUpdate').innerHTML = 'Update to '+data.fpgaUpdate;
+						document.getElementById('fpgaVersion').innerHTML = data.fpgaVersion;
+						document.getElementById('fpgaUpdate').style.display = 'block';
+					}else{
+						document.getElementById('fpgaUpdate').style.display = 'none';
+						document.getElementById('fpgaVersion').innerHTML = data.fpgaVersion+ '(latest)';
+						document.getElementById('fpgaUpdate').innerHTML = "(Latest)";
+					}
+				}
+				${updateScript}
+				</script>
+			</body>
+			</html>`;
+			this._setWebviewMessageListener(webviewView.webview);
+    }
+
+};

@@ -26,41 +26,48 @@ export async function checkForUpdates() {
 }
 async function getUpdateInfo() {
   // Check nRF firmware
+  let updateDetails:any = {};
+  let getTag:any;
   let response: any = await replSend("import device;print(device.VERSION)");
   if (response.includes("Error")) {
-    return "Could not detect the firmware version. You may have to update" +
-      " manually. Try typing: import update;update.micropython()"
-    ;
+    updateDetails.message=  "Could not detect the firmware version. You may have to update" +
+    " manually. Try typing: import update;update.micropython()";
+    updateDetails.firmwareVersion = "Unknown";
+  }else{
+      let currentVersion = response.substring(
+        response.indexOf("v"),
+        response.lastIndexOf("\r\n")
+      );
+      updateDetails.firmwareVersion = currentVersion;
+      response = await replSend("print(device.GIT_REPO);del(device)");
+      if (response.includes("Error")) {
+        updateDetails.message  =  "Could not detect the device. Current version is: " +
+        currentVersion +
+        ". You may have to update manually. Try typing: " +
+        "import update;update.micropython()";
+       
+      }else{
+          let gitRepoLink = response.substring(
+            response.indexOf("https"),
+            response.lastIndexOf("\r\n")
+          );
+        
+          micropythonGit.owner = gitRepoLink.split("/")[3];
+          micropythonGit.repo = gitRepoLink.split("/")[4];
+           getTag = await request("GET /repos/{owner}/{repo}/releases/latest", {
+            owner: micropythonGit.owner,
+            repo: micropythonGit.repo,
+          });
+          let latestVersion = getTag.data.tag_name;
+         
+          if (currentVersion !== latestVersion) {
+            updateDetails.firmwareUpdate= latestVersion;
+            updateDetails.message = `New firmware ([${latestVersion}](${getTag.url})) update available, Do you want to update?`;
+          }
+      }
+      
   }
-  let currentVersion = response.substring(
-    response.indexOf("v"),
-    response.lastIndexOf("\r\n")
-  );
-
-  response = await replSend("print(device.GIT_REPO);del(device)");
-  if (response.includes("Error")) {
-    return (
-      "Could not detect the device. Current version is: " +
-      currentVersion +
-      ". You may have to update manually. Try typing: " +
-      "import update;update.micropython()"
-    );
-  }
-  let gitRepoLink = response.substring(
-    response.indexOf("https"),
-    response.lastIndexOf("\r\n")
-  );
-
-  micropythonGit.owner = gitRepoLink.split("/")[3];
-  micropythonGit.repo = gitRepoLink.split("/")[4];
-  let getTag = await request("GET /repos/{owner}/{repo}/releases/latest", {
-    owner: micropythonGit.owner,
-    repo: micropythonGit.repo,
-  });
-  let latestVersion = getTag.data.tag_name;
-  if (currentVersion !== latestVersion) {
-    return `New firmware ([${latestVersion}](${getTag.url})) update available, Do you want to update?`;
-  }
+  
 
   // Check FPGA image
   fpgaGit.owner = micropythonGit.owner;
@@ -69,19 +76,33 @@ async function getUpdateInfo() {
     owner: fpgaGit.owner,
     repo: fpgaGit.repo,
   });
-  latestVersion = getTag.data.tag_name;
+  let latestVersion = getTag.data.tag_name;
 
   response = await replSend(
     "import fpga;" + "print(fpga.read(2,12));" + "del(fpga)"
   );
   if (response.includes("Error")) {
-    return "Could not detect the FPGA image, check manually. ";
+    updateDetails.message ="Could not detect the FPGA image, check manually. ";
+    updateDetails.fpgaVersion ="Unknown";
+  }else{
+    let currentVersion = response.substring(
+      response.indexOf("OKb"),
+      response.lastIndexOf("\r\n")
+    );
+    if(currentVersion.includes('\\x00\\x00\\x00\\x00')){
+      updateDetails.fpgaVersion = "Uknown";
+    }else{
+      updateDetails.fpgaVersion = currentVersion;
+    }
+   
+    if (!response.includes(latestVersion)) {
+      updateDetails.fpgaUpdate =  latestVersion;
+      updateDetails.message =  `New FPGA image ([${latestVersion}](${getTag.url}))  available, Do you want to update?`;
+    }
+    updateDetails.message = '';
   }
-
-  if (!response.includes(latestVersion)) {
-    return `New FPGA image ([${latestVersion}](${getTag.url}))  available, Do you want to update?`;
-  }
-  return "";
+return updateDetails; 
+  
 }
 
 export async function startFirmwareUpdate() {
