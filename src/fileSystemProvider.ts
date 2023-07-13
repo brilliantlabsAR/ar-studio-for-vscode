@@ -430,13 +430,13 @@ export class DeviceInfoProvider implements vscode.WebviewViewProvider{
 			
 			<body>
 				<div>
-					Device: <b id="name"></b><br>
-					MAC address: <b id="macAddress"></b><br>
-					Firmware version: <b id="firmwareVersion"></b>
-					<a href="javascript:void(0)" id="firmwareUpdate" style="display:none"></a>
-					FPGA image: <b id="fpgaVersion"></b>
-					<a href="javascript:void(0)" id="fpgaUpdate" style="display:none"></a>
-					<a href="javascript:void(0)" id="customFpga" style="margin-top:1rem">Custom FPGA</a>
+				Device: <b id="name"></b><br>
+				MAC address: <b id="macAddress"></b><br>
+				Firmware version: <b id="firmwareVersion"></b><br>
+				<a href="javascript:void(0)" id="firmwareUpdate" style="display:none"></a>
+				FPGA image: <b id="fpgaVersion"></b><br>
+				<a href="javascript:void(0)" id="fpgaUpdate" style="display:none"></a>
+				<a href="javascript:void(0)" id="customFpga" style="margin-top:1rem">Custom FPGA</a>
 				</div>
 				<script>
 				// To retain state
