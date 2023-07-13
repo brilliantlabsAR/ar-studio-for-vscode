@@ -43,7 +43,7 @@ Browse community projects, or publish your own:
 
 4. Now open main.py and edit it.
    you can create any file transferred to device.
-   you can also upload files/dir from `device files` dir by
+   you can also upload files/dir from your project dir by
    right click and `Brilliant AR Studio: Upload File To Device` then type path of file at which you want to upload.
    all uploaded files will be tracked with `.brilliant/device-files.json` with relative source and destination.
 

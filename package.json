@@ -7,7 +7,7 @@
     "url": "https://github.com/brilliantlabsAR/ar-studio-for-vscode"
   },
   "icon": "media/brilliant.png",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "engines": {
     "vscode": "^1.76.0"
   },
@@ -42,8 +42,10 @@
         },
         {
           "id": "fpga",
-          "name": "FPGA",
-          "icon": "media/Monocle_Icon.svg"
+          "name": "Device Status",
+          "icon": "media/Monocle_Icon.svg",
+          "type": "webview",
+          "when": "monocle.deviceConnected"
         },
         {
           "id": "projects",
@@ -60,6 +62,11 @@
       ]
     },
     "viewsWelcome": [
+      {
+        "view": "fpga",
+        "contents": "Device: Monocle \nMAC address: ...\nFirmware version: v23.117.1100 (Up to date) \nFPGA image: v23.130.1100 (Update available)",
+        "when": "monocle.deviceConnected"
+      },
       {
         "view": "fpga",
         "contents": "[Update FPGA](command:brilliant-ar-studio.fpgaUpdate)",
