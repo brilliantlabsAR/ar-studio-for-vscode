@@ -107,6 +107,10 @@ export async function connect() {
     const server = await device.gatt.connect();
     device.addEventListener('gattserverdisconnected', disconnect);
     deviceInfo.macAddress = device.id;
+    if(String(device.id).length>20){
+        deviceInfo.macAddress = "Uknown";
+    }
+    
     deviceInfo.name = device.name;
     const nordicDfuService = await server.getPrimaryService(nordicDfuServiceUuid)
         .catch(() => { });
