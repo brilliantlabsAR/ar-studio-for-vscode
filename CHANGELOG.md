@@ -74,3 +74,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - context menu in device files
 
 ## [1.15.0] - 2023-06-23
+
+### ADDED Device Info tab
+
+- uploading file from anywhere in workspace
+- Building with ctrl+shift+b
+- fixed file transfer bugs
+- context menu in device files
+
+## [1.15.0] - 2023-07-13

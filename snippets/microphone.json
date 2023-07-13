@@ -4,9 +4,9 @@
         "body": "microphone.record(seconds=${1:5.0},sample_rate=${2|16000,8000|},bit_depth=${3|16,8|})",
         "description": "Issues an instruction to the FPGA to start recording audio for a number of seconds. Always clears previously recorded audio. While recording is ongoing, data can be read out using read(). sample_rate can be either 16000 or 8000. bit_depth can be either 16 or 8."
     },
-    "read(samples=127)": {
+    "read(samples)": {
         "prefix": "read",
-        "body": "microphone.read(samples=${1:127})",
+        "body": "microphone.read(${1:127})",
         "description": "Reads out a number of recorded audio samples from the FPGA as a list. Samples are signed 16bit values, and up to 127 samples can be read at a time. Once all samples have been read, read() will return None."
     }
 }

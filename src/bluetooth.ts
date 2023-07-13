@@ -27,7 +27,13 @@ const rawDataTxCharacteristicUuid = "e5700003-7bac-429a-b4ce-57ff900f479d";
 
 export const replDataTxQueue = [];
 export const rawDataTxQueue = [];
-
+type DeviceInfo = {
+    macAddress?:string,
+    name?:string,
+    fpgaStatu?:boolean,
+    fpgaMessage?:string
+};
+export var deviceInfo:DeviceInfo = {};
 let replTxTaskIntervalId:any = null;
 let replDataTxInProgress = false;
 let rawDataTxInProgress = false;
@@ -100,6 +106,12 @@ export async function connect() {
 
     const server = await device.gatt.connect();
     device.addEventListener('gattserverdisconnected', disconnect);
+    deviceInfo.macAddress = device.id;
+    if(String(device.id).length>20){
+        deviceInfo.macAddress = "Uknown";
+    }
+    
+    deviceInfo.name = device.name;
     const nordicDfuService = await server.getPrimaryService(nordicDfuServiceUuid)
         .catch(() => { });
     const replService = await server.getPrimaryService(replDataServiceUuid)

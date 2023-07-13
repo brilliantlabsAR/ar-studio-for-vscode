@@ -1,6 +1,6 @@
-import { isConnected, replDataTxQueue,connect,disconnect } from './bluetooth';
+import { isConnected, replDataTxQueue,connect,disconnect, deviceInfo } from './bluetooth';
 import { checkForUpdates, startFirmwareUpdate, downloadLatestFpgaImage, updateFPGA } from "./update";
-import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus, deviceTreeProvider, monocleFolder } from './extension';
+import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus, deviceTreeProvider, monocleFolder,deviceInfoWebview } from './extension';
 import { startNordicDFU } from './nordicdfu'; 
 import * as vscode from 'vscode';
 import * as path from 'path';
@@ -162,11 +162,14 @@ export async function ensureConnected() {
             }
            
             // console.log(updateInfo);
+            
             if (updateInfo !== "") {
-                let newFirmware = updateInfo?.includes('New firmware');
-                let newFpga = updateInfo?.includes('New FPGA');
+                let newFirmware = updateInfo?.message?.includes('New firmware');
+                let newFpga = updateInfo?.message?.includes('New FPGA');
+                let newDeviceInfo = {...deviceInfo,...updateInfo};
+                deviceInfoWebview.updateValues(newDeviceInfo);
                 let items:string[] =["Update Now","Later"] ;
-                const updateMsg = new vscode.MarkdownString(updateInfo);
+                const updateMsg = new vscode.MarkdownString(updateInfo.message);
                 vscode.commands.executeCommand('setContext', 'monocle.fpgaAvailable', newFpga);
                 if(newFirmware){
                     vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
