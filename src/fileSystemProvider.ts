@@ -12,7 +12,7 @@ import {
 	buildMappedFiles
 } from './repl';
 import { startFirmwareUpdate } from './update';
-import {deviceTreeProvider, isPathExist, monocleFolder,screenFolder} from './extension';
+import {deviceTreeProvider, isPathExist, monocleFolder,configScreenReadUpdate} from './extension';
 import { isConnected } from './bluetooth';
 
 export class File extends vscode.TreeItem implements vscode.FileStat {
@@ -309,22 +309,27 @@ export class ScreenProvider implements vscode.TreeDataProvider<vscode.TreeItem>{
 	private async getAllScreens(){
 		if(vscode.workspace.workspaceFolders){
 			const rootUri = vscode.workspace.workspaceFolders[0].uri;
-			const localFiles = vscode.Uri.joinPath(rootUri,screenFolder);
+			// const localFiles = vscode.Uri.joinPath(rootUri,screenFolder);
 			
-			if(await isPathExist(localFiles)){
-				const screenFiles = new vscode.RelativePattern(localFiles, '*_screen.py');
-				const filesFound = await vscode.workspace.findFiles(screenFiles);
-				if(filesFound.length===0){
-					return [];
-				}else{
-					return filesFound.map(f=>{
-						let filename = path.posix.basename(f.path);
-						let newitem = new vscode.TreeItem(filename.replace('_screen.py',''),vscode.TreeItemCollapsibleState.None);
+			if(await isPathExist(rootUri)){
+				// const screenFiles = new vscode.RelativePattern(rootUri, '*_screen.py');
+				let finalList:vscode.TreeItem[]=[];
+				let screensObjs = await configScreenReadUpdate();
+				for (const [key, value] of Object.entries(screensObjs)) {
+					try {
+						let uri = vscode.Uri.parse(value.filePath);
+							if(await isPathExist(uri)){
+						let newitem = new vscode.TreeItem(key.replace('.py',''),vscode.TreeItemCollapsibleState.None);
 						newitem.iconPath = vscode.ThemeIcon.File;
-						newitem.command =  {command:"brilliant-ar-studio.editUIEditor",title:"Edit In UI Editor",arguments:[{"uri":f,"name":filename.replace('_screen.py','')}]};
-						return newitem;
-					});
+						newitem.command =  {command:"brilliant-ar-studio.editUIEditor",title:"Edit In UI Editor",arguments:[{"uri":uri,"name":key.replace('.py','')}]};
+						finalList.push(newitem);
+							}
+					} catch (error) {
+						console.log(error);
+					}
+				
 				}
+				return finalList;
 			}else{
 				
 				// vscode.window.showWarningMessage("Project not initialized!");

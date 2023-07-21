@@ -106,7 +106,8 @@ const dropDown = { value: 1 };
 window.addEventListener('keydown', function (event) {
   document.getElementById('myDropdown').style.display = 'none';
   const key = event.key; // const {key} = event; ES6+
-  if (event.ctrlKey && (key === 'a' || key === 'A')) {
+  const ctrlKey = event.ctrlKey || event.metaKey;
+  if (ctrlKey && (key === 'a' || key === 'A')) {
     let shapes = stage.find('.rect,.line,.text,.polyline,.polygone');
     if (
       shapes.length === 1 &&
@@ -124,7 +125,7 @@ window.addEventListener('keydown', function (event) {
     event.preventDefault();
     return;
   }
-  if (event.ctrlKey && (key === 'd' || key === 'D') && tr.nodes().length > 0) {
+  if (ctrlKey && (key === 'd' || key === 'D') && tr.nodes().length > 0) {
     let shapes = tr.nodes();
 
     let newshapes = [];
@@ -140,13 +141,13 @@ window.addEventListener('keydown', function (event) {
     return;
   }
   let offset = DELTA;
-  if (event.ctrlKey && arrowKeys.includes(key)) {
+  if (ctrlKey && arrowKeys.includes(key)) {
     offset = 1;
   }
   if (key === 'ArrowLeft') {
-    tr.nodes().forEach((node) => {
-      node.x(node.x() - offset);
-    });
+    tr.nodes().forEach((node) => node.x(node.x() - offset));
+    const box = getTotalBox(tr.nodes().map((node) => node.getClientRect()));
+    tr.nodes().forEach((node) => restrcitToStage(node, box));
     stage.find('.line,.polyline,.polygone').forEach((l) => {
       let anchors = l.getParent().find('.line-anchor');
       if (anchors[0].visible()) {
@@ -162,9 +163,9 @@ window.addEventListener('keydown', function (event) {
     });
   }
   if (key === 'ArrowRight') {
-    tr.nodes().forEach((node) => {
-      node.x(node.x() + offset);
-    });
+    tr.nodes().forEach((node) => node.x(node.x() + offset));
+    const box = getTotalBox(tr.nodes().map((node) => node.getClientRect()));
+    tr.nodes().forEach((node) => restrcitToStage(node, box));
     stage.find('.line,.polyline,.polygone').forEach((l) => {
       let anchors = l.getParent().find('.line-anchor');
       if (anchors[0].visible()) {
@@ -180,9 +181,9 @@ window.addEventListener('keydown', function (event) {
     });
   }
   if (key === 'ArrowUp') {
-    tr.nodes().forEach((node) => {
-      node.y(node.y() - offset);
-    });
+    tr.nodes().forEach((node) => node.y(node.y() - offset));
+    const box = getTotalBox(tr.nodes().map((node) => node.getClientRect()));
+    tr.nodes().forEach((node) => restrcitToStage(node, box));
     stage.find('.line,.polyline,.polygone').forEach((l) => {
       let anchors = l.getParent().find('.line-anchor');
       if (anchors[0].visible()) {
@@ -198,9 +199,9 @@ window.addEventListener('keydown', function (event) {
     });
   }
   if (key === 'ArrowDown') {
-    tr.nodes().forEach((node) => {
-      node.y(node.y() + offset);
-    });
+    tr.nodes().forEach((node) => node.y(node.y() + offset));
+    const box = getTotalBox(tr.nodes().map((node) => node.getClientRect()));
+    tr.nodes().forEach((node) => restrcitToStage(node, box));
     stage.find('.line,.polyline,.polygone').forEach((l) => {
       let anchors = l.getParent().find('.line-anchor');
       if (anchors[0].visible()) {
@@ -315,6 +316,51 @@ var stage = new Konva.Stage({
 
 var layer = new Konva.Layer();
 stage.add(layer);
+// let borderRect = new Konva.Rect({
+//   height: height,
+//   name: 'border',
+//   width: width,
+//   stroke: '#FFFFFF',
+//   strokeWidth: 1,
+//   dash: [5, 10],
+//   visible: true,
+//   fillEnabled: false,
+// });
+// layer.add(borderRect);
+
+function getCorner(pivotX, pivotY, diffX, diffY, angle) {
+  const distance = Math.sqrt(diffX * diffX + diffY * diffY);
+
+  /// find angle from pivot to corner
+  angle += Math.atan2(diffY, diffX);
+
+  /// get new x and y and round it off to integer
+  const x = pivotX + distance * Math.cos(angle);
+  const y = pivotY + distance * Math.sin(angle);
+
+  return { x: x, y: y };
+}
+function getClientRect(rotatedBox) {
+  const { x, y, width, height } = rotatedBox;
+  const rad = rotatedBox.rotation;
+
+  const p1 = getCorner(x, y, 0, 0, rad);
+  const p2 = getCorner(x, y, width, 0, rad);
+  const p3 = getCorner(x, y, width, height, rad);
+  const p4 = getCorner(x, y, 0, height, rad);
+
+  const minX = Math.min(p1.x, p2.x, p3.x, p4.x);
+  const minY = Math.min(p1.y, p2.y, p3.y, p4.y);
+  const maxX = Math.max(p1.x, p2.x, p3.x, p4.x);
+  const maxY = Math.max(p1.y, p2.y, p3.y, p4.y);
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
+}
 
 const tr = new Konva.Transformer({
   anchorFill: '#526D82',
@@ -327,6 +373,18 @@ const tr = new Konva.Transformer({
   rotateEnabled: false,
   flipEnabled: true,
   borderStroke: '#526D82',
+  boundBoxFunc: (oldBox, newBox) => {
+    const box = getClientRect(newBox);
+    const isOut =
+      box.x < 0 ||
+      box.y < 0 ||
+      box.x + box.width > stage.width() ||
+      box.y + box.height > stage.height();
+    if (isOut) {
+      return oldBox;
+    }
+    return newBox;
+  },
 });
 tr.anchorCornerRadius(5);
 layer.add(tr);
@@ -894,6 +952,9 @@ function createRectangle(id, attrs = null) {
   newrect.on('mouseleave', cursorChangeLeave);
   newrect.on('dragstart', cursorChangeDragstart);
   newrect.on('dragend', cursorChangeDragEnd);
+  newrect.on('dragmove', () => {
+    restrcitToStage(newrect, newrect.getClientRect());
+  });
   layer.add(newrect);
 }
 function createText(id, attrs = null) {
@@ -1004,25 +1065,6 @@ function createText(id, attrs = null) {
       sendUIData();
     }
 
-    function setTextareaWidth(newWidth) {
-      if (!newWidth) {
-        // set width for placeholder
-        newWidth = textNode.placeholder.length * textNode.fontSize();
-      }
-      // some extra fixes on different browsers
-      let isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-      if (isSafari || isFirefox) {
-        newWidth = Math.ceil(newWidth);
-      }
-
-      let isEdge = document.documentMode || /Edge/.test(navigator.userAgent);
-      if (isEdge) {
-        newWidth += 1;
-      }
-      textarea.style.width = newWidth + 'px';
-    }
-
     textarea.addEventListener('keydown', function (e) {
       // hide on enter
       // but don't hide on shift + enter
@@ -1045,7 +1087,6 @@ function createText(id, attrs = null) {
     });
 
     function handleOutsideClick(e) {
-      yk;
       if (e.target !== textarea) {
         textNode.text(textarea.value);
         removeTextarea();
@@ -1059,7 +1100,52 @@ function createText(id, attrs = null) {
   movingId = null;
   // currentSelection = null;
 }
+function getTotalBox(boxes) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
 
+  boxes.forEach((box) => {
+    minX = Math.min(minX, box.x);
+    minY = Math.min(minY, box.y);
+    maxX = Math.max(maxX, box.x + box.width);
+    maxY = Math.max(maxY, box.y + box.height);
+  });
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
+}
+tr.on('dragmove', () => {
+  const boxes = tr.nodes().map((node) => node.getClientRect());
+  const box = getTotalBox(boxes);
+  tr.nodes().forEach((shape) => restrcitToStage(shape, box));
+});
+function restrcitToStage(shape, box) {
+  const absPos = shape.getAbsolutePosition();
+  // where are shapes inside bounding box of all shapes?
+  const offsetX = box.x - absPos.x;
+  const offsetY = box.y - absPos.y;
+
+  // we total box goes outside of viewport, we need to move absolute position of shape
+  const newAbsPos = { ...absPos };
+  if (box.x < 0) {
+    newAbsPos.x = -offsetX;
+  }
+  if (box.y < 0) {
+    newAbsPos.y = -offsetY;
+  }
+  if (box.x + box.width > stage.width()) {
+    newAbsPos.x = stage.width() - box.width - offsetX;
+  }
+  if (box.y + box.height > stage.height()) {
+    newAbsPos.y = stage.height() - box.height - offsetY;
+  }
+  shape.setAbsolutePosition(newAbsPos);
+}
 stage.on('dragmoveend', sendUIData);
 stage.on('dragmove', sendUIData);
 stage.on('transformend', sendUIData);
@@ -1150,38 +1236,38 @@ function calculateOffset(textNode) {
 }
 // for zoom and scroll
 
-var scaleBy = 1.01;
-stage.on('wheel', (e) => {
-  // stop default scrolling
-  e.evt.preventDefault();
+// var scaleBy = 1.01;
+// stage.on('wheel', (e) => {
+//   // stop default scrolling
+//   e.evt.preventDefault();
 
-  var oldScale = stage.scaleX();
-  var pointer = stage.getPointerPosition();
+//   var oldScale = stage.scaleX();
+//   var pointer = stage.getPointerPosition();
 
-  var mousePointTo = {
-    x: (pointer.x - stage.x()) / oldScale,
-    y: (pointer.y - stage.y()) / oldScale,
-  };
+//   var mousePointTo = {
+//     x: (pointer.x - stage.x()) / oldScale,
+//     y: (pointer.y - stage.y()) / oldScale,
+//   };
 
-  // how to scale? Zoom in? Or zoom out?
-  let direction = e.evt.deltaY > 0 ? 1 : -1;
+//   // how to scale? Zoom in? Or zoom out?
+//   let direction = e.evt.deltaY > 0 ? 1 : -1;
 
-  // when we zoom on trackpad, e.evt.ctrlKey is true
-  // in that case lets revert direction
-  if (e.evt.ctrlKey) {
-    direction = -direction;
-  }
+//   // when we zoom on trackpad, e.evt.ctrlKey is true
+//   // in that case lets revert direction
+//   if (e.evt.ctrlKey) {
+//     direction = -direction;
+//   }
 
-  var newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+//   var newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
 
-  stage.scale({ x: newScale, y: newScale });
+//   stage.scale({ x: newScale, y: newScale });
 
-  var newPos = {
-    x: pointer.x - mousePointTo.x * newScale,
-    y: pointer.y - mousePointTo.y * newScale,
-  };
-  stage.position(newPos);
-});
+//   var newPos = {
+//     x: pointer.x - mousePointTo.x * newScale,
+//     y: pointer.y - mousePointTo.y * newScale,
+//   };
+//   stage.position(newPos);
+// });
 
 function updateColor(color, colorname = false) {
   tr.nodes().forEach((node) => {

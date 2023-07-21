@@ -317,7 +317,7 @@ export class UIEditorPanel {
     try {
       let existingData = existingDataBin.toString();
       let allblocks = existingData.slice(
-        existingData.indexOf("blocks=[") + 8,
+        existingData.indexOf("screen=[") + 8,
         existingData.indexOf("]##")
       );
       let allblocksArray = allblocks
@@ -491,7 +491,7 @@ function gUItoPython(data: object[], screenName: string) {
       screenName +
       ":\n\tblocks=[]## dont't remove this #";
   } else {
-    finalPyString += initialMessage + "class " + screenName + ":\n\tblocks=[";
+    finalPyString += initialMessage + "class " + screenName + ":\n\tscreen=[";
   }
   data.forEach((uiElement: any, index: number) => {
     let colorname= uiElement.colorname||undefined;
@@ -541,16 +541,16 @@ function gUItoPython(data: object[], screenName: string) {
   if (data.length !== 0) {
     finalPyString += "\n\t]## dont't remove this #";
   }
-  finalPyString += `\n\tdef __init__(self):\n\t\td.show(self.blocks)`;
+  // finalPyString += `\n\tdef __init__(self):\n\t\td.show(self.blocks)`;
 
-  finalPyString +=
-    "\n\n\n# To use this in main.py screen import into main.py or copy below code in main.py\n# from screens." +
-    screenName +
-    "_screen import " +
-    screenName +
-    "\nif __name__=='__main__':\n\t" +
-    screenName +
-    "()";
+  // finalPyString +=
+  //   "\n\n\n# To use this in main.py screen import into main.py or copy below code in main.py\n# from screens." +
+  //   screenName +
+  //   "_screen import " +
+  //   screenName +
+  //   "\nif __name__=='__main__':\n\t" +
+  //   screenName +
+  //   "()";
   return finalPyString;
 }
 
