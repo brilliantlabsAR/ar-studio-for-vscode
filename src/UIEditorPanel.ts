@@ -40,6 +40,13 @@ export class UIEditorPanel {
     );
     this._setWebviewMessageListener(this._panel.webview);
     this.updatePy([], true);
+    this._disposables.push(
+      vscode.workspace.onDidSaveTextDocument((e:vscode.TextDocument)=>{
+        if (e.uri.fsPath===this.screenPath.fsPath){
+          this.updateGUI();
+        }
+      })
+    );
   }
 
   public static render(

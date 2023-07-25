@@ -317,7 +317,7 @@ export class ScreenProvider implements vscode.TreeDataProvider<vscode.TreeItem>{
 				let screensObjs = await configScreenReadUpdate();
 				for (const [key, value] of Object.entries(screensObjs)) {
 					try {
-						let uri = vscode.Uri.parse(value.filePath);
+						let uri = vscode.Uri.joinPath(rootUri,value.filePath);
 							if(await isPathExist(uri)){
 						let newitem = new vscode.TreeItem(key.replace('.py',''),vscode.TreeItemCollapsibleState.None);
 						newitem.iconPath = vscode.ThemeIcon.File;

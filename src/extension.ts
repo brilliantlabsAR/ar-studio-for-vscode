@@ -460,6 +460,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.workspace.onDidRenameFiles(async (e:vscode.FileRenameEvent)=>{
 			if(vscode.workspace.workspaceFolders){
 				let newpathKey:any = await configReadUpdate();
+				let newpathScreens:any = await configScreenReadUpdate();
 				let projectPath = vscode.workspace.workspaceFolders[0].uri;
 				for (let index = 0; index < e.files.length; index++) {
 					const ef = e.files[index];
@@ -477,10 +478,21 @@ export async function activate(context: vscode.ExtensionContext) {
 							newpathKey[localDirnew] =newpathKey[localDirOld];
 							newpathKey[localDirOld] = false;
 						}
+						let segments = path.posix.basename(localDirOld).split("/");
+						let segmentsnew = path.posix.basename(localDirnew).split("/");
+						if(segments.length>0 && Object.keys(newpathScreens).includes(segments[segments.length-1].replace('.py',''))){
+							
+							newpathScreens[segmentsnew[segmentsnew.length-1].replace('.py','')] = newpathScreens[segments[segments.length-1].replace('.py','')];
+							// newpathScreens[segments[segments.length-1].replace('.py','')].filePath = localDirnew;
+							newpathScreens[segmentsnew[segmentsnew.length-1].replace('.py','')].filePath = localDirnew;
+							newpathScreens[segments[segments.length-1].replace('.py','')] = false;
+						}
 					}
 					
 				}
 				await configReadUpdate(newpathKey);
+				await configScreenReadUpdate(newpathScreens);
+				screenProvider.refresh();
 			}
 		}),
 		// vscode.workspace.onDidCreateFiles( async (e:vscode.FileCreateEvent)=>{
@@ -497,16 +509,16 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.workspace.onWillDeleteFiles(async (e:vscode.FileDeleteEvent)=>{
 			if(vscode.workspace.workspaceFolders){
 				let newpathKey:any = await configReadUpdate();
-				let newpathScreens:any = await configReadUpdate();
+				let newpathScreens:any = await configScreenReadUpdate();
 				let projectPath = vscode.workspace.workspaceFolders[0].uri;
 				for (let index = 0; index < e.files.length; index++) {
 					const ef = e.files[index];
 					// if(currentSyncPath!==null && ef.fsPath.includes(currentSyncPath.fsPath)){
 						// let devicePath = ef.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
 						// 	let oldDevicePath =  ef.oldUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-					if((await vscode.workspace.fs.stat(ef)).type===vscode.FileType.Directory){
-						// TODO: if needed to change path recursively on directory change
-					}else{
+					// if((await vscode.workspace.fs.stat(ef)).type===vscode.FileType.Directory){
+					// 	// TODO: if needed to change path recursively on directory change
+					// }else{
 						let localDir = ef.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
 						if(Object.keys(newpathKey).includes(localDir)){
 							newpathKey[localDir] =false;
@@ -516,13 +528,14 @@ export async function activate(context: vscode.ExtensionContext) {
 						if(segments.length>0 && Object.keys(newpathScreens).includes(segments[segments.length-1].replace('.py',''))){
 							newpathScreens[segments[segments.length-1].replace('.py','')] = false;
 						}
-					}
+					// }
 							// }
 						// await memFs.deleteFile(devicePath);
 					// }
 				}
 				await configReadUpdate(newpathKey);
-				await configReadUpdate(newpathScreens);
+				await configScreenReadUpdate(newpathScreens);
+				screenProvider.refresh();
 			}
 			
 		}),
@@ -911,7 +924,7 @@ export async function activate(context: vscode.ExtensionContext) {
 						let localPath = screenPath.fsPath.replace(projectPath.fsPath, "").replaceAll("\\","/");
 						let screenKey:any = {};
 						let pathKey:any = {};
-						screenKey[screenName] = {"filePath":screenPath.path};
+						screenKey[screenName] = {"filePath":localPath};
 						pathKey[localPath] = filename;
 						await vscode.workspace.fs.writeFile(screenPath,Buffer.from('# GENERATED BRILLIANT AR STUDIO Do not modify this file directly\n\nimport display\n\nclass '+screenName+':\n\tpass'));
 						await configScreenReadUpdate(screenKey);

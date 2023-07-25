@@ -21,6 +21,7 @@ window.addEventListener('message', async (event) => {
   let uiData = event.data; // The JSON data our extension sent
   liveUpdate = false;
   // console.log(uiData);
+  stage.find('.line-group,.rect,.text').forEach((d) => d.destroy());
   if (await isFontReady()) {
     uiData.forEach((ui) => {
       const id = new Date().valueOf();
