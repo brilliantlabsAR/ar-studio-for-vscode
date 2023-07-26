@@ -24,7 +24,7 @@ window.addEventListener('message', async (event) => {
   stage.find('.line-group,.rect,.text').forEach((d) => d.destroy());
   if (await isFontReady()) {
     uiData.forEach((ui) => {
-      const id = new Date().valueOf();
+      const id = new Date().valueOf() + Math.floor(Math.random() * 100);
       switch (ui.name) {
         case 'rect':
           createRectangle(id, ui);
@@ -279,10 +279,11 @@ alignBtns.forEach((btn) => {
         el?.classList.remove('active');
       });
     btn.classList.add('active');
-    tr.nodes().forEach((shp) => {
-      if (shp.name() === 'text') {
-        shp.setAttrs({ alignment: getCurrentAlignment() });
-        shp.setAttrs(calculateOffset(shp));
+    stage.find('.text-anchor').forEach((shp) => {
+      let txtNodes = stage.find('#' + shp.id().replace('anchor', ''));
+      if (txtNodes.length > 0 && shp.visible()) {
+        txtNodes[0].setAttrs({ alignment: getCurrentAlignment() });
+        txtNodes[0].setAttrs(calculateOffset(txtNodes[0]));
       }
     });
   });
@@ -291,6 +292,20 @@ function getCurrentAlignment() {
   let horz = document.querySelector('.alignBtn.hz.active').value;
   let vert = document.querySelector('.alignBtn.vt.active').value;
   return vert + '_' + horz;
+  //  return "TOP_LEFT";
+}
+function setCurrentAlignment(verthorz) {
+  verthorz = verthorz.split('_');
+  if (verthorz.length === 2) {
+    document.querySelector('.alignBtn.hz.active').classList.remove('active');
+    document.querySelector('.alignBtn.vt.active').classList.remove('active');
+    document
+      .querySelector('.alignBtn.hz[value="' + verthorz[1] + '"]')
+      .classList.add('active');
+    document
+      .querySelector('.alignBtn.vt[value="' + verthorz[0] + '"]')
+      .classList.add('active');
+  }
   //  return "TOP_LEFT";
 }
 function deleteSelected() {
@@ -703,6 +718,8 @@ stage.on('mouseup touchend', (e) => {
       .forEach((la) => {
         la.visible(true);
       });
+  } else if (selected.length === 1 && selected[0].name() === 'text') {
+    // tr.
   } else {
     tr.nodes(selected);
   }
@@ -727,14 +744,14 @@ function onClickEvent(e) {
   // if click on empty area - remove all selections
   if (e.target === stage) {
     tr.nodes([]);
-    stage.find('.line-anchor').forEach((la) => {
+    stage.find('.line-anchor,.text-anchor').forEach((la) => {
       la.visible(false);
     });
     tr.shouldOverdrawWholeArea(false);
     return;
   }
   // console.log(e);
-  // do nothing if clicked NOT on our rectangles
+  // do nothing if clicked NOT on our lines
   if (
     ['line', 'line-group', 'line-anchor', 'polyline', 'polygone'].includes(
       e.target.name()
@@ -752,6 +769,13 @@ function onClickEvent(e) {
         .forEach((la) => {
           la.visible(true);
         });
+    }
+    return;
+  } else if (e.target.name() === 'text') {
+    let _anch = stage.find('#' + e.target.id() + 'anchor');
+    if (_anch.length !== 0) {
+      _anch[0].visible(true);
+      setCurrentAlignment(e.target.getAttrs().alignment);
     }
     return;
   }
@@ -984,7 +1008,18 @@ function createText(id, attrs = null) {
   }
   var textNode = new Konva.Text(attrs);
   layer.add(textNode);
-
+  const anchor = new Konva.Circle({
+    x: textNode.x(),
+    y: textNode.y(),
+    radius: 5,
+    fill: '#526D82',
+    draggable: true,
+    name: 'text-anchor',
+    id: 'm' + id + 'anchor',
+    visible: false,
+  });
+  layer.add(anchor);
+  // anchor.on('dragmove', updateLine);
   textNode.on('transform', function () {
     //   // reset scale, so only with is changing by transformer
     textNode.setAttrs({
@@ -1001,6 +1036,12 @@ function createText(id, attrs = null) {
   textNode.setAttrs(calculateOffset(textNode));
   textNode.on('dragstart', cursorChangeDragstart);
   textNode.on('dragend', cursorChangeDragEnd);
+  textNode.on('dragmove', () => {
+    anchor.setAttrs({
+      x: textNode.x(),
+      y: textNode.y(),
+    });
+  });
   textNode.on('mouseenter', cursorChangeEnter);
   textNode.on('mouseleave', cursorChangeLeave);
   textNode.on('dblclick dbltap', () => {
@@ -1054,15 +1095,21 @@ function createText(id, attrs = null) {
     textarea.style.height = 'auto';
     // after browsers resized it we can set actual value
     textarea.style.height = textarea.scrollHeight + 3 + 'px';
-    tr.hide();
+    // tr.hide();
     textarea.focus();
     textNode.hide();
     function removeTextarea() {
       textarea.parentNode.removeChild(textarea);
       window.removeEventListener('click', handleOutsideClick);
       textNode.show();
-      tr.show();
-      tr.forceUpdate();
+      // tr.show();
+      // tr.forceUpdate();
+      textNode.setAttrs(calculateOffset(textNode));
+      anchor.setAttrs({
+        x: textNode.x(),
+        y: textNode.y(),
+      });
+      // anchor.visible(false);
       sendUIData();
     }
 

@@ -20,7 +20,7 @@ export async function startNordicDFU() {
 
         await transferFile(files.dat, 'init');
         await transferFile(files.bin, 'image');
-
+        await new Promise(r => setTimeout(r, 500));
         outputChannel.appendLine('Leaving nRF52 DFU');
         return Promise.resolve("completed");
     } catch (error) {

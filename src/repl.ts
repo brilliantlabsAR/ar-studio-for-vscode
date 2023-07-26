@@ -272,7 +272,12 @@ export async function onDisconnect() {
     vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', false);
     updateStatusBarItem("disconnected");
 	writeEmitter.fire("\r\nDisconnected \r\n");
-    await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
+    try {
+        await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
+    } catch (error) {
+        
+    }
+    
 }
 
 
