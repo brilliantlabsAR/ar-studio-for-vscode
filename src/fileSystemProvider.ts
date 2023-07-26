@@ -12,7 +12,7 @@ import {
 	buildMappedFiles
 } from './repl';
 import { startFirmwareUpdate } from './update';
-import {deviceTreeProvider, isPathExist, monocleFolder,screenFolder} from './extension';
+import {deviceTreeProvider, isPathExist, monocleFolder,configScreenReadUpdate} from './extension';
 import { isConnected } from './bluetooth';
 
 export class File extends vscode.TreeItem implements vscode.FileStat {
@@ -309,22 +309,27 @@ export class ScreenProvider implements vscode.TreeDataProvider<vscode.TreeItem>{
 	private async getAllScreens(){
 		if(vscode.workspace.workspaceFolders){
 			const rootUri = vscode.workspace.workspaceFolders[0].uri;
-			const localFiles = vscode.Uri.joinPath(rootUri,screenFolder);
+			// const localFiles = vscode.Uri.joinPath(rootUri,screenFolder);
 			
-			if(await isPathExist(localFiles)){
-				const screenFiles = new vscode.RelativePattern(localFiles, '*_screen.py');
-				const filesFound = await vscode.workspace.findFiles(screenFiles);
-				if(filesFound.length===0){
-					return [];
-				}else{
-					return filesFound.map(f=>{
-						let filename = path.posix.basename(f.path);
-						let newitem = new vscode.TreeItem(filename.replace('_screen.py',''),vscode.TreeItemCollapsibleState.None);
+			if(await isPathExist(rootUri)){
+				// const screenFiles = new vscode.RelativePattern(rootUri, '*_screen.py');
+				let finalList:vscode.TreeItem[]=[];
+				let screensObjs = await configScreenReadUpdate();
+				for (const [key, value] of Object.entries(screensObjs)) {
+					try {
+						let uri = vscode.Uri.joinPath(rootUri,value.filePath);
+							if(await isPathExist(uri)){
+						let newitem = new vscode.TreeItem(key.replace('.py',''),vscode.TreeItemCollapsibleState.None);
 						newitem.iconPath = vscode.ThemeIcon.File;
-						newitem.command =  {command:"brilliant-ar-studio.editUIEditor",title:"Edit In UI Editor",arguments:[{"uri":f,"name":filename.replace('_screen.py','')}]};
-						return newitem;
-					});
+						newitem.command =  {command:"brilliant-ar-studio.editUIEditor",title:"Edit In UI Editor",arguments:[{"uri":uri,"name":key.replace('.py','')}]};
+						finalList.push(newitem);
+							}
+					} catch (error) {
+						console.log(error);
+					}
+				
 				}
+				return finalList;
 			}else{
 				
 				// vscode.window.showWarningMessage("Project not initialized!");
@@ -430,13 +435,13 @@ export class DeviceInfoProvider implements vscode.WebviewViewProvider{
 			
 			<body>
 				<div>
-					Device: <b id="name"></b><br>
-					MAC address: <b id="macAddress"></b><br>
-					Firmware version: <b id="firmwareVersion"></b>
-					<a href="javascript:void(0)" id="firmwareUpdate" style="display:none"></a>
-					FPGA image: <b id="fpgaVersion"></b>
-					<a href="javascript:void(0)" id="fpgaUpdate" style="display:none"></a>
-					<a href="javascript:void(0)" id="customFpga" style="margin-top:1rem">Custom FPGA</a>
+				Device: <b id="name"></b><br>
+				MAC address: <b id="macAddress"></b><br>
+				Firmware version: <b id="firmwareVersion"></b><br>
+				<a href="javascript:void(0)" id="firmwareUpdate" style="display:none"></a>
+				FPGA image: <b id="fpgaVersion"></b><br>
+				<a href="javascript:void(0)" id="fpgaUpdate" style="display:none"></a>
+				<a href="javascript:void(0)" id="customFpga" style="margin-top:1rem">Custom FPGA</a>
 				</div>
 				<script>
 				// To retain state
