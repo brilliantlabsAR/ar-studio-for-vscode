@@ -410,6 +410,7 @@ export class DeviceInfoProvider implements vscode.WebviewViewProvider{
 					line-height: 18px;
 					text-decoration: none;
 					max-width: 300px;
+					
 				}
 				a:hover{
 					color: var(--vscode-button-foreground); 
@@ -438,9 +439,9 @@ export class DeviceInfoProvider implements vscode.WebviewViewProvider{
 				Device: <b id="name"></b><br>
 				MAC address: <b id="macAddress"></b><br>
 				Firmware version: <b id="firmwareVersion"></b><br>
-				<a href="javascript:void(0)" id="firmwareUpdate" style="display:none"></a>
+				<a href="javascript:void(0)" id="firmwareUpdate" style="display:none;margin-top:0.5rem;margin-bottom:0.5rem;"></a>
 				FPGA image: <b id="fpgaVersion"></b><br>
-				<a href="javascript:void(0)" id="fpgaUpdate" style="display:none"></a>
+				<a href="javascript:void(0)" id="fpgaUpdate" style="display:none;margin-top:0.5rem;margin-bottom:0.5rem;"></a>
 				<a href="javascript:void(0)" id="customFpga" style="margin-top:1rem">Custom FPGA</a>
 				</div>
 				<script>

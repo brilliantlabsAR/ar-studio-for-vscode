@@ -6,7 +6,7 @@ import {
 } from "./repl";
 import { outputChannel } from "./extension";
 import { request } from "@octokit/request";
-import { disconnect, isConnected } from "./bluetooth";
+import { disconnect, isConnected,convertToLittleEndian } from "./bluetooth";
 let fetch = require("node-fetch");
 
 export let micropythonGit: any = {};
@@ -28,17 +28,23 @@ async function getUpdateInfo() {
   // Check nRF firmware
   let updateDetails:any = {};
   let getTag:any;
-  let response: any = await replSend("import device;print(device.VERSION)");
-  if (response.includes("Error")) {
+  let response: any = await replSend("import device;print(device.VERSION);print('MACADDR#'+device.mac_address())");
+  if (response && response.includes("Error")) {
     updateDetails.message=  "Could not detect the firmware version. You may have to update" +
     " manually. Try typing: import update;update.micropython()";
     updateDetails.firmwareVersion = "Unknown";
-  }else{
+    return updateDetails;
+  }else if(response){
       let currentVersion = response.substring(
         response.indexOf("v"),
-        response.lastIndexOf("\r\n")
+        response.indexOf("MACADDR#")-2
+      );
+      let macAddress = response.substring(
+        response.indexOf("MACADDR#")+8,
+        response.lastIndexOf(">")-4
       );
       updateDetails.firmwareVersion = currentVersion;
+      updateDetails.macAddress = convertToLittleEndian(macAddress.trim()).toUpperCase();
       response = await replSend("print(device.GIT_REPO);del(device)");
       if (response.includes("Error")) {
         updateDetails.message  =  "Could not detect the device. Current version is: " +
@@ -81,10 +87,10 @@ async function getUpdateInfo() {
   response = await replSend(
     "import fpga;" + "print(fpga.read(2,12));" + "del(fpga)"
   );
-  if (response.includes("Error")) {
+  if (response && response.includes("Error")) {
     updateDetails.message ="Could not detect the FPGA image, check manually. ";
     updateDetails.fpgaVersion ="Unknown";
-  }else{
+  }else if(response){
     let currentVersion = response.substring(
       response.indexOf("OKb"),
       response.lastIndexOf("\r\n")

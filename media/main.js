@@ -1013,7 +1013,7 @@ function createText(id, attrs = null) {
     y: textNode.y(),
     radius: 5,
     fill: '#526D82',
-    draggable: true,
+    draggable: false,
     name: 'text-anchor',
     id: 'm' + id + 'anchor',
     visible: false,
@@ -1346,6 +1346,13 @@ function updateColor(color, colorname = false) {
     if (l.getParent().find('.line-anchor')[0].visible()) {
       l.stroke(color);
       l.setAttrs({ colorname });
+    }
+  });
+  stage.find('.text-anchor').forEach((shp) => {
+    let txtNodes = stage.find('#' + shp.id().replace('anchor', ''));
+    if (txtNodes.length > 0 && shp.visible()) {
+      txtNodes[0].fill(color);
+      txtNodes[0].setAttrs({ colorname });
     }
   });
   stage.find('.polygone').forEach((l) => {

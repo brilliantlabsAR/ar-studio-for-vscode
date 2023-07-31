@@ -40,7 +40,31 @@ let rawDataTxInProgress = false;
 
 // Web-Bluetooth doesn't have any MTU API, so we just set it to something reasonable
 const maxmtu:any = 100;
+export function convertToLittleEndian(macAddress:string):string {
+    // Split the MAC address into an array of hexadecimal values
+    var macAddressBytes = macAddress.split(":").map((hex:any) => parseInt(hex, 16));
+  
+    // Check if the current endianness is big-endian
+    var isBigEndian = (macAddressBytes[0] & 1) === 0;
+  
+    if (isBigEndian) {
+      // Reverse the array to convert to little-endian
+      macAddressBytes.reverse();
+      
+      // Join the array back into a string with colons
+      var littleEndianMAC = macAddressBytes.map((byt:any) => {
+        var hex = byt.toString(16).toUpperCase();
+        return hex.length === 1 ? "0" + hex : hex;
+      }).join(":");
+  
+      return littleEndianMAC;
+    } else {
+      // If it's already little-endian, no need to change anything
+      return macAddress;
+    }
+  }
 
+  
 export function isConnected() {
 
     if (device && device.gatt.connected) {
@@ -80,8 +104,13 @@ export async function connect() {
             ],
             optionalServices: [rawDataServiceUuid],
             deviceFound:  function(bleDevice:any,selectFn:any){
-                allDevices[bleDevice.id.toUpperCase()] = bleDevice;
-                quickPick.items = [...quickPick.items, {label:bleDevice.name +' RSSI: '+bleDevice.adData.rssi||"can't detect",description:bleDevice.id.toUpperCase()}];
+                let mac = bleDevice.id.toUpperCase();
+               
+                if(bleDevice.id.length<20){
+                    mac  = convertToLittleEndian(bleDevice.id).toUpperCase();
+                }
+                allDevices[mac] = bleDevice;
+                quickPick.items = [...quickPick.items, {label:bleDevice.name +' RSSI: '+bleDevice.adData.rssi||"can't detect",description:mac}];
                 quickPick.onDidChangeSelection(selection => {
                     if(selection[0] && selection[0].description){
                         selectFn(allDevices[selection[0]?.description]);
@@ -114,6 +143,8 @@ export async function connect() {
     deviceInfo.macAddress = device.id;
     if(String(device.id).length>20){
         deviceInfo.macAddress = "Uknown";
+    }else{
+        deviceInfo.macAddress = convertToLittleEndian(device.id).toUpperCase();
     }
     
     deviceInfo.name = device.name;
