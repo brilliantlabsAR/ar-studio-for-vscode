@@ -72,6 +72,7 @@ jobs:
         uses: HaaLeo/publish-vscode-extension@v1
         with:
           pat: ${{ secrets.VSCE_TOKEN }}
+          registryUrl: https://marketplace.visualstudio.com
       - name: Upload VSIX
         if: steps.check_vsix_files.outputs.vsix_found == 'true'
         uses: actions/upload-artifact@v2
