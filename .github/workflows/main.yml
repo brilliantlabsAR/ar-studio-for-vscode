@@ -57,9 +57,28 @@ jobs:
             echo "No VSIX files found."
             echo "::set-output name=vsix_found::false"
           fi
+
+      - name: Create Release
+        if: steps.check_vsix_files.outputs.vsix_found == 'true'
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: latest
+          release_name: ${{ steps.package.outputs.version }}
       - name: Upload VSIX
         if: steps.check_vsix_files.outputs.vsix_found == 'true'
         uses: actions/upload-artifact@v2
         with:
-          name: vsix
+          name: Brilliant_AR_Studio
           path: Release/
+
+      - name: Attach artifact to release
+        if: steps.check_vsix_files.outputs.vsix_found == 'true'
+        run: |
+          echo "Attaching artifact to release"
+          upload_url=$(jq -r '.upload_url' $GITHUB_EVENT_PATH)
+          upload_url=${upload_url%\{*}
+          curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/zip" \
+            --data-binary "@Release/linux/*.vsix" \
+            "$upload_url?name=Brilliant_AR_Studio.zip"
