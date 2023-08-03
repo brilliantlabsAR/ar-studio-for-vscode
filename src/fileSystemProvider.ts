@@ -498,6 +498,7 @@ export class DeviceInfoProvider implements vscode.WebviewViewProvider{
 			</body>
 			</html>`;
 			this._setWebviewMessageListener(webviewView.webview);
+			setTimeout(()=>this.updateValues(this._currentInfo),500);
     }
 
 };
