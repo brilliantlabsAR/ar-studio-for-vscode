@@ -1,0 +1,35 @@
+name: Publish VS Code Extensions
+
+on:
+  push:
+    branches:
+      - linux
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: linux
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      
+      - name: Install dependencies
+        run: npm install && npm install -g vsce
+
+      - name: Package VSIX
+        run: |
+          publisher=$(jq -r '.publisher' package.json)
+          version=$(jq -r '.version' package.json)
+          vsce package --target-targets linux-x64,linux-arm64,linux-armhf,alpine-x64,alpine-arm64 --out $publisher-$version.vsix
+      
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v2
+        with:
+          name: vsix
+          path: ${{ publisher }}-${{ version }}.vsix
