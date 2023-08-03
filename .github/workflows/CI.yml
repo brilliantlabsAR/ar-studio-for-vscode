@@ -7,9 +7,9 @@ on:
       - mac
     tags:
       - "v*"
-
 jobs:
   build:
+    if: startsWith( github.ref, 'refs/tags/')
     strategy:
       matrix:
         include:
@@ -43,6 +43,7 @@ jobs:
             arch: arm64
             npm_config_arch: arm64
             branch: mac_win
+          
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
