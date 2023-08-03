@@ -28,8 +28,7 @@ jobs:
         with:
           node-version: '16'
       
-      - name: Install dependencies
-        run: npm install && npm install -g vsce
+      
       - name: Cache Node.js dependencies
         uses: actions/cache@v2
         with:
@@ -37,6 +36,8 @@ jobs:
           key: node-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             node-${{ runner.os }}-
+      - name: Install dependencies
+        run: npm install && npm install -g vsce
       - name: Package VSIX
         id: package
         run: |
@@ -65,6 +66,7 @@ jobs:
         with:
           tag_name: latest
           release_name: ${{ steps.package.outputs.version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload VSIX
         if: steps.check_vsix_files.outputs.vsix_found == 'true'
         uses: actions/upload-artifact@v2
