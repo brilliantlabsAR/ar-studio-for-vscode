@@ -16,6 +16,13 @@ jobs:
         with:
           ref: linux
 
+      - name: Restore Node.js cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: node-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            node-${{ runner.os }}-
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
@@ -23,13 +30,19 @@ jobs:
       
       - name: Install dependencies
         run: npm install && npm install -g vsce
-
+      - name: Cache Node.js dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: node-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            node-${{ runner.os }}-
       - name: Package VSIX
         id: package
         run: |
           publisher=$(jq -r '.publisher' package.json)
           version=$(jq -r '.version' package.json)
-          vsce package  $version --target linux-x64 linux-arm64 linux-armhf alpine-x64 alpine-arm64 --out $publisher-$version.vsix
+          vsce package  $version --target linux-x64 linux-arm64 linux-armhf alpine-x64 alpine-arm64 --packagePath $publisher-$version.vsix
           echo "::set-output name=vsixFileName::$publisher-$version.vsix"
       
       - name: Upload VSIX
