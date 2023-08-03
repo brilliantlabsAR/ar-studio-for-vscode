@@ -93,8 +93,7 @@ Browse community projects, or publish your own:
    2. To draw Line select Line and click on two points then click to select or drag a selection , adjust anchors
    3. To draw Polyline or polygon click select button and click multiple points and to finish double click or  
       to cancel press Esc. to adjust select and move anchor points
-   4. To write text select T and drag to make box, double click to edit and enter or outside click to finish.
-      shift + enter to new line
+   4. To write text select T and drag to make box, double click to edit and enter or outside click to finish. shift + enter to new line
    5. you can move any object with arrow keys after select. ctrl + arrow keys to move with precise
    6. to delete select and press delete button, multiple selected objects can be deleted
    7. ctrl + A to select all
