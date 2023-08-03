@@ -61,12 +61,13 @@ jobs:
 
       - name: Create Release
         if: steps.check_vsix_files.outputs.vsix_found == 'true'
-        id: create_release
-        uses: actions/create-release@v1
-        with:
-          tag_name: latest
-          release_name: ${{ steps.package.outputs.version }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=${{ steps.package.outputs.version }}
+          body=$(curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" \
+                 https://api.github.com/repos/${{ github.repository }}/releases \
+                 -d '{"tag_name": "latest", "name": "'"$version"'", "draft": false, "prerelease": false}')
+          release_id=$(echo "$body" | jq '.id')
+          echo "::set-output name=release_id::$release_id"
       - name: Upload VSIX
         if: steps.check_vsix_files.outputs.vsix_found == 'true'
         uses: actions/upload-artifact@v2
