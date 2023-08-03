@@ -46,8 +46,20 @@ jobs:
           vsce package  $version --target linux-x64 linux-arm64 linux-armhf alpine-x64 alpine-arm64
           mv *.vsix Release/linux/
           echo "::set-output name=vsixFileName::Release/linux"
+
+      - name: Check for VSIX files
+        id: check_vsix_files
+        run: |
+          if [ -n "$(find Release/linux/ -name '*.vsix')" ]; then
+            echo "VSIX files found."
+            echo "::set-output name=vsix_found::true"
+          else
+            echo "No VSIX files found."
+            echo "::set-output name=vsix_found::false"
+          fi
       - name: Upload VSIX
+        if: steps.check_vsix_files.outputs.vsix_found == 'true'
         uses: actions/upload-artifact@v2
         with:
           name: vsix
-          path: ${{ needs.publish.outputs.vsixFileName }}
+          path: Release/
