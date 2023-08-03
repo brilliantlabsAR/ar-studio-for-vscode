@@ -42,9 +42,10 @@ jobs:
         run: |
           publisher=$(jq -r '.publisher' package.json)
           version=$(jq -r '.version' package.json)
-          vsce package  $version --target linux-x64 linux-arm64 linux-armhf alpine-x64 alpine-arm64 --packagePath $publisher-$version.vsix
-          echo "::set-output name=vsixFileName::$publisher-$version.vsix"
-      
+          mkdir -p Release/linux/
+          vsce package  $version --target linux-x64 linux-arm64 linux-armhf alpine-x64 alpine-arm64
+          mv *.vsix Release/linux/
+          echo "::set-output name=vsixFileName::Release/linux"
       - name: Upload VSIX
         uses: actions/upload-artifact@v2
         with:
