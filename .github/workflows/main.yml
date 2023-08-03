@@ -27,9 +27,11 @@ jobs:
           publisher=$(jq -r '.publisher' package.json)
           version=$(jq -r '.version' package.json)
           vsce package --target-targets linux-x64,linux-arm64,linux-armhf,alpine-x64,alpine-arm64 --out ${{ publisher }}-${{ version }}.vsix
+          echo "PUBLISHER=${publisher}" >> $GITHUB_ENV
+          echo "VERSION=${version}" >> $GITHUB_ENV
       
       - name: Upload VSIX
         uses: actions/upload-artifact@v2
         with:
           name: vsix
-          path: ${{ publisher }}-${{ version }}.vsix
+          path: ${{ env.PUBLISHER }}-${{ env.VERSION }}.vsix
