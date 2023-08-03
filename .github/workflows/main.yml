@@ -73,7 +73,7 @@ jobs:
         with:
           pat: ${{ secrets.VSCE_TOKEN }}
           registryUrl: https://marketplace.visualstudio.com
-          extensionFile: Release/linux/${{steps.package.outputs.vsixFileName}}
+          extensionFile: ${{steps.package.outputs.vsixFileName}}
       - name: Upload VSIX
         if: steps.check_vsix_files.outputs.vsix_found == 'true'
         uses: actions/upload-artifact@v2
