@@ -47,7 +47,7 @@ jobs:
           vsce package  $version --target linux-x64 linux-arm64 linux-armhf alpine-x64 alpine-arm64
           mv *.vsix Release/linux/
           echo "::set-output name=vsixFileName::Release/linux"
-
+          echo "Release/linux/${version}.vsix" > vsix_path.txt
       - name: Check for VSIX files
         id: check_vsix_files
         run: |
@@ -73,7 +73,7 @@ jobs:
         with:
           pat: ${{ secrets.VSCE_TOKEN }}
           registryUrl: https://marketplace.visualstudio.com
-          extensionFile: ${{steps.package.outputs.vsixFileName}}/*.vsix
+          extensionFile:  $(cat vsix_path.txt)
       - name: Upload VSIX
         if: steps.check_vsix_files.outputs.vsix_found == 'true'
         uses: actions/upload-artifact@v2
