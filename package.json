@@ -395,9 +395,8 @@
   },
   "dependencies": {
     "@octokit/request": "^6.2.3",
-    "@abandonware/noble": "git://github.com/brilliantlabsAR/noble.git",
     "froala-editor": "^4.0.18",
     "jszip": "^3.10.1",
-    "noble-winrt": "^0.1.1"
+    "node-ble": "^1.9.0"
   }
 }
