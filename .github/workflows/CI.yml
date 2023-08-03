@@ -13,21 +13,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-latest
-            platform: win32
-            arch: x64
-            npm_config_arch: x64
-            branch: mac_win
-          - os: windows-latest
-            platform: win32
-            arch: ia32
-            npm_config_arch: ia32
-            branch: mac_win
-          - os: windows-latest
-            platform: win32
-            arch: arm64
-            npm_config_arch: arm
-            branch: mac_win
           - os: ubuntu-latest
             platform: linux
             arch: x64
