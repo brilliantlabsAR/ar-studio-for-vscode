@@ -59,15 +59,19 @@ jobs:
             echo "::set-output name=vsix_found::false"
           fi
 
-      - name: Create Release
-        if: steps.check_vsix_files.outputs.vsix_found == 'true'
-        run: |
-          version=${{ steps.package.outputs.version }}
-          body=$(curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" \
-                 https://api.github.com/repos/${{ github.repository }}/releases \
-                 -d '{"tag_name": "latest", "name": "'"$version"'", "draft": false, "prerelease": false}')
-          release_id=$(echo "$body" | jq '.id')
-          echo "::set-output name=release_id::$release_id"
+      # - name: Create Release
+      #   if: steps.check_vsix_files.outputs.vsix_found == 'true'
+      #   run: |
+      #     version=${{ steps.package.outputs.version }}
+      #     body=$(curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" \
+      #            https://api.github.com/repos/${{ github.repository }}/releases \
+      #            -d '{"tag_name": "latest", "name": "'"$version"'", "draft": false, "prerelease": false}')
+      #     release_id=$(echo "$body" | jq '.id')
+      #     echo "::set-output name=release_id::$release_id"
+      - name : Publish To Marketplace
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.VSCE_TOKEN }}
       - name: Upload VSIX
         if: steps.check_vsix_files.outputs.vsix_found == 'true'
         uses: actions/upload-artifact@v2
@@ -75,13 +79,13 @@ jobs:
           name: Brilliant_AR_Studio
           path: Release/
 
-      - name: Attach artifact to release
-        if: steps.check_vsix_files.outputs.vsix_found == 'true'
-        run: |
-          echo "Attaching artifact to release"
-          upload_url=$(jq -r '.upload_url' $GITHUB_EVENT_PATH)
-          upload_url=${upload_url%\{*}
-          curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/zip" \
-            --data-binary "@Release/linux/*.vsix" \
-            "$upload_url?name=Brilliant_AR_Studio.zip"
+      # - name: Attach artifact to release
+      #   if: steps.check_vsix_files.outputs.vsix_found == 'true'
+      #   run: |
+      #     echo "Attaching artifact to release"
+      #     upload_url=$(jq -r '.upload_url' $GITHUB_EVENT_PATH)
+      #     upload_url=${upload_url%\{*}
+      #     curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+      #       -H "Content-Type: application/zip" \
+      #       --data-binary "@Release/linux/*.vsix" \
+      #       "$upload_url?name=Brilliant_AR_Studio.zip"
