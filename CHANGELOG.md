@@ -64,4 +64,22 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - RAW DATA log, RAW DATA send options
 - Select from multiple monocle
 
-## [1.13.0] - 2023-06-12
+## [1.14.0] - 2023-06-12
+
+### ADDED
+
+- uploading file from anywhere in workspace
+- Building with ctrl+shift+b
+- fixed file transfer bugs
+- context menu in device files
+
+## [1.15.0] - 2023-06-23
+
+### ADDED Device Info tab
+
+- uploading file from anywhere in workspace
+- Building with ctrl+shift+b
+- fixed file transfer bugs
+- context menu in device files
+
+## [1.15.0] - 2023-07-13

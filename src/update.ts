@@ -6,7 +6,7 @@ import {
 } from "./repl";
 import { outputChannel } from "./extension";
 import { request } from "@octokit/request";
-import { disconnect, isConnected } from "./bluetooth";
+import { disconnect, isConnected,convertToLittleEndian } from "./bluetooth";
 let fetch = require("node-fetch");
 
 export let micropythonGit: any = {};
@@ -26,41 +26,54 @@ export async function checkForUpdates() {
 }
 async function getUpdateInfo() {
   // Check nRF firmware
-  let response: any = await replSend("import device;print(device.VERSION)");
-  if (response.includes("Error")) {
-    return "Could not detect the firmware version. You may have to update" +
-      " manually. Try typing: import update;update.micropython()"
-    ;
+  let updateDetails:any = {};
+  let getTag:any;
+  let response: any = await replSend("import device;print(device.VERSION);print('MACADDR#'+device.mac_address())");
+  if (response && response.includes("Error")) {
+    updateDetails.message=  "Could not detect the firmware version. You may have to update" +
+    " manually. Try typing: import update;update.micropython()";
+    updateDetails.firmwareVersion = "Unknown";
+    return updateDetails;
+  }else if(response){
+      let currentVersion = response.substring(
+        response.indexOf("v"),
+        response.indexOf("MACADDR#")-2
+      );
+      let macAddress = response.substring(
+        response.indexOf("MACADDR#")+8,
+        response.lastIndexOf(">")-4
+      );
+      updateDetails.firmwareVersion = currentVersion;
+      updateDetails.macAddress = convertToLittleEndian(macAddress.trim()).toUpperCase();
+      response = await replSend("print(device.GIT_REPO);del(device)");
+      if (response.includes("Error")) {
+        updateDetails.message  =  "Could not detect the device. Current version is: " +
+        currentVersion +
+        ". You may have to update manually. Try typing: " +
+        "import update;update.micropython()";
+       
+      }else{
+          let gitRepoLink = response.substring(
+            response.indexOf("https"),
+            response.lastIndexOf("\r\n")
+          );
+        
+          micropythonGit.owner = gitRepoLink.split("/")[3];
+          micropythonGit.repo = gitRepoLink.split("/")[4];
+           getTag = await request("GET /repos/{owner}/{repo}/releases/latest", {
+            owner: micropythonGit.owner,
+            repo: micropythonGit.repo,
+          });
+          let latestVersion = getTag.data.tag_name;
+         
+          if (currentVersion !== latestVersion) {
+            updateDetails.firmwareUpdate= latestVersion;
+            updateDetails.message = `New firmware ([${latestVersion}](${getTag.url})) update available, Do you want to update?`;
+          }
+      }
+      
   }
-  let currentVersion = response.substring(
-    response.indexOf("v"),
-    response.lastIndexOf("\r\n")
-  );
-
-  response = await replSend("print(device.GIT_REPO);del(device)");
-  if (response.includes("Error")) {
-    return (
-      "Could not detect the device. Current version is: " +
-      currentVersion +
-      ". You may have to update manually. Try typing: " +
-      "import update;update.micropython()"
-    );
-  }
-  let gitRepoLink = response.substring(
-    response.indexOf("https"),
-    response.lastIndexOf("\r\n")
-  );
-
-  micropythonGit.owner = gitRepoLink.split("/")[3];
-  micropythonGit.repo = gitRepoLink.split("/")[4];
-  let getTag = await request("GET /repos/{owner}/{repo}/releases/latest", {
-    owner: micropythonGit.owner,
-    repo: micropythonGit.repo,
-  });
-  let latestVersion = getTag.data.tag_name;
-  if (currentVersion !== latestVersion) {
-    return `New firmware ([${latestVersion}](${getTag.url})) update available, Do you want to update?`;
-  }
+  
 
   // Check FPGA image
   fpgaGit.owner = micropythonGit.owner;
@@ -69,19 +82,33 @@ async function getUpdateInfo() {
     owner: fpgaGit.owner,
     repo: fpgaGit.repo,
   });
-  latestVersion = getTag.data.tag_name;
+  let latestVersion = getTag.data.tag_name;
 
   response = await replSend(
     "import fpga;" + "print(fpga.read(2,12));" + "del(fpga)"
   );
-  if (response.includes("Error")) {
-    return "Could not detect the FPGA image, check manually. ";
+  if (response && response.includes("Error")) {
+    updateDetails.message ="Could not detect the FPGA image, check manually. ";
+    updateDetails.fpgaVersion ="Unknown";
+  }else if(response){
+    let currentVersion = response.substring(
+      response.indexOf("OKb"),
+      response.lastIndexOf("\r\n")
+    );
+    if(currentVersion.includes('\\x00\\x00\\x00\\x00')){
+      updateDetails.fpgaVersion = "Uknown";
+    }else{
+      updateDetails.fpgaVersion = currentVersion;
+    }
+   
+    if (!response.includes(latestVersion)) {
+      updateDetails.fpgaUpdate =  latestVersion;
+      updateDetails.message =  `New FPGA image ([${latestVersion}](${getTag.url}))  available, Do you want to update?`;
+    }
+    updateDetails.message = '';
   }
-
-  if (!response.includes(latestVersion)) {
-    return `New FPGA image ([${latestVersion}](${getTag.url}))  available, Do you want to update?`;
-  }
-  return "";
+return updateDetails; 
+  
 }
 
 export async function startFirmwareUpdate() {
@@ -141,8 +168,15 @@ export async function updateFPGA(file: ArrayBuffer) {
 }
 
 export async function downloadLatestFpgaImage() {
+  let chiprev = "revC";
+
+  let chipresponse:any = await replSend("import fpga;print(fpga.version())");
+  if (chipresponse && chipresponse.includes("revB")) {
+    chiprev = "revB";
+  }
+
   outputChannel.appendLine(
-    "Downloading latest release from: github.com/" +
+    "Downloading latest " + chiprev + " release from: github.com/" +
       fpgaGit.owner +
       "/" +
       fpgaGit.repo
@@ -158,7 +192,11 @@ export async function downloadLatestFpgaImage() {
 
   let assetId;
   response.data.assets.forEach((item: any, index: number) => {
-    if (item.name.includes(".bin")) {
+    if (item.name.includes('revC.bin') && chiprev === "revC") {
+      assetId = item.id;
+  }
+
+  if (item.name.includes('revB.bin') && chiprev === "revB") {
       assetId = item.id;
     }
   });

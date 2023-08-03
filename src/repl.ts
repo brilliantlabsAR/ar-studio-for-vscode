@@ -1,6 +1,6 @@
-import { isConnected, replDataTxQueue,connect,disconnect } from './bluetooth';
+import { isConnected, replDataTxQueue,connect,disconnect, deviceInfo } from './bluetooth';
 import { checkForUpdates, startFirmwareUpdate, downloadLatestFpgaImage, updateFPGA } from "./update";
-import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus, deviceTreeProvider, monocleFolder } from './extension';
+import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus, deviceTreeProvider, monocleFolder,deviceInfoWebview } from './extension';
 import { startNordicDFU } from './nordicdfu'; 
 import * as vscode from 'vscode';
 import * as path from 'path';
@@ -162,12 +162,15 @@ export async function ensureConnected() {
             }
            
             // console.log(updateInfo);
+            
             if (updateInfo !== "") {
-                let newFirmware = updateInfo?.includes('New firmware');
-                let newFpga = updateInfo?.includes('New FPGA');
+                let newFirmware = updateInfo?.message?.includes('New firmware');
+                let newFpga = updateInfo?.message?.includes('New FPGA');
+                let newDeviceInfo = {...deviceInfo,...updateInfo};
+                deviceInfoWebview.updateValues(newDeviceInfo);
                 let items:string[] =["Update Now","Later"] ;
-                const updateMsg = new vscode.MarkdownString(updateInfo);
-               
+                const updateMsg = new vscode.MarkdownString(updateInfo.message);
+                vscode.commands.executeCommand('setContext', 'monocle.fpgaAvailable', newFpga);
                 if(newFirmware){
                     vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
                         if(op==="Update Now"){
@@ -179,7 +182,7 @@ export async function ensureConnected() {
                         }
                     });
                 }else if(newFpga){
-                    vscode.commands.executeCommand('setContext', 'monocle.fpgaAvailable', newFpga);
+                    // vscode.commands.executeCommand('setContext', 'monocle.fpgaAvailable', newFpga);
                 }else{
                     vscode.window.showInformationMessage(updateMsg.value);
                     await replRawMode(false);
@@ -205,7 +208,7 @@ export async function ensureConnected() {
         if (error.message && error.message.includes("cancelled")) {
             return;
         }
-        vscode.window.showErrorMessage(error);
+        vscode.window.showErrorMessage(String(error));
         // infoText.innerHTML = error;
         // console.error(error);
         updateStatusBarItem("disconnected");
@@ -269,7 +272,12 @@ export async function onDisconnect() {
     vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', false);
     updateStatusBarItem("disconnected");
 	writeEmitter.fire("\r\nDisconnected \r\n");
-    await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
+    try {
+        await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
+    } catch (error) {
+        
+    }
+    
 }
 
 

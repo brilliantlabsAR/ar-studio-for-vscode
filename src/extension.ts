@@ -13,9 +13,10 @@ import {snippets} from "./snippets";
 const util = require('util');
 const encoder = new util.TextEncoder('utf-8');
 const decoder = new util.TextDecoder('utf-8');
-import { DeviceFs, MonocleFile,ScreenProvider } from './fileSystemProvider';
+import { DeviceFs, MonocleFile,ScreenProvider,DeviceInfoProvider } from './fileSystemProvider';
 export const monocleFolder = "device files";
 export const monocleFiles = '.brilliant/device-files.json';
+export const monocleScreens = '.brilliant/screens.json';
 export const screenFolder ="screens";
 let statusBarItemBle:vscode.StatusBarItem;
 
@@ -26,33 +27,82 @@ export const myscheme = "monocle";
 export var outputChannel:vscode.OutputChannel;
 // export var outputChannelData:vscode.OutputChannel;
 export var deviceTreeProvider:vscode.TreeView<MonocleFile>;
-
+export var deviceInfoWebview:DeviceInfoProvider;
 export const isPathExist = async (uri:vscode.Uri):Promise<boolean>=>{
 	let exist = fs.existsSync(uri.fsPath);
 	return exist;
 };
+function isEmpty(obj:object) {
+	for (var prop in obj) {
+	  if (Object.prototype.hasOwnProperty.call(obj, prop)) {
+		return false;
+	  }
+	}
+  
+	return true;
+  }
 
+  export const configScreenReadUpdate = async  function(dataToupdate?:object):Promise<object>{
+	let workspaces = vscode.workspace.workspaceFolders;
+	let newdata:any = {};
+	if(workspaces){
+		
+		let _configFileScreen = vscode.Uri.joinPath(workspaces[0].uri,monocleScreens);
+		if(dataToupdate && !(await isPathExist(_configFileScreen)) && !isEmpty(dataToupdate)){
+			await vscode.workspace.fs.writeFile(_configFileScreen,Buffer.from(JSON.stringify({}, null, "\t")));
+		}
+	
+		
+		try{ 
+			if((await isPathExist(_configFileScreen))){
+				let data =  await vscode.workspace.fs.readFile(_configFileScreen);
+				let jsonData = JSON.parse(decoder.decode(data));
+				newdata = {...jsonData};
+			}
+
+		} catch (error) {
+			
+		}
+		
+		if(dataToupdate && (await isPathExist(_configFileScreen))){
+			newdata  = {...newdata,...dataToupdate};
+			Object.keys(newdata).forEach(function(skey){
+				if(newdata[skey]===false){
+					delete newdata[skey];
+				}
+			});
+			await vscode.workspace.fs.writeFile(_configFileScreen,Buffer.from(JSON.stringify(newdata, null, "\t")));
+		}
+		return newdata;
+		
+	}
+	return newdata;
+	
+};
 export const configReadUpdate = async  function(dataToupdate?:object):Promise<object>{
 	let workspaces = vscode.workspace.workspaceFolders;
 	let newdata:any = {};
 	if(workspaces){
 		
 		let _configFile = vscode.Uri.joinPath(workspaces[0].uri,monocleFiles);
-		if(!await isPathExist(_configFile)){
+		let _configFileScreen = vscode.Uri.joinPath(workspaces[0].uri,monocleScreens);
+		if(dataToupdate && !(await isPathExist(_configFile)) && !isEmpty(dataToupdate)){
 			await vscode.workspace.fs.writeFile(_configFile,Buffer.from(JSON.stringify({}, null, "\t")));
 		}
 	
 		
-		try {
-			let data =  await vscode.workspace.fs.readFile(_configFile);
-			let jsonData = JSON.parse(decoder.decode(data));
-			newdata = {...jsonData};
+		try{ 
+			if((await isPathExist(_configFile))){
+				let data =  await vscode.workspace.fs.readFile(_configFile);
+				let jsonData = JSON.parse(decoder.decode(data));
+				newdata = {...jsonData};
+			}
 
 		} catch (error) {
 			
 		}
 		
-		if(dataToupdate){
+		if(dataToupdate && (await isPathExist(_configFile))){
 			newdata  = {...newdata,...dataToupdate};
 			Object.keys(newdata).forEach(function(skey){
 				if(newdata[skey]===false){
@@ -69,7 +119,7 @@ export const configReadUpdate = async  function(dataToupdate?:object):Promise<ob
 };
 // initialize main.py and README.md for new project
 const initFiles = async (rootUri:vscode.Uri,projectName:string) => {
-	let monocleUri = vscode.Uri.joinPath(rootUri,monocleFolder+'/main.py');
+	let monocleUri = vscode.Uri.joinPath(rootUri,'/main.py');
 	let readmeUri = vscode.Uri.joinPath(rootUri,'./README.md');
 	if(! await isPathExist(monocleUri)){
 		vscode.workspace.fs.writeFile(monocleUri,Buffer.from("print(\"Hello Monocle from "+projectName+"!\")"));
@@ -142,6 +192,13 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 							break;
 					}
 					prevByte = byteData[0];
+					if(byteData[0]===21 || byteData[0]===23){ // cmd+Backspace  for mac 21 ; ctrl+ Backspace for windows 23
+						terminalHandleInput(
+							'\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b' +
+							'\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b' +
+							'\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
+						return;
+					}
 				}
 				terminalHandleInput(data);
 			}else{
@@ -220,17 +277,27 @@ export async function activate(context: vscode.ExtensionContext) {
 	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
 	const snippetprovider = new SnippetProvider();
 	const projectProvider =  new ProjectProvider();
-
-	// register empty project and show buttons with viewswelcome from package.json for fpga updates
-	vscode.window.registerTreeDataProvider("fpga",{
-		getChildren(element?:vscode.TreeItem):vscode.TreeItem[]{
-			return [];
+	// const fpgaTree= vscode.window.createTreeView('fpga',{treeDataProvider:{
+	// 	getChildren(element?:vscode.TreeItem):vscode.TreeItem[]{
+	// 		return [];
 			
-		},
-		getTreeItem(element:vscode.TreeItem):vscode.TreeItem{
-			return element;
-		}
-	});
+	// 	},
+	// 	getTreeItem(element:vscode.TreeItem):vscode.TreeItem{
+	// 		return element;
+	// 	}
+	// }});
+	// fpgaTree.
+	// fpgaTree.message = "[Update FPGA](command:brilliant-ar-studio.fpgaUpdate)";
+	// register empty project and show buttons with viewswelcome from package.json for fpga updates
+	// vscode.window.registerTreeDataProvider("fpga",{
+	// 	getChildren(element?:vscode.TreeItem):vscode.TreeItem[]{
+	// 		return [];
+			
+	// 	},
+	// 	getTreeItem(element:vscode.TreeItem):vscode.TreeItem{
+	// 		return element;
+	// 	}
+	// });
 	//  register data provider for templates
 	vscode.window.registerTreeDataProvider('snippetTemplates', snippetprovider);
 	// register data provider for community projects
@@ -254,9 +321,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	
 		
 	// const fsWatcher = vscode.workspace.createFileSystemWatcher("**",true,false,true);
-	
+	deviceInfoWebview = new DeviceInfoProvider(context.extensionUri);
 	// vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse(myscheme+':/'), name: myscheme });
 	const alldisposables = vscode.Disposable.from(
+		// for device info
+		vscode.window.registerWebviewViewProvider("fpga", deviceInfoWebview),
 		// for completions 
 		vscode.languages.registerCompletionItemProvider(
 			'python',
@@ -369,7 +438,7 @@ export async function activate(context: vscode.ExtensionContext) {
 						var regex = new RegExp("import\\s+" + mod + "(\\s+as\\s+\\w+)?|from\\s+" + mod + "\\s+import\\s+(.*)");
 						if(!regex.test(document.getText())){
 							let codeaction = new vscode.CodeAction("Import "+linePrefix);
-							codeaction.kind = vscode.CodeActionKind.SourceFixAll;
+							codeaction.kind = vscode.CodeActionKind.QuickFix;
 							codeaction.isPreferred = true;
 							// codeaction.
 							let edit = new vscode.WorkspaceEdit();
@@ -391,13 +460,14 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.workspace.onDidRenameFiles(async (e:vscode.FileRenameEvent)=>{
 			if(vscode.workspace.workspaceFolders){
 				let newpathKey:any = await configReadUpdate();
+				let newpathScreens:any = await configScreenReadUpdate();
 				let projectPath = vscode.workspace.workspaceFolders[0].uri;
 				for (let index = 0; index < e.files.length; index++) {
 					const ef = e.files[index];
 					// if(currentSyncPath!==null &&  ef.newUri.fsPath.includes(currentSyncPath.fsPath)){
 					// 	let newDevicePath =  ef.newUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
 					// 	let oldDevicePath =  ef.oldUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-					if((await vscode.workspace.fs.stat(ef.oldUri)).type===vscode.FileType.Directory){
+					if((await vscode.workspace.fs.stat(ef.newUri)).type===vscode.FileType.Directory){
 						// TODO: if needed to change path recursively on directory change
 					}else{
 						let localDirOld = ef.oldUri.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
@@ -408,10 +478,21 @@ export async function activate(context: vscode.ExtensionContext) {
 							newpathKey[localDirnew] =newpathKey[localDirOld];
 							newpathKey[localDirOld] = false;
 						}
+						let segments = path.posix.basename(localDirOld).split("/");
+						let segmentsnew = path.posix.basename(localDirnew).split("/");
+						if(segments.length>0 && Object.keys(newpathScreens).includes(segments[segments.length-1].replace('.py',''))){
+							
+							newpathScreens[segmentsnew[segmentsnew.length-1].replace('.py','')] = newpathScreens[segments[segments.length-1].replace('.py','')];
+							// newpathScreens[segments[segments.length-1].replace('.py','')].filePath = localDirnew;
+							newpathScreens[segmentsnew[segmentsnew.length-1].replace('.py','')].filePath = localDirnew;
+							newpathScreens[segments[segments.length-1].replace('.py','')] = false;
+						}
 					}
 					
 				}
 				await configReadUpdate(newpathKey);
+				await configScreenReadUpdate(newpathScreens);
+				screenProvider.refresh();
 			}
 		}),
 		// vscode.workspace.onDidCreateFiles( async (e:vscode.FileCreateEvent)=>{
@@ -425,28 +506,36 @@ export async function activate(context: vscode.ExtensionContext) {
 		// 	}
 			
 		// }),
-		vscode.workspace.onDidDeleteFiles(async (e:vscode.FileDeleteEvent)=>{
+		vscode.workspace.onWillDeleteFiles(async (e:vscode.FileDeleteEvent)=>{
 			if(vscode.workspace.workspaceFolders){
 				let newpathKey:any = await configReadUpdate();
+				let newpathScreens:any = await configScreenReadUpdate();
 				let projectPath = vscode.workspace.workspaceFolders[0].uri;
 				for (let index = 0; index < e.files.length; index++) {
 					const ef = e.files[index];
 					// if(currentSyncPath!==null && ef.fsPath.includes(currentSyncPath.fsPath)){
 						// let devicePath = ef.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
 						// 	let oldDevicePath =  ef.oldUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-					if((await vscode.workspace.fs.stat(ef)).type===vscode.FileType.Directory){
-						// TODO: if needed to change path recursively on directory change
-					}else{
+					// if((await vscode.workspace.fs.stat(ef)).type===vscode.FileType.Directory){
+					// 	// TODO: if needed to change path recursively on directory change
+					// }else{
 						let localDir = ef.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
 						if(Object.keys(newpathKey).includes(localDir)){
 							newpathKey[localDir] =false;
 						}
-					}
+						let basename = path.posix.basename(localDir);
+						let segments = basename.split("/");
+						if(segments.length>0 && Object.keys(newpathScreens).includes(segments[segments.length-1].replace('.py',''))){
+							newpathScreens[segments[segments.length-1].replace('.py','')] = false;
+						}
+					// }
 							// }
 						// await memFs.deleteFile(devicePath);
 					// }
 				}
 				await configReadUpdate(newpathKey);
+				await configScreenReadUpdate(newpathScreens);
+				screenProvider.refresh();
 			}
 			
 		}),
@@ -494,7 +583,15 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.commands.registerCommand('brilliant-ar-studio.renameDeviceFile', async (thiscontext) => {
 			let newpath = await vscode.window.showInputBox({title:"Rename", value:thiscontext.path});
+			let pathKey:any = await configReadUpdate();
+			let newpathKey:any = {};
 			if(newpath){
+				Object.keys(pathKey).forEach(source=>{
+					if(thiscontext.path===pathKey[source]){
+						newpathKey[source]=newpath;
+					}
+				});
+				await configReadUpdate(newpathKey);
 				await memFs.renameFile(thiscontext.path,newpath);
 			}
 		}),
@@ -816,16 +913,31 @@ export async function activate(context: vscode.ExtensionContext) {
 		// for UI webview
 		vscode.commands.registerCommand("brilliant-ar-studio.openUIEditor", async () => {
 			if(vscode.workspace.workspaceFolders){
-				let screenName = await vscode.window.showInputBox({prompt:"Enter Screen name"});
+				let screenName = await vscode.window.showInputBox({prompt:"Enter Screen name",title:"New Screen"});
+				const projectPath = vscode.workspace.workspaceFolders[0].uri;
 				if(screenName){
 					screenName = screenName.replaceAll(" ","_").replaceAll("/","").replaceAll("\\","").replaceAll("-","_");
-					let screenPath = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri,monocleFolder,screenFolder,screenName+"_screen.py");
-					await vscode.workspace.fs.writeFile(screenPath,Buffer.from('# GENERATED BRILLIANT AR STUDIO Do not modify this file directly\n\nimport display\n\nclass '+screenName+':\n\tpass'));
-					await vscode.commands.executeCommand('vscode.open',screenPath,vscode.ViewColumn.One);
-					UIEditorPanel.render(context.extensionUri,screenName,screenPath);
-					screenProvider.refresh();
+					let filename = screenName.endsWith('.py')?screenName:screenName+".py";
+					let screenPath = vscode.Uri.joinPath(projectPath,filename);
 					
+					if(!await isPathExist(screenPath)){
+						let localPath = screenPath.fsPath.replace(projectPath.fsPath, "").replaceAll("\\","/");
+						let screenKey:any = {};
+						let pathKey:any = {};
+						screenKey[screenName] = {"filePath":localPath};
+						pathKey[localPath] = filename;
+						await vscode.workspace.fs.writeFile(screenPath,Buffer.from('# GENERATED BRILLIANT AR STUDIO Do not modify this file directly\n\nimport display\n\nclass '+screenName+':\n\tpass'));
+						await configScreenReadUpdate(screenKey);
+						await configReadUpdate(pathKey);
+						await vscode.commands.executeCommand('vscode.open',screenPath,vscode.ViewColumn.One);
+						UIEditorPanel.render(context.extensionUri,screenName,screenPath);
+						screenProvider.refresh();
+					}else{
+						vscode.window.showErrorMessage(filename+' already exist');
+					}
 				}
+			}else{
+				vscode.window.showWarningMessage("First initialize a project");
 			}
 			
 		}),

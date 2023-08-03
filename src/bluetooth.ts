@@ -27,14 +27,44 @@ const rawDataTxCharacteristicUuid = "e5700003-7bac-429a-b4ce-57ff900f479d";
 
 export const replDataTxQueue = [];
 export const rawDataTxQueue = [];
-
+type DeviceInfo = {
+    macAddress?:string,
+    name?:string,
+    fpgaStatu?:boolean,
+    fpgaMessage?:string
+};
+export var deviceInfo:DeviceInfo = {};
 let replTxTaskIntervalId:any = null;
 let replDataTxInProgress = false;
 let rawDataTxInProgress = false;
 
 // Web-Bluetooth doesn't have any MTU API, so we just set it to something reasonable
 const maxmtu:any = 100;
+export function convertToLittleEndian(macAddress:string):string {
+    // Split the MAC address into an array of hexadecimal values
+    var macAddressBytes = macAddress.split(":").map((hex:any) => parseInt(hex, 16));
+  
+    // Check if the current endianness is big-endian
+    var isBigEndian = (macAddressBytes[0] & 1) === 0;
+  
+    if (isBigEndian) {
+      // Reverse the array to convert to little-endian
+      macAddressBytes.reverse();
+      
+      // Join the array back into a string with colons
+      var littleEndianMAC = macAddressBytes.map((byt:any) => {
+        var hex = byt.toString(16).toUpperCase();
+        return hex.length === 1 ? "0" + hex : hex;
+      }).join(":");
+  
+      return littleEndianMAC;
+    } else {
+      // If it's already little-endian, no need to change anything
+      return macAddress;
+    }
+  }
 
+  
 export function isConnected() {
 
     if (device && device.gatt.connected) {
@@ -43,9 +73,19 @@ export function isConnected() {
 
     return false;
 }
+let connectionInProgress = 0;
 let currentSelectionTimeout:any;
 export async function connect() {
-    
+    try {
+        // connection timeout = 10s
+        if(connectionInProgress && (Date.now()-connectionInProgress)>10200){
+            connectionInProgress = 0;
+            return Promise.reject("connection failure");
+        }
+        if(connectionInProgress){
+            return Promise.resolve("inprogress");
+        }
+        connectionInProgress= Date.now();
         setTimeout(()=>{
             bluetooth.cancelRequest();
             if(!isConnected() && !currentSelectionTimeout){
@@ -64,8 +104,13 @@ export async function connect() {
             ],
             optionalServices: [rawDataServiceUuid],
             deviceFound:  function(bleDevice:any,selectFn:any){
-                allDevices[bleDevice.id.toUpperCase()] = bleDevice;
-                quickPick.items = [...quickPick.items, {label:bleDevice.name +' RSSI: '+bleDevice.adData.rssi||"can't detect",description:bleDevice.id.toUpperCase()}];
+                let mac = bleDevice.id.toUpperCase();
+               
+                if(bleDevice.id.length<20){
+                    mac  = convertToLittleEndian(bleDevice.id).toUpperCase();
+                }
+                allDevices[mac] = bleDevice;
+                quickPick.items = [...quickPick.items, {label:bleDevice.name +' RSSI: '+bleDevice.adData.rssi||"can't detect",description:mac}];
                 quickPick.onDidChangeSelection(selection => {
                     if(selection[0] && selection[0].description){
                         selectFn(allDevices[selection[0]?.description]);
@@ -84,6 +129,7 @@ export async function connect() {
                         
                     }else if(Object.keys(allDevices).length===1){
                         selectFn(allDevices[Object.keys(allDevices)[0]]);
+                        allDevices = {};
                     }
                     clearTimeout(currentSelectionTimeout);
                 },3000);
@@ -94,6 +140,14 @@ export async function connect() {
 
     const server = await device.gatt.connect();
     device.addEventListener('gattserverdisconnected', disconnect);
+    deviceInfo.macAddress = device.id;
+    if(String(device.id).length>20){
+        deviceInfo.macAddress = "Uknown";
+    }else{
+        deviceInfo.macAddress = convertToLittleEndian(device.id).toUpperCase();
+    }
+    
+    deviceInfo.name = device.name;
     const nordicDfuService = await server.getPrimaryService(nordicDfuServiceUuid)
         .catch(() => { });
     const replService = await server.getPrimaryService(replDataServiceUuid)
@@ -106,6 +160,7 @@ export async function connect() {
         nordicDfuPacketCharacteristic = await nordicDfuService.getCharacteristic(nordicDfuPacketCharacteristicUUID);
         await nordicDfuControlCharacteristic.startNotifications();
         nordicDfuControlCharacteristic.addEventListener('characteristicvaluechanged', receiveNordicDfuControlData);
+        connectionInProgress = 0;
         return Promise.resolve("dfu connected");
     }
 
@@ -124,7 +179,14 @@ export async function connect() {
         await rawDataTxCharacteristic.startNotifications();
         rawDataTxCharacteristic.addEventListener('characteristicvaluechanged', receiveRawData);
     }
+    connectionInProgress = 0;
     return Promise.resolve("repl connected");
+    } catch (error) {
+        connectionInProgress = 0;
+        console.log(error);
+    }
+    
+        
 }
 
 export async function disconnect() {

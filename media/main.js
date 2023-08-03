@@ -21,9 +21,10 @@ window.addEventListener('message', async (event) => {
   let uiData = event.data; // The JSON data our extension sent
   liveUpdate = false;
   // console.log(uiData);
+  stage.find('.line-group,.rect,.text').forEach((d) => d.destroy());
   if (await isFontReady()) {
     uiData.forEach((ui) => {
-      const id = new Date().valueOf();
+      const id = new Date().valueOf() + Math.floor(Math.random() * 100);
       switch (ui.name) {
         case 'rect':
           createRectangle(id, ui);
@@ -106,7 +107,8 @@ const dropDown = { value: 1 };
 window.addEventListener('keydown', function (event) {
   document.getElementById('myDropdown').style.display = 'none';
   const key = event.key; // const {key} = event; ES6+
-  if (event.ctrlKey && (key === 'a' || key === 'A')) {
+  const ctrlKey = event.ctrlKey || event.metaKey;
+  if (ctrlKey && (key === 'a' || key === 'A')) {
     let shapes = stage.find('.rect,.line,.text,.polyline,.polygone');
     if (
       shapes.length === 1 &&
@@ -124,7 +126,7 @@ window.addEventListener('keydown', function (event) {
     event.preventDefault();
     return;
   }
-  if (event.ctrlKey && (key === 'd' || key === 'D') && tr.nodes().length > 0) {
+  if (ctrlKey && (key === 'd' || key === 'D') && tr.nodes().length > 0) {
     let shapes = tr.nodes();
 
     let newshapes = [];
@@ -140,13 +142,13 @@ window.addEventListener('keydown', function (event) {
     return;
   }
   let offset = DELTA;
-  if (event.ctrlKey && arrowKeys.includes(key)) {
+  if (ctrlKey && arrowKeys.includes(key)) {
     offset = 1;
   }
   if (key === 'ArrowLeft') {
-    tr.nodes().forEach((node) => {
-      node.x(node.x() - offset);
-    });
+    tr.nodes().forEach((node) => node.x(node.x() - offset));
+    const box = getTotalBox(tr.nodes().map((node) => node.getClientRect()));
+    tr.nodes().forEach((node) => restrcitToStage(node, box));
     stage.find('.line,.polyline,.polygone').forEach((l) => {
       let anchors = l.getParent().find('.line-anchor');
       if (anchors[0].visible()) {
@@ -162,9 +164,9 @@ window.addEventListener('keydown', function (event) {
     });
   }
   if (key === 'ArrowRight') {
-    tr.nodes().forEach((node) => {
-      node.x(node.x() + offset);
-    });
+    tr.nodes().forEach((node) => node.x(node.x() + offset));
+    const box = getTotalBox(tr.nodes().map((node) => node.getClientRect()));
+    tr.nodes().forEach((node) => restrcitToStage(node, box));
     stage.find('.line,.polyline,.polygone').forEach((l) => {
       let anchors = l.getParent().find('.line-anchor');
       if (anchors[0].visible()) {
@@ -180,9 +182,9 @@ window.addEventListener('keydown', function (event) {
     });
   }
   if (key === 'ArrowUp') {
-    tr.nodes().forEach((node) => {
-      node.y(node.y() - offset);
-    });
+    tr.nodes().forEach((node) => node.y(node.y() - offset));
+    const box = getTotalBox(tr.nodes().map((node) => node.getClientRect()));
+    tr.nodes().forEach((node) => restrcitToStage(node, box));
     stage.find('.line,.polyline,.polygone').forEach((l) => {
       let anchors = l.getParent().find('.line-anchor');
       if (anchors[0].visible()) {
@@ -198,9 +200,9 @@ window.addEventListener('keydown', function (event) {
     });
   }
   if (key === 'ArrowDown') {
-    tr.nodes().forEach((node) => {
-      node.y(node.y() + offset);
-    });
+    tr.nodes().forEach((node) => node.y(node.y() + offset));
+    const box = getTotalBox(tr.nodes().map((node) => node.getClientRect()));
+    tr.nodes().forEach((node) => restrcitToStage(node, box));
     stage.find('.line,.polyline,.polygone').forEach((l) => {
       let anchors = l.getParent().find('.line-anchor');
       if (anchors[0].visible()) {
@@ -277,10 +279,11 @@ alignBtns.forEach((btn) => {
         el?.classList.remove('active');
       });
     btn.classList.add('active');
-    tr.nodes().forEach((shp) => {
-      if (shp.name() === 'text') {
-        shp.setAttrs({ alignment: getCurrentAlignment() });
-        shp.setAttrs(calculateOffset(shp));
+    stage.find('.text-anchor').forEach((shp) => {
+      let txtNodes = stage.find('#' + shp.id().replace('anchor', ''));
+      if (txtNodes.length > 0 && shp.visible()) {
+        txtNodes[0].setAttrs({ alignment: getCurrentAlignment() });
+        txtNodes[0].setAttrs(calculateOffset(txtNodes[0]));
       }
     });
   });
@@ -289,6 +292,20 @@ function getCurrentAlignment() {
   let horz = document.querySelector('.alignBtn.hz.active').value;
   let vert = document.querySelector('.alignBtn.vt.active').value;
   return vert + '_' + horz;
+  //  return "TOP_LEFT";
+}
+function setCurrentAlignment(verthorz) {
+  verthorz = verthorz.split('_');
+  if (verthorz.length === 2) {
+    document.querySelector('.alignBtn.hz.active').classList.remove('active');
+    document.querySelector('.alignBtn.vt.active').classList.remove('active');
+    document
+      .querySelector('.alignBtn.hz[value="' + verthorz[1] + '"]')
+      .classList.add('active');
+    document
+      .querySelector('.alignBtn.vt[value="' + verthorz[0] + '"]')
+      .classList.add('active');
+  }
   //  return "TOP_LEFT";
 }
 function deleteSelected() {
@@ -315,6 +332,51 @@ var stage = new Konva.Stage({
 
 var layer = new Konva.Layer();
 stage.add(layer);
+// let borderRect = new Konva.Rect({
+//   height: height,
+//   name: 'border',
+//   width: width,
+//   stroke: '#FFFFFF',
+//   strokeWidth: 1,
+//   dash: [5, 10],
+//   visible: true,
+//   fillEnabled: false,
+// });
+// layer.add(borderRect);
+
+function getCorner(pivotX, pivotY, diffX, diffY, angle) {
+  const distance = Math.sqrt(diffX * diffX + diffY * diffY);
+
+  /// find angle from pivot to corner
+  angle += Math.atan2(diffY, diffX);
+
+  /// get new x and y and round it off to integer
+  const x = pivotX + distance * Math.cos(angle);
+  const y = pivotY + distance * Math.sin(angle);
+
+  return { x: x, y: y };
+}
+function getClientRect(rotatedBox) {
+  const { x, y, width, height } = rotatedBox;
+  const rad = rotatedBox.rotation;
+
+  const p1 = getCorner(x, y, 0, 0, rad);
+  const p2 = getCorner(x, y, width, 0, rad);
+  const p3 = getCorner(x, y, width, height, rad);
+  const p4 = getCorner(x, y, 0, height, rad);
+
+  const minX = Math.min(p1.x, p2.x, p3.x, p4.x);
+  const minY = Math.min(p1.y, p2.y, p3.y, p4.y);
+  const maxX = Math.max(p1.x, p2.x, p3.x, p4.x);
+  const maxY = Math.max(p1.y, p2.y, p3.y, p4.y);
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
+}
 
 const tr = new Konva.Transformer({
   anchorFill: '#526D82',
@@ -327,6 +389,18 @@ const tr = new Konva.Transformer({
   rotateEnabled: false,
   flipEnabled: true,
   borderStroke: '#526D82',
+  boundBoxFunc: (oldBox, newBox) => {
+    const box = getClientRect(newBox);
+    const isOut =
+      box.x < 0 ||
+      box.y < 0 ||
+      box.x + box.width > stage.width() ||
+      box.y + box.height > stage.height();
+    if (isOut) {
+      return oldBox;
+    }
+    return newBox;
+  },
 });
 tr.anchorCornerRadius(5);
 layer.add(tr);
@@ -644,6 +718,8 @@ stage.on('mouseup touchend', (e) => {
       .forEach((la) => {
         la.visible(true);
       });
+  } else if (selected.length === 1 && selected[0].name() === 'text') {
+    // tr.
   } else {
     tr.nodes(selected);
   }
@@ -668,14 +744,14 @@ function onClickEvent(e) {
   // if click on empty area - remove all selections
   if (e.target === stage) {
     tr.nodes([]);
-    stage.find('.line-anchor').forEach((la) => {
+    stage.find('.line-anchor,.text-anchor').forEach((la) => {
       la.visible(false);
     });
     tr.shouldOverdrawWholeArea(false);
     return;
   }
   // console.log(e);
-  // do nothing if clicked NOT on our rectangles
+  // do nothing if clicked NOT on our lines
   if (
     ['line', 'line-group', 'line-anchor', 'polyline', 'polygone'].includes(
       e.target.name()
@@ -693,6 +769,13 @@ function onClickEvent(e) {
         .forEach((la) => {
           la.visible(true);
         });
+    }
+    return;
+  } else if (e.target.name() === 'text') {
+    let _anch = stage.find('#' + e.target.id() + 'anchor');
+    if (_anch.length !== 0) {
+      _anch[0].visible(true);
+      setCurrentAlignment(e.target.getAttrs().alignment);
     }
     return;
   }
@@ -894,6 +977,9 @@ function createRectangle(id, attrs = null) {
   newrect.on('mouseleave', cursorChangeLeave);
   newrect.on('dragstart', cursorChangeDragstart);
   newrect.on('dragend', cursorChangeDragEnd);
+  newrect.on('dragmove', () => {
+    restrcitToStage(newrect, newrect.getClientRect());
+  });
   layer.add(newrect);
 }
 function createText(id, attrs = null) {
@@ -922,7 +1008,18 @@ function createText(id, attrs = null) {
   }
   var textNode = new Konva.Text(attrs);
   layer.add(textNode);
-
+  const anchor = new Konva.Circle({
+    x: textNode.x(),
+    y: textNode.y(),
+    radius: 5,
+    fill: '#526D82',
+    draggable: false,
+    name: 'text-anchor',
+    id: 'm' + id + 'anchor',
+    visible: false,
+  });
+  layer.add(anchor);
+  // anchor.on('dragmove', updateLine);
   textNode.on('transform', function () {
     //   // reset scale, so only with is changing by transformer
     textNode.setAttrs({
@@ -939,6 +1036,12 @@ function createText(id, attrs = null) {
   textNode.setAttrs(calculateOffset(textNode));
   textNode.on('dragstart', cursorChangeDragstart);
   textNode.on('dragend', cursorChangeDragEnd);
+  textNode.on('dragmove', () => {
+    anchor.setAttrs({
+      x: textNode.x(),
+      y: textNode.y(),
+    });
+  });
   textNode.on('mouseenter', cursorChangeEnter);
   textNode.on('mouseleave', cursorChangeLeave);
   textNode.on('dblclick dbltap', () => {
@@ -992,35 +1095,22 @@ function createText(id, attrs = null) {
     textarea.style.height = 'auto';
     // after browsers resized it we can set actual value
     textarea.style.height = textarea.scrollHeight + 3 + 'px';
-    tr.hide();
+    // tr.hide();
     textarea.focus();
     textNode.hide();
     function removeTextarea() {
       textarea.parentNode.removeChild(textarea);
       window.removeEventListener('click', handleOutsideClick);
       textNode.show();
-      tr.show();
-      tr.forceUpdate();
+      // tr.show();
+      // tr.forceUpdate();
+      textNode.setAttrs(calculateOffset(textNode));
+      anchor.setAttrs({
+        x: textNode.x(),
+        y: textNode.y(),
+      });
+      // anchor.visible(false);
       sendUIData();
-    }
-
-    function setTextareaWidth(newWidth) {
-      if (!newWidth) {
-        // set width for placeholder
-        newWidth = textNode.placeholder.length * textNode.fontSize();
-      }
-      // some extra fixes on different browsers
-      let isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-      if (isSafari || isFirefox) {
-        newWidth = Math.ceil(newWidth);
-      }
-
-      let isEdge = document.documentMode || /Edge/.test(navigator.userAgent);
-      if (isEdge) {
-        newWidth += 1;
-      }
-      textarea.style.width = newWidth + 'px';
     }
 
     textarea.addEventListener('keydown', function (e) {
@@ -1045,7 +1135,6 @@ function createText(id, attrs = null) {
     });
 
     function handleOutsideClick(e) {
-      yk;
       if (e.target !== textarea) {
         textNode.text(textarea.value);
         removeTextarea();
@@ -1059,7 +1148,52 @@ function createText(id, attrs = null) {
   movingId = null;
   // currentSelection = null;
 }
+function getTotalBox(boxes) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
 
+  boxes.forEach((box) => {
+    minX = Math.min(minX, box.x);
+    minY = Math.min(minY, box.y);
+    maxX = Math.max(maxX, box.x + box.width);
+    maxY = Math.max(maxY, box.y + box.height);
+  });
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
+}
+tr.on('dragmove', () => {
+  const boxes = tr.nodes().map((node) => node.getClientRect());
+  const box = getTotalBox(boxes);
+  tr.nodes().forEach((shape) => restrcitToStage(shape, box));
+});
+function restrcitToStage(shape, box) {
+  const absPos = shape.getAbsolutePosition();
+  // where are shapes inside bounding box of all shapes?
+  const offsetX = box.x - absPos.x;
+  const offsetY = box.y - absPos.y;
+
+  // we total box goes outside of viewport, we need to move absolute position of shape
+  const newAbsPos = { ...absPos };
+  if (box.x < 0) {
+    newAbsPos.x = -offsetX;
+  }
+  if (box.y < 0) {
+    newAbsPos.y = -offsetY;
+  }
+  if (box.x + box.width > stage.width()) {
+    newAbsPos.x = stage.width() - box.width - offsetX;
+  }
+  if (box.y + box.height > stage.height()) {
+    newAbsPos.y = stage.height() - box.height - offsetY;
+  }
+  shape.setAbsolutePosition(newAbsPos);
+}
 stage.on('dragmoveend', sendUIData);
 stage.on('dragmove', sendUIData);
 stage.on('transformend', sendUIData);
@@ -1150,38 +1284,38 @@ function calculateOffset(textNode) {
 }
 // for zoom and scroll
 
-var scaleBy = 1.01;
-stage.on('wheel', (e) => {
-  // stop default scrolling
-  e.evt.preventDefault();
+// var scaleBy = 1.01;
+// stage.on('wheel', (e) => {
+//   // stop default scrolling
+//   e.evt.preventDefault();
 
-  var oldScale = stage.scaleX();
-  var pointer = stage.getPointerPosition();
+//   var oldScale = stage.scaleX();
+//   var pointer = stage.getPointerPosition();
 
-  var mousePointTo = {
-    x: (pointer.x - stage.x()) / oldScale,
-    y: (pointer.y - stage.y()) / oldScale,
-  };
+//   var mousePointTo = {
+//     x: (pointer.x - stage.x()) / oldScale,
+//     y: (pointer.y - stage.y()) / oldScale,
+//   };
 
-  // how to scale? Zoom in? Or zoom out?
-  let direction = e.evt.deltaY > 0 ? 1 : -1;
+//   // how to scale? Zoom in? Or zoom out?
+//   let direction = e.evt.deltaY > 0 ? 1 : -1;
 
-  // when we zoom on trackpad, e.evt.ctrlKey is true
-  // in that case lets revert direction
-  if (e.evt.ctrlKey) {
-    direction = -direction;
-  }
+//   // when we zoom on trackpad, e.evt.ctrlKey is true
+//   // in that case lets revert direction
+//   if (e.evt.ctrlKey) {
+//     direction = -direction;
+//   }
 
-  var newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+//   var newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
 
-  stage.scale({ x: newScale, y: newScale });
+//   stage.scale({ x: newScale, y: newScale });
 
-  var newPos = {
-    x: pointer.x - mousePointTo.x * newScale,
-    y: pointer.y - mousePointTo.y * newScale,
-  };
-  stage.position(newPos);
-});
+//   var newPos = {
+//     x: pointer.x - mousePointTo.x * newScale,
+//     y: pointer.y - mousePointTo.y * newScale,
+//   };
+//   stage.position(newPos);
+// });
 
 function updateColor(color, colorname = false) {
   tr.nodes().forEach((node) => {
@@ -1212,6 +1346,13 @@ function updateColor(color, colorname = false) {
     if (l.getParent().find('.line-anchor')[0].visible()) {
       l.stroke(color);
       l.setAttrs({ colorname });
+    }
+  });
+  stage.find('.text-anchor').forEach((shp) => {
+    let txtNodes = stage.find('#' + shp.id().replace('anchor', ''));
+    if (txtNodes.length > 0 && shp.visible()) {
+      txtNodes[0].fill(color);
+      txtNodes[0].setAttrs({ colorname });
     }
   });
   stage.find('.polygone').forEach((l) => {
