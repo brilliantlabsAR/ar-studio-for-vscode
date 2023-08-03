@@ -1,8 +1,9 @@
 name: CI Universal
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:    
+      - main
 jobs:
   build:
     strategy:
