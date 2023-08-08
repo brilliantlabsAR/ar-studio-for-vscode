@@ -170,13 +170,13 @@ export async function updateFPGA(file: ArrayBuffer) {
 export async function downloadLatestFpgaImage() {
   let chiprev = "revC";
 
-  let chipresponse:any = await replSend("import fpga;print(fpga.version())");
-  if (chipresponse && chipresponse.includes("revB")) {
-    chiprev = "revB";
-  }
+  // let chipresponse:any = await replSend("import fpga;print(fpga.version())");
+  // if (chipresponse && chipresponse.includes("revB")) {
+  //   chiprev = "revB";
+  // }
 
   outputChannel.appendLine(
-    "Downloading latest " + chiprev + " release from: github.com/" +
+    "Downloading latest release from: github.com/" +
       fpgaGit.owner +
       "/" +
       fpgaGit.repo
@@ -192,13 +192,15 @@ export async function downloadLatestFpgaImage() {
 
   let assetId;
   response.data.assets.forEach((item: any, index: number) => {
-    if (item.name.includes('revC.bin') && chiprev === "revC") {
+    // if (item.name.includes('revC.bin') && chiprev === "revC") {
+      if (item.name.includes('.bin')) {
       assetId = item.id;
-  }
+      }
+  // }
 
-  if (item.name.includes('revB.bin') && chiprev === "revB") {
-      assetId = item.id;
-    }
+  // if (item.name.includes('revB.bin') && chiprev === "revB") {
+  //     assetId = item.id;
+  //   }
   });
 
   response = await request(
