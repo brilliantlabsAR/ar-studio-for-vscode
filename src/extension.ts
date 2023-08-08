@@ -699,6 +699,10 @@ export async function activate(context: vscode.ExtensionContext) {
 				let rootUri = vscode.workspace.workspaceFolders[0].uri;
 				let projectPath = vscode.Uri.joinPath(rootUri,monocleFolder);
 				let filesMapped:FileMaps[] = [];
+				vscode.window.visibleTextEditors.forEach(ed=>{
+                    ed.document.save();
+                });
+
 				for (let source in mappedFiles) {
 					let files = await vscode.workspace.findFiles(new vscode.RelativePattern(rootUri, '*'+source.slice(1)));
 					if(files.length>0){
