@@ -200,7 +200,9 @@ async function transferFile(file:any, type:any) {
 
         if (returnedCrc !== chunkCrc) {
              vscode.window.showErrorMessage('CRC mismatch after sending this chunk. Expected: ' + chunkCrc);
-             return Promise.reject('');
+             chk--;
+             continue;
+            //  return Promise.reject('');
         }
 
         // Execute command

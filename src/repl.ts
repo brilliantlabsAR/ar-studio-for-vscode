@@ -335,7 +335,7 @@ export async function triggerFpgaUpdate(binPath?:vscode.Uri){
           }
         
         fpgaUpdateInProgress = true;
-        await updateFPGA(file).catch(console.log);
+        await updateFPGA(file);
         fpgaUpdateInProgress = false;
     
         await replRawMode(false);
