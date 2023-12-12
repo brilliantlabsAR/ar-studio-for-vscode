@@ -23,7 +23,9 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 16.x
-      - run: npm install
+      - run: |
+            python3 -m pip install setuptools
+            npm install
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_arch: ${{ matrix.npm_config_arch }}
