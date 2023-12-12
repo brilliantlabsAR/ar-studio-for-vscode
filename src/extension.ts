@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs'; // In NodeJS: 'const fs = require('fs')'
 import * as path from 'path';
 import { isConnected,disconnect,sendRawData } from './bluetooth';
-import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate,replRawModeEnabled,colorText, FileMaps} from './repl';
+import {ensureConnected,terminalHandleInput,sendFileUpdate,triggerFpgaUpdate,replRawModeEnabled,internalOperation,colorText, FileMaps} from './repl';
 import {ProjectProvider, GitOperation, cloneAndOpenRepo} from './projects';
 import { SnippetProvider } from './snippets/provider';
 import { UIEditorPanel } from "./UIEditorPanel";
@@ -171,7 +171,7 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 		close: () => { /* noop*/ },
 		handleInput: (data: string) => {
 			// console.log(data);
-			if(!replRawModeEnabled){
+			if(!replRawModeEnabled && !internalOperation){
 				let byteData = encoder.encode(data);
 				if(byteData.length===1){
 					
@@ -627,7 +627,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 		//open any device file to local or in virtual path
 		vscode.commands.registerCommand('brilliant-ar-studio.openDeviceFile', async (thiscontext) => {
-			let localPath = vscode.Uri.parse(myscheme+':' + thiscontext?.path);
+			let randomNumber = Math.floor(Math.random()*100);
+			let localPath = vscode.Uri.parse(myscheme+':' + thiscontext?.path+'?v='+randomNumber.toString());
 			let doc = await vscode.workspace.openTextDocument(localPath);
 			await vscode.window.showTextDocument(doc);
 			

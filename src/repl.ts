@@ -1,4 +1,4 @@
-import { isConnected, replDataTxQueue,connect,disconnect, deviceInfo } from './bluetooth';
+import { isConnected, replDataTxQueue,connect,disconnect, deviceInfo, frameDataTxQueue,maxmtu } from './bluetooth';
 import { checkForUpdates, startFirmwareUpdate, downloadLatestFpgaImage, updateFPGA } from "./update";
 import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus, deviceTreeProvider, monocleFolder,deviceInfoWebview } from './extension';
 import { startNordicDFU } from './nordicdfu'; 
@@ -11,9 +11,13 @@ let fpgaUpdateInProgress: any = false;
 let progressReport:any;
 export let replRawModeEnabled = false;
 let rawReplResponseString = '';
+let frameResponseString = '';
 let rawReplResponseCallback:any;
+let frameResponseCallback:any;
 let fileWriteStart = false;
-let internalOperation = false;
+export let internalOperation = false;
+let deviceConnected = "Monocle";
+let frameStringBuffer = "";
 const decoder = new util.TextDecoder('utf-8');
 const RESET_CMD = '\x03\x04';
 const FILE_WRITE_MAX = 1000000;
@@ -41,7 +45,47 @@ export async function replRawMode(enable:boolean) {
     replRawModeEnabled = false;
     
 }
-
+export async function frameSend(string:string,longWait?:boolean){
+ 
+    ensureConnected();
+    if (!isConnected()) {
+        return;
+    }
+   
+    frameStringBuffer += string;
+    if(frameStringBuffer==="\r"){
+        frameStringBuffer = "print('');\r";
+    }
+    if(frameStringBuffer.endsWith("\r")){
+        if(internalOperation){
+            frameStringBuffer += ";print('<|END');";
+        }
+        if(!frameStringBuffer.includes("print")){
+            frameStringBuffer += "print('');";
+        }
+    // Encode the UTF-8 string into an array and populate the buffer
+    const encoder = new util.TextEncoder('utf-8');
+    frameDataTxQueue.push.apply(frameDataTxQueue, encoder.encode(frameStringBuffer));
+    frameStringBuffer ="";
+    // Return a promise which calls a function that'll eventually run when the
+    // response handler calls the function associated with rawReplResponseCallback
+    return new Promise(resolve => {
+        frameResponseCallback = function (responseString:string) {
+            outputChannel.appendLine('FRAME ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'));
+            resolve(responseString);
+        };
+        if(!longWait){
+            setTimeout(() => {
+                resolve(null);
+            }, 5000);
+        }
+        
+    });
+    }else{
+        return;
+    }
+    
+}
 export async function replSend(string:string) {
 
     ensureConnected();
@@ -88,7 +132,7 @@ let initializedWorkspace = false;
 export async function ensureConnected() {
     
     if (isConnected() === true) {
-        updateStatusBarItem("connected");
+        updateStatusBarItem("connected",deviceConnected);
         return;
     }
     updateStatusBarItem("progress");
@@ -201,6 +245,25 @@ export async function ensureConnected() {
             }  
             await replSend('\x02'); 
         }
+        if(connectionResult === "frame connected"){
+            deviceConnected = "Frame";
+            vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', true);
+                // writeEmitter.fire("Connected\r\n");
+                updateStatusBarItem("connected",deviceConnected);
+            let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
+            if(allTerminals.length>0){
+                allTerminals[0].show();
+                vscode.commands.executeCommand('workbench.action.terminal.clear');
+                
+            } 
+            await frameSend("print('Frame ' .. frame.FIRMWARE_VERSION .. ' - '.. frame.GIT_TAG);\r"); 
+            try {
+                await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
+            } catch (error) {
+                
+            }
+           
+        }
     }
 
     catch (error:any) {
@@ -215,6 +278,29 @@ export async function ensureConnected() {
     }
 }
 
+export function frameHandleResponse(string:string) {
+console.log(string);
+    if(fileWriteStart){
+    writeEmitter.fire(string);
+        return;
+    }
+    if(internalOperation){
+        frameResponseString += string;
+        // Once the end of response '>' is received, run the callbacks
+        if (string.endsWith('<|END')) {
+            frameResponseCallback(frameResponseString.replace('<|END',''));
+            frameResponseString = '';
+        }
+        // frameResponseCallback(string);
+        return;
+    }
+    if(string.trimEnd()!==""){
+        writeEmitter.fire("\n\r"+string.trimEnd()+"\n\r> ");
+    }else{
+        writeEmitter.fire("\n\r> ");
+    }
+   
+}
 export function replHandleResponse(string:string) {
 
     if (replRawModeEnabled === true) {
@@ -353,7 +439,9 @@ export async function triggerFpgaUpdate(binPath?:vscode.Uri){
 
 //  close the file operation and raw mode
 async function exitRawReplInternal(){
-    await replRawMode(false);
+    if(deviceConnected!=="Frame"){
+        await replRawMode(false);
+    }
     internalOperation = false;
 }
 
@@ -362,6 +450,7 @@ async function enterRawReplInternal(){
     if (!isConnected()) {
         return false;
     }
+   
     //  check if already a file operation going on
     if(replRawModeEnabled || internalOperation){
         await new Promise(r => {
@@ -375,8 +464,11 @@ async function enterRawReplInternal(){
             },10);
         });
     }
+    
     internalOperation = true;
-    await replRawMode(true);
+    if(deviceConnected!=="Frame"){
+        await replRawMode(true);
+    }
     await new Promise(r => setTimeout(r, 10));
     return true;
 }
@@ -384,6 +476,26 @@ async function enterRawReplInternal(){
 // list files and folders for the device under given path
 export async function listFilesDevice(currentPath="/"):Promise<string[]>{
 
+    if(deviceConnected==="Frame"){
+        internalOperation = true;
+        let cmd =`l=frame.file.listdir('${currentPath}');`;
+        await frameSend(cmd+'\r'); //0=size,1=type,2=name
+        cmd = `for _, b in ipairs(l) do 
+print(b[2]..'|'..b[1]..'\\n')
+end;`;
+        let response :any = await frameSend(cmd+'\r');
+        if(!response.includes('|')){
+            vscode.window.showErrorMessage(response);
+            return [];
+        }
+        let items = response.split("\n").filter((s:string)=>!(s.startsWith("..|") || s.startsWith(".|") || s.trim()===""));
+        let files = items.map((it:string)=>{
+            let tuple = it.split("|");
+            return {"name":tuple[0],"file" : tuple[1]==="1"};
+        });
+        internalOperation = false;
+        return files;
+    }
     if(!await enterRawReplInternal()){return[];};
     let cmd = `import os,ujson;
 d="${currentPath}"
@@ -428,15 +540,25 @@ export function colorText(text: string, colorIndex=4): string {
 	return output;
 }
 const updateToTerminal = function (msg:string,colorIndex=4){
-    writeEmitter.fire('\n\r'+colorText(msg,colorIndex)+'\n\r>>> ');
+    if(deviceConnected==="Frame"){
+        writeEmitter.fire('\n\r'+colorText(msg,colorIndex)+'\n\r> ');
+    }else{
+        writeEmitter.fire('\n\r'+colorText(msg,colorIndex)+'\n\r>>> ');
+    }
 
 };
 //  create directory recursively
 export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
-   
+    let response:any;
     if(!await enterRawReplInternal()){return false;};
-    let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}');del(md,os)`;
-    let response:any = await replSend(dirMakeCmd);
+    if(deviceConnected==="Frame"){
+        let dirMakeCmd = `a=frame.file.mkdir('${devicePath}');print(a);\r`;
+        response = await frameSend(dirMakeCmd);
+    }else{
+        let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}');del(md,os)`;
+        response = await replSend(dirMakeCmd);
+    }
+    
     updateToTerminal(`Creating  ${devicePath} `);
     await exitRawReplInternal();
     if(response && !response.includes("Error")){
@@ -449,51 +571,20 @@ export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
 export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string):Promise<boolean>{
     
     if(!await enterRawReplInternal()){return false;};
-    // if(devicePath!==''){
-        let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}')`;
-        await replSend(dirMakeCmd);
-    // }
-
+        if(deviceConnected==="Frame"){
+            let dirMakeCmd = `a=frame.file.mkdir('${devicePath}');print(a);\r`;
+            await frameSend(dirMakeCmd);
+        }else{
+            let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}')`;
+            await replSend(dirMakeCmd);
+        }
+    await exitRawReplInternal();
     await new Promise(async (res,rej)=>{
         for (let index = 0; index < uris.length; index++) {
             const uri = uris[index];
-            
-        // uris.forEach(async (uri:vscode.Uri,index:number)=>{
             try {
-                // let absPath = uri.path.replaceAll("\\","/");
-                // let dPath = absPath.slice(absPath.indexOf(devicePath));
-                // if(devicePath===''){
-                //     dPath = absPath.slice(absPath.indexOf(monocleFolder)+monocleFolder.length+1);
-                // }
                 let dPath = devicePath + '/'+ path.posix.basename(uri.path);
-                let segments = dPath.split('/');
-                let fileWriteCmd = "";
-                if(segments.length>1){
-                    let newDirTocreate = segments.slice(0,segments.length-1).join("/");
-                    if(newDirTocreate!==devicePath){
-                        fileWriteCmd += `md('${newDirTocreate}')\n`;
-                    }
-                }
-                let fileData = await vscode.workspace.fs.readFile(uri);
-        
-                if(fileData.byteLength===0){
-                    
-                    fileWriteCmd += "f = open('"+ dPath +"', 'w');f.write('');f.close()";
-                    let response:any = await replSend(fileWriteCmd);
-                    updateToTerminal(`Creating  ${dPath} `);
-                    if(response &&  response.includes("Error")){
-                        vscode.window.showInformationMessage('File Transfer failed for '+uri.path);
-                    };
-                }
-                if(fileData.byteLength<=FILE_WRITE_MAX && fileData.byteLength>0){
-                    
-                    fileWriteCmd +=`f=open('${dPath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`;
-                    let response:any = await replSend(fileWriteCmd);
-                    updateToTerminal(`Updating  ${dPath} `);
-                    if(response &&  response.includes("Error")){
-                        vscode.window.showInformationMessage('File Transfer failed for '+uri.path);
-                    };
-                }
+                await creatUpdateFileDevice(uri,dPath);
                 if(index===(uris.length-1)){
                     res("");
                 }
@@ -508,10 +599,10 @@ export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string)
         }
        
     });
-    await replSend("\x03");
+    if(deviceConnected!=="Frame"){
+        await replSend("\x03");
+    }
     await exitRawReplInternal();
-    // updateToTerminal(`Applying Reset (ctrl-D)`,3);
-    // await replSend(RESET_CMD);
     return true;
 }
 //  Build (upload all mapped files)
@@ -521,48 +612,14 @@ export interface FileMaps {
 }
 export async function buildMappedFiles(fileMaps:FileMaps[]):Promise<boolean>{
     
-    if(!await enterRawReplInternal()){return false;}
 
     await new Promise(async (res,rej)=>{
         for (let index = 0; index < fileMaps.length; index++) {
             const fileMAp = fileMaps[index];
             
-        // uris.forEach(async (uri:vscode.Uri,index:number)=>{
             try {
-                // let absPath = uri.path.replaceAll("\\","/");
-                // let dPath = absPath.slice(absPath.indexOf(devicePath));
-                // if(devicePath===''){
-                //     dPath = absPath.slice(absPath.indexOf(monocleFolder)+monocleFolder.length+1);
-                // }
                 let dPath = fileMAp.devicePath;
-                let segments = dPath.split('/');
-                let fileWriteCmd = "";
-                if(segments.length>1){
-                    let newDirTocreate = segments.slice(0,segments.length-1).join("/");
-                    if(newDirTocreate!==fileMAp.devicePath){
-                        fileWriteCmd += DIR_MAKE_CMD+`md('${newDirTocreate}')\n`;
-                    }
-                }
-                let fileData = await vscode.workspace.fs.readFile(fileMAp.uri);
-        
-                if(fileData.byteLength===0){
-                    
-                    fileWriteCmd += "f = open('"+ dPath +"', 'w');f.write('');f.close()";
-                    let response:any = await replSend(fileWriteCmd);
-                    updateToTerminal(`Creating  ${dPath} `);
-                    if(response &&  response.includes("Error")){
-                        vscode.window.showInformationMessage('File Transfer failed for '+fileMAp.uri.path);
-                    };
-                }
-                if(fileData.byteLength<=FILE_WRITE_MAX && fileData.byteLength>0){
-                    
-                    fileWriteCmd +=`f=open('${dPath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`;
-                    let response:any = await replSend(fileWriteCmd);
-                    updateToTerminal(`Updating  ${dPath} `);
-                    if(response &&  response.includes("Error")){
-                        vscode.window.showInformationMessage('File Transfer failed for '+fileMAp.uri.path);
-                    };
-                }
+                await creatUpdateFileDevice(fileMAp.uri,dPath);
                 if(index===(fileMaps.length-1)){
                     res("");
                 }
@@ -577,19 +634,45 @@ export async function buildMappedFiles(fileMaps:FileMaps[]):Promise<boolean>{
         }
        
     });
-    await replSend("\x03");
+    if(deviceConnected!=="Frame"){
+        updateToTerminal(`Applying Reset (ctrl-D)`,3);
+        await replSend(RESET_CMD);
+    }
     await exitRawReplInternal();
-    updateToTerminal(`Applying Reset (ctrl-D)`,3);
-    await replSend(RESET_CMD);
     return true;
 }
 //  create or update individual file on device
 export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):Promise<boolean>{
-    
     if(!await enterRawReplInternal()){return false;};
-    // let absPath = uri.path.replaceAll("\\","/");
-    // let dPath = absPath.slice(absPath.indexOf(devicePath));
     let segments = devicePath.split('/');
+    let fileData = await vscode.workspace.fs.readFile(uri);
+    if(deviceConnected==="Frame"){
+        if(segments.length>1){
+            let newDirTocreate = segments.slice(0,segments.length-1).join("/");
+                if(newDirTocreate!==devicePath){
+                    let dirCreate = `a=frame.file.mkdir('${newDirTocreate}');print(a);\r`;
+                    await frameSend(dirCreate);
+                }
+        }
+        if(fileData.byteLength===0){
+            await frameSend("f = frame.file.open('"+ devicePath +"', 'w');f:write('');print(f:close());\r");
+            updateToTerminal(`Creating  ${devicePath} `);
+        }else{
+            await frameSend("f = frame.file.open('"+ devicePath +"', 'w');print(f);\r");
+            const dataString = decoder.decode(fileData);
+            let chunkSize = maxmtu-40;
+            for (let i = 0; i < dataString.length; i += chunkSize) {
+                const chunk = dataString.substring(i, i + chunkSize);
+                await frameSend(`print(f:write([[${chunk}]]));\r`);
+            }
+            await frameSend("print(f:close());\r");
+            // await frameSend(`f:write([[${decoder.decode(fileData)}]]);print(f:close());\r`);
+            updateToTerminal(`Updating  ${devicePath} `);
+        }
+        await exitRawReplInternal();
+        return true;
+    }
+   
     if(segments.length>1){
         let newDirTocreate = segments.slice(0,segments.length-1).join("/");
             if(newDirTocreate!==devicePath){
@@ -597,7 +680,6 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
                     await replSend(dirCreate);
             }
     }
-    let fileData = await vscode.workspace.fs.readFile(uri);
 
     if(fileData.byteLength===0){
         
@@ -634,8 +716,15 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
 }
 //  rename or move files and folders on device
 export async function renameFileDevice(oldDevicePath:string, newDevicePath:string):Promise<boolean>{
-    
     if(!await enterRawReplInternal()){return false;};
+    if(deviceConnected==="Frame"){
+        let response:any = await frameSend(`print(frame.file.rename('${oldDevicePath}','${newDevicePath}'));\r`);
+        updateToTerminal(`Renaming ${oldDevicePath} To ${newDevicePath} `);
+        await exitRawReplInternal();
+
+        return response.includes('true');
+    }
+    
     
     let cmd = `import os;
 os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
@@ -652,8 +741,16 @@ os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
 
 //  reading a individual file data from device
 export async function readFileDevice(devicePath:string):Promise<boolean|string>{
-   
     if(!await enterRawReplInternal()){return false;};
+    if(deviceConnected==="Frame"){
+        await frameSend(`f=frame.file.open('${devicePath}');\r`);
+        await frameSend(`a=f:read('a');f:close();\r`);
+        let cmd = `for i=1,750,250 do print(string.sub(a,i,i+250-1))end;`;
+        let response:any = await frameSend(cmd+'\r',true);
+        await exitRawReplInternal();
+        return response;
+    }
+   
 
     let cmd = `f=open('${devicePath}');print(f.read());f.close();del(f)`;
     let response:any = await replSend(cmd);
@@ -666,6 +763,15 @@ export async function readFileDevice(devicePath:string):Promise<boolean|string>{
 export async function deleteFilesDevice(devicePath:string):Promise<boolean>{
 
     if(!await enterRawReplInternal()){return false;};
+    if(deviceConnected==="Frame"){
+        internalOperation = true;
+        let response:any = await frameSend(`print(frame.file.remove('${devicePath}'));\r`);
+        internalOperation = false;
+        await exitRawReplInternal();
+        return response.includes('true');
+        
+    }
+    
     updateToTerminal(`Deleting  ${devicePath} `);
     let cmd = `import os;
 def rm(d):
@@ -703,5 +809,17 @@ export async function terminalHandleInput(data:string){
             },10);
         });
     }
-    replSend(data);
+    if(deviceConnected==="Frame"){
+        
+        if(data.charCodeAt(0)===127){
+            writeEmitter.fire("\b \b");
+            frameStringBuffer = frameStringBuffer.slice(0,frameStringBuffer.length-1);
+            return;
+        }
+        writeEmitter.fire(data);
+        frameSend(data);
+    }else{
+        replSend(data);
+    }
+    
 }

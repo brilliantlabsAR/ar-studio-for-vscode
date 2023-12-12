@@ -1,5 +1,5 @@
 
-import { replHandleResponse,onDisconnect,colorText } from "./repl";
+import { replHandleResponse,onDisconnect,colorText, frameHandleResponse } from "./repl";
 import { nordicDfuHandleControlResponse } from './nordicdfu';
 import {writeEmitterRaw} from './extension';
 import * as vscode from 'vscode';
@@ -19,6 +19,12 @@ const replDataServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 const replRxCharacteristicUuid = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 const replTxCharacteristicUuid = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 
+let frameRxCharacteristic:any = null;
+let frameTxCharacteristic:any = null;
+const frameServiceUUID = "7a230001-5475-a6a4-654c-8431f6ad49c4";
+const frameRxCharacteristicsUUID = "7a230002-5475-a6a4-654c-8431f6ad49c4";
+const frameTxCharacteristicsUUID = "7a230003-5475-a6a4-654c-8431f6ad49c4";
+
 let rawDataRxCharacteristic:any = null;
 let rawDataTxCharacteristic = null;
 const rawDataServiceUuid = "e5700001-7bac-429a-b4ce-57ff900f479d";
@@ -26,6 +32,7 @@ const rawDataRxCharacteristicUuid = "e5700002-7bac-429a-b4ce-57ff900f479d";
 const rawDataTxCharacteristicUuid = "e5700003-7bac-429a-b4ce-57ff900f479d";
 
 export const replDataTxQueue = [];
+export const frameDataTxQueue = [];
 export const rawDataTxQueue = [];
 type DeviceInfo = {
     macAddress?:string,
@@ -35,11 +42,12 @@ type DeviceInfo = {
 };
 export var deviceInfo:DeviceInfo = {};
 let replTxTaskIntervalId:any = null;
+let frameTxTaskIntervalId:any = null;
 let replDataTxInProgress = false;
-let rawDataTxInProgress = false;
+let frameDataTxInProgress = false;
 
 // Web-Bluetooth doesn't have any MTU API, so we just set it to something reasonable
-const maxmtu:any = 100;
+export const maxmtu:any = 100;
 export function convertToLittleEndian(macAddress:string):string {
     // Split the MAC address into an array of hexadecimal values
     var macAddressBytes = macAddress.split(":").map((hex:any) => parseInt(hex, 16));
@@ -101,6 +109,7 @@ export async function connect() {
             filters: [
                 { services: [replDataServiceUuid] },
                 { services: [nordicDfuServiceUuid] },
+                { services : [frameServiceUUID]}
             ],
             optionalServices: [rawDataServiceUuid],
             deviceFound:  function(bleDevice:any,selectFn:any){
@@ -152,6 +161,8 @@ export async function connect() {
         .catch(() => { });
     const replService = await server.getPrimaryService(replDataServiceUuid)
         .catch((err:any) => { console.log(err); });
+    const frameService = await server.getPrimaryService(frameServiceUUID)
+        .catch((err:any) => { console.log(err); });
     const rawDataService = await server.getPrimaryService(rawDataServiceUuid)
         .catch(() => { });
 
@@ -164,14 +175,23 @@ export async function connect() {
         return Promise.resolve("dfu connected");
     }
 
+    if (frameService) {
+        frameRxCharacteristic = await frameService.getCharacteristic(frameRxCharacteristicsUUID);
+        frameTxCharacteristic = await frameService.getCharacteristic(frameTxCharacteristicsUUID);
+        await frameTxCharacteristic.startNotifications();
+        frameTxCharacteristic.addEventListener('characteristicvaluechanged', receiveFrameData);
+        frameTxTaskIntervalId = setInterval(transmitFrameData);
+        connectionInProgress = 0;
+        return Promise.resolve("frame connected");
+    }
     if (replService) {
         replRxCharacteristic = await replService.getCharacteristic(replRxCharacteristicUuid);
         replTxCharacteristic = await replService.getCharacteristic(replTxCharacteristicUuid);
         await replTxCharacteristic.startNotifications();
         replTxCharacteristic.addEventListener('characteristicvaluechanged', receiveReplData);
         replTxTaskIntervalId = setInterval(transmitReplData);
-    }
 
+    }
     
     if (rawDataService) {
         rawDataRxCharacteristic = await rawDataService.getCharacteristic(rawDataRxCharacteristicUuid);
@@ -197,6 +217,7 @@ export async function disconnect() {
 
     // Stop transmitting data
     clearInterval(replTxTaskIntervalId);
+    clearInterval(frameTxTaskIntervalId);
 
     // Callback to main.js
     onDisconnect();
@@ -221,7 +242,42 @@ function receiveReplData(event:any) {
 
     replHandleResponse(decoder.decode(event.target.value));
 }
+function receiveFrameData(event:any){
+    const decoder = new util.TextDecoder('utf-8');
+   frameHandleResponse(decoder.decode(event.target.value));
+}
+async function transmitFrameData() {
+    if (frameDataTxInProgress === true) {
+        return;
+    }
 
+    if (frameDataTxQueue.length === 0) {
+        return;
+    }
+
+    frameDataTxInProgress = true;
+
+    const payload = frameDataTxQueue.slice(0, maxmtu);
+
+    await frameRxCharacteristic.writeValueWithoutResponse(new Uint8Array(payload))
+        .then(() => {
+            frameDataTxQueue.splice(0, payload.length);
+            frameDataTxInProgress = false;
+            return;
+        })
+        .catch((error:any) => {
+            console.log(error);
+            if (error === "NetworkError: GATT operation already in progress.") {
+                // Ignore busy errors. Just wait and try again later
+            }
+            else {
+                // Discard data on other types of error
+                frameDataTxQueue.splice(0, payload.length);
+                frameDataTxInProgress = false;
+                // return Promise.reject(error);
+            }
+        });
+}
 async function transmitReplData() {
 
     if (replDataTxInProgress === true) {
