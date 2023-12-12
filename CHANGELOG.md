@@ -83,3 +83,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - context menu in device files
 
 ## [1.15.0] - 2023-07-13
+
+### IMPROVEMENT
+
+- file upload in chunk to save ram usage
+- fixed typo in snippets bugs
+
+## [1.19.2] - 2023-12-12

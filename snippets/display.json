@@ -186,7 +186,7 @@
   },
   "HEIGHT": {
     "prefix": "HEIGHT",
-    "body": "display.MIDDLE_CENTER",
+    "body": "display.HEIGHT",
     "description": "Justifies a text object on its x, y coordinate to the top right."
   }
 }

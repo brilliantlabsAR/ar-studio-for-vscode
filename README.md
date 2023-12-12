@@ -69,9 +69,9 @@ Browse community projects, or publish your own:
 9. Send Raw Data: data can be directly send at data service to monocle. This data can be received inside monocle by `bluetooth.receive_callback()`. To use the play button at title bar of `file explorer` -> `Brilliant AR Studio: device files` or command `Brilliant AR Studio: Send Raw Data`
 
 10. Context Menu: on right clicking on device files in `file explorer` -> `Brilliant AR Studio: device files` you can perform:
-11. Download of files from Device
-12. Rename of files
-13. Delete from device
+    a. Download of files from Device
+    b. Rename of files
+    c. Delete from device
 
 # Create and Edit display screens with DRAG-DROP UI:
 
