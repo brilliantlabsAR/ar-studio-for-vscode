@@ -627,7 +627,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 		//open any device file to local or in virtual path
 		vscode.commands.registerCommand('brilliant-ar-studio.openDeviceFile', async (thiscontext) => {
-			let localPath = vscode.Uri.parse(myscheme+':' + thiscontext?.path);
+			let randomNumber = Math.floor(Math.random()*100);
+			let localPath = vscode.Uri.parse(myscheme+':' + thiscontext?.path+'?v='+randomNumber.toString());
 			let doc = await vscode.workspace.openTextDocument(localPath);
 			await vscode.window.showTextDocument(doc);
 			
