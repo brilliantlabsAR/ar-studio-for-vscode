@@ -448,7 +448,7 @@ export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
 //  upload files recursively to device
 export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string):Promise<boolean>{
     
-    if(!await enterRawReplInternal()){return false;};
+    // if(!await enterRawReplInternal()){return false;};
     // if(devicePath!==''){
         let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}')`;
         await replSend(dirMakeCmd);
@@ -457,43 +457,9 @@ export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string)
     await new Promise(async (res,rej)=>{
         for (let index = 0; index < uris.length; index++) {
             const uri = uris[index];
-            
-        // uris.forEach(async (uri:vscode.Uri,index:number)=>{
             try {
-                // let absPath = uri.path.replaceAll("\\","/");
-                // let dPath = absPath.slice(absPath.indexOf(devicePath));
-                // if(devicePath===''){
-                //     dPath = absPath.slice(absPath.indexOf(monocleFolder)+monocleFolder.length+1);
-                // }
                 let dPath = devicePath + '/'+ path.posix.basename(uri.path);
-                let segments = dPath.split('/');
-                let fileWriteCmd = "";
-                if(segments.length>1){
-                    let newDirTocreate = segments.slice(0,segments.length-1).join("/");
-                    if(newDirTocreate!==devicePath){
-                        fileWriteCmd += `md('${newDirTocreate}')\n`;
-                    }
-                }
-                let fileData = await vscode.workspace.fs.readFile(uri);
-        
-                if(fileData.byteLength===0){
-                    
-                    fileWriteCmd += "f = open('"+ dPath +"', 'w');f.write('');f.close()";
-                    let response:any = await replSend(fileWriteCmd);
-                    updateToTerminal(`Creating  ${dPath} `);
-                    if(response &&  response.includes("Error")){
-                        vscode.window.showInformationMessage('File Transfer failed for '+uri.path);
-                    };
-                }
-                if(fileData.byteLength<=FILE_WRITE_MAX && fileData.byteLength>0){
-                    
-                    fileWriteCmd +=`f=open('${dPath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`;
-                    let response:any = await replSend(fileWriteCmd);
-                    updateToTerminal(`Updating  ${dPath} `);
-                    if(response &&  response.includes("Error")){
-                        vscode.window.showInformationMessage('File Transfer failed for '+uri.path);
-                    };
-                }
+                await creatUpdateFileDevice(uri,dPath);
                 if(index===(uris.length-1)){
                     res("");
                 }
@@ -509,7 +475,7 @@ export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string)
        
     });
     await replSend("\x03");
-    await exitRawReplInternal();
+    // await exitRawReplInternal();
     // updateToTerminal(`Applying Reset (ctrl-D)`,3);
     // await replSend(RESET_CMD);
     return true;
@@ -521,7 +487,7 @@ export interface FileMaps {
 }
 export async function buildMappedFiles(fileMaps:FileMaps[]):Promise<boolean>{
     
-    if(!await enterRawReplInternal()){return false;}
+    // if(!await enterRawReplInternal()){return false;}
 
     await new Promise(async (res,rej)=>{
         for (let index = 0; index < fileMaps.length; index++) {
@@ -529,40 +495,7 @@ export async function buildMappedFiles(fileMaps:FileMaps[]):Promise<boolean>{
             
         // uris.forEach(async (uri:vscode.Uri,index:number)=>{
             try {
-                // let absPath = uri.path.replaceAll("\\","/");
-                // let dPath = absPath.slice(absPath.indexOf(devicePath));
-                // if(devicePath===''){
-                //     dPath = absPath.slice(absPath.indexOf(monocleFolder)+monocleFolder.length+1);
-                // }
-                let dPath = fileMAp.devicePath;
-                let segments = dPath.split('/');
-                let fileWriteCmd = "";
-                if(segments.length>1){
-                    let newDirTocreate = segments.slice(0,segments.length-1).join("/");
-                    if(newDirTocreate!==fileMAp.devicePath){
-                        fileWriteCmd += DIR_MAKE_CMD+`md('${newDirTocreate}')\n`;
-                    }
-                }
-                let fileData = await vscode.workspace.fs.readFile(fileMAp.uri);
-        
-                if(fileData.byteLength===0){
-                    
-                    fileWriteCmd += "f = open('"+ dPath +"', 'w');f.write('');f.close()";
-                    let response:any = await replSend(fileWriteCmd);
-                    updateToTerminal(`Creating  ${dPath} `);
-                    if(response &&  response.includes("Error")){
-                        vscode.window.showInformationMessage('File Transfer failed for '+fileMAp.uri.path);
-                    };
-                }
-                if(fileData.byteLength<=FILE_WRITE_MAX && fileData.byteLength>0){
-                    
-                    fileWriteCmd +=`f=open('${dPath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`;
-                    let response:any = await replSend(fileWriteCmd);
-                    updateToTerminal(`Updating  ${dPath} `);
-                    if(response &&  response.includes("Error")){
-                        vscode.window.showInformationMessage('File Transfer failed for '+fileMAp.uri.path);
-                    };
-                }
+                await creatUpdateFileDevice(fileMAp.uri,fileMAp.devicePath);
                 if(index===(fileMaps.length-1)){
                     res("");
                 }
@@ -578,7 +511,7 @@ export async function buildMappedFiles(fileMaps:FileMaps[]):Promise<boolean>{
        
     });
     await replSend("\x03");
-    await exitRawReplInternal();
+    // await exitRawReplInternal();
     updateToTerminal(`Applying Reset (ctrl-D)`,3);
     await replSend(RESET_CMD);
     return true;
@@ -613,7 +546,24 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
     }
     if(fileData.byteLength<=FILE_WRITE_MAX){
         updateToTerminal(`Updating  ${devicePath} `);
-        let response:any = await replSend(`f=open('${devicePath}', 'w');f.write('''${decoder.decode(fileData)}''');f.close()`);
+        // open file
+        let chunkSize = 1000;
+        let response:any;
+        await replSend(`f=open('${devicePath}', 'w');`);
+        let strData = decoder.decode(fileData);
+        for (let i = 0; i < strData.length; i += chunkSize) {
+            const chunk = strData.slice(i, i + chunkSize);
+            response = await replSend(`f.write('''${chunk}''')`);
+            if(response &&  !response.includes("Error")){
+                continue;
+            }
+            else{
+                vscode.window.showErrorMessage(response);
+                break;
+                
+            };
+        }
+        response = await replSend(`f.close()`);
       
         await exitRawReplInternal();
         // updateToTerminal(`Applying Reset (ctrl-D)`,3);
