@@ -212,33 +212,6 @@ function selectTerminal(): Thenable<vscode.Terminal | undefined> {
 		open: async () => await ensureConnected(),
 		close: () => { /* noop*/ },
 		handleInput: (data: string) => {
-			// console.log(data);
-			// if(!replRawModeEnabled){
-				// let byteData = encoder.encode(data);
-				// if(byteData.length===1){
-					
-				// 	switch (byteData[0]) {
-				// 		case 1:
-				// 			writeEmitter.fire(colorText('\r\nCtrl-A was pressed',3));
-				// 			break;
-				// 		case 2:
-				// 			writeEmitter.fire(colorText('\r\nCtrl-B was pressed',3));
-				// 			break;
-				// 		case 3:
-				// 			writeEmitter.fire(colorText('\r\nCtrl-C was pressed',3));
-				// 			break;
-				// 		case 4:
-				// 			writeEmitter.fire(colorText('\r\nCtrl-D was pressed. Press Ctrl-C to break',3));
-				// 			break;
-				// 		default:
-				// 			break;
-				// 	}
-				// 	prevByte = byteData[0];
-				// }
-				// terminalHandleInputRaw(data);
-			// }else{
-			// 	vscode.window.showWarningMessage("Device Busy!");
-			// }
 
 		}
 	};
@@ -277,27 +250,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	statusBarItemBle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
 	const snippetprovider = new SnippetProvider();
 	const projectProvider =  new ProjectProvider();
-	// const fpgaTree= vscode.window.createTreeView('fpga',{treeDataProvider:{
-	// 	getChildren(element?:vscode.TreeItem):vscode.TreeItem[]{
-	// 		return [];
-			
-	// 	},
-	// 	getTreeItem(element:vscode.TreeItem):vscode.TreeItem{
-	// 		return element;
-	// 	}
-	// }});
-	// fpgaTree.
-	// fpgaTree.message = "[Update FPGA](command:brilliant-ar-studio.fpgaUpdate)";
-	// register empty project and show buttons with viewswelcome from package.json for fpga updates
-	// vscode.window.registerTreeDataProvider("fpga",{
-	// 	getChildren(element?:vscode.TreeItem):vscode.TreeItem[]{
-	// 		return [];
-			
-	// 	},
-	// 	getTreeItem(element:vscode.TreeItem):vscode.TreeItem{
-	// 		return element;
-	// 	}
-	// });
+
 	//  register data provider for templates
 	vscode.window.registerTreeDataProvider('snippetTemplates', snippetprovider);
 	// register data provider for community projects
@@ -316,10 +269,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		updateStatusBarItem("disconnected");
 
 	}
-	// const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
-	// ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
-	
-		
+
 	// const fsWatcher = vscode.workspace.createFileSystemWatcher("**",true,false,true);
 	deviceInfoWebview = new DeviceInfoProvider(context.extensionUri);
 	// vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse(myscheme+':/'), name: myscheme });
@@ -343,13 +293,6 @@ export async function activate(context: vscode.ExtensionContext) {
 					Object.keys(snippets).forEach(it=>{
 						
 						if (linePrefix.endsWith(it+'.')) {
-							// let mod = linePrefix.replaceAll('.','');
-							// var regex = new RegExp("import\\s+" + mod + "(\\s+as\\s+\\w+)?|from\\s+" + mod + "\\s+import\\s+(.*)");
-							// if(!regex.test(document.getText())){
-							// 	vscode.window.activeTextEditor?.edit(editerBuilder=>{
-							// 		editerBuilder.insert(new vscode.Position(0,0),'import '+mod+'\n');
-							// 	});
-							// }
 							Object.keys(snippets[it]).forEach(ke=>{
 								const snippetCompletion = new vscode.CompletionItem(ke);
 								snippetCompletion.insertText = new vscode.SnippetString(snippets[it][ke].body.replace(it+'.',''));
@@ -419,14 +362,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.languages.registerCodeActionsProvider('python',{
 			provideCodeActions(document, range, context, token) {
-			// const linePrefix = document.lineAt(range).text.substr(0, position.character);
-			// let mod = linePrefix.replaceAll('.','');
-			// var regex = new RegExp("import\\s+" + mod + "(\\s+as\\s+\\w+)?|from\\s+" + mod + "\\s+import\\s+(.*)");
-			// if(!regex.test(document.getText())){
-			// 	vscode.window.activeTextEditor?.edit(editerBuilder=>{
-			// 		editerBuilder.insert(new vscode.Position(0,0),'import '+mod+'\n');
-			// 	});
-			// }
 			let actions:vscode.CodeAction[]=[];
 			if(context.diagnostics.length>0){
 				const linePrefix =document.lineAt(context.diagnostics[0].range.start.line).text.substr(context.diagnostics[0].range.start.character, context.diagnostics[0].range.end.character);
@@ -464,9 +399,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				let projectPath = vscode.workspace.workspaceFolders[0].uri;
 				for (let index = 0; index < e.files.length; index++) {
 					const ef = e.files[index];
-					// if(currentSyncPath!==null &&  ef.newUri.fsPath.includes(currentSyncPath.fsPath)){
-					// 	let newDevicePath =  ef.newUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-					// 	let oldDevicePath =  ef.oldUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
 					if((await vscode.workspace.fs.stat(ef.newUri)).type===vscode.FileType.Directory){
 						// TODO: if needed to change path recursively on directory change
 					}else{
@@ -495,17 +427,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				screenProvider.refresh();
 			}
 		}),
-		// vscode.workspace.onDidCreateFiles( async (e:vscode.FileCreateEvent)=>{
-		// 	for (let index = 0; index < e.files.length; index++) {
-		// 		const ef = e.files[index];
-		
-		// 		if(currentSyncPath!==null && ef.fsPath.includes(currentSyncPath.fsPath)){
-		// 			let devicePath = ef.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-		// 			await memFs.addFile(ef,devicePath);
-		// 		}
-		// 	}
-			
-		// }),
 		vscode.workspace.onWillDeleteFiles(async (e:vscode.FileDeleteEvent)=>{
 			if(vscode.workspace.workspaceFolders){
 				let newpathKey:any = await configReadUpdate();
@@ -513,12 +434,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				let projectPath = vscode.workspace.workspaceFolders[0].uri;
 				for (let index = 0; index < e.files.length; index++) {
 					const ef = e.files[index];
-					// if(currentSyncPath!==null && ef.fsPath.includes(currentSyncPath.fsPath)){
-						// let devicePath = ef.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-						// 	let oldDevicePath =  ef.oldUri.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-					// if((await vscode.workspace.fs.stat(ef)).type===vscode.FileType.Directory){
-					// 	// TODO: if needed to change path recursively on directory change
-					// }else{
 						let localDir = ef.fsPath.replace(projectPath?.fsPath, "").replaceAll("\\","/");
 						if(Object.keys(newpathKey).includes(localDir)){
 							newpathKey[localDir] =false;
@@ -528,10 +443,6 @@ export async function activate(context: vscode.ExtensionContext) {
 						if(segments.length>0 && Object.keys(newpathScreens).includes(segments[segments.length-1].replace('.py',''))){
 							newpathScreens[segments[segments.length-1].replace('.py','')] = false;
 						}
-					// }
-							// }
-						// await memFs.deleteFile(devicePath);
-					// }
 				}
 				await configReadUpdate(newpathKey);
 				await configScreenReadUpdate(newpathScreens);
@@ -539,15 +450,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 			
 		}),
-    // // event capture on file changes 
-	// 	fsWatcher.onDidChange(async (e)=>{
-			
-	// 		if(currentSyncPath!==null && e.path.includes(currentSyncPath.path)){
-	// 			let devicePath = e.fsPath.replace(currentSyncPath?.fsPath, "").replaceAll("\\","/");
-	// 			await memFs.updateFile(e,devicePath);
-	// 		}
-		
-	// 	}),
 	// register code templates tree
 		vscode.window.createTreeView('snippetTemplates', {
 			treeDataProvider: new SnippetProvider(),

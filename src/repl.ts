@@ -31,6 +31,9 @@ def md(p):
         except:
             pass
 `;
+export function setDeviceConnected(_deviceConnceted:string){
+deviceConnected =_deviceConnceted;
+}
 export async function replRawMode(enable:boolean) {
 
     if (enable === true) {
@@ -45,45 +48,44 @@ export async function replRawMode(enable:boolean) {
     replRawModeEnabled = false;
     
 }
-export async function frameSend(string:string,longWait?:boolean){
+export async function frameSend(string:string,wait=5){
  
     ensureConnected();
     if (!isConnected()) {
         return;
     }
-   
+   let iscontrolKey = string.length===1 && [3,4].includes(string.charCodeAt(0));
     frameStringBuffer += string;
-    if(frameStringBuffer==="\r"){
-        frameStringBuffer = "print('');\r";
+    if(!internalOperation && !frameStringBuffer.endsWith("\r") && !iscontrolKey){
+        return;
     }
-    if(frameStringBuffer.endsWith("\r")){
-        if(internalOperation){
-            frameStringBuffer += ";print('<|END');";
-        }
-        if(!frameStringBuffer.includes("print")){
-            frameStringBuffer += "print('');";
-        }
+    if(internalOperation && !iscontrolKey){
+        frameStringBuffer += ";print('<|END');";
+    }
+    if(!frameStringBuffer.includes("print") && !iscontrolKey){
+        frameStringBuffer += "print('');";
+    }
     // Encode the UTF-8 string into an array and populate the buffer
     const encoder = new util.TextEncoder('utf-8');
     frameDataTxQueue.push.apply(frameDataTxQueue, encoder.encode(frameStringBuffer));
     frameStringBuffer ="";
     // Return a promise which calls a function that'll eventually run when the
     // response handler calls the function associated with rawReplResponseCallback
+    let isResolved = false;
     return new Promise(resolve => {
         frameResponseCallback = function (responseString:string) {
+            isResolved = true;
             outputChannel.appendLine('FRAME ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'));
             resolve(responseString);
         };
-        if(!longWait){
             setTimeout(() => {
-                resolve(null);
-            }, 5000);
-        }
+                if(!isResolved){
+                    frameResponseString="";
+                    resolve(null);
+                }
+            }, wait*1000);
         
     });
-    }else{
-        return;
-    }
     
 }
 export async function replSend(string:string) {
@@ -246,7 +248,6 @@ export async function ensureConnected() {
             await replSend('\x02'); 
         }
         if(connectionResult === "frame connected"){
-            deviceConnected = "Frame";
             vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', true);
                 // writeEmitter.fire("Connected\r\n");
                 updateStatusBarItem("connected",deviceConnected);
@@ -255,7 +256,10 @@ export async function ensureConnected() {
                 allTerminals[0].show();
                 vscode.commands.executeCommand('workbench.action.terminal.clear');
                 
-            } 
+            }
+            await enterRawReplInternal();
+            await frameSend("\x03",0.1); 
+            await exitRawReplInternal();
             await frameSend("print('Frame ' .. frame.FIRMWARE_VERSION .. ' - '.. frame.GIT_TAG);\r"); 
             try {
                 await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
@@ -279,11 +283,11 @@ export async function ensureConnected() {
 }
 
 export function frameHandleResponse(string:string) {
-console.log(string);
     if(fileWriteStart){
     writeEmitter.fire(string);
         return;
     }
+    
     if(internalOperation){
         frameResponseString += string;
         // Once the end of response '>' is received, run the callbacks
@@ -468,22 +472,25 @@ async function enterRawReplInternal(){
     internalOperation = true;
     if(deviceConnected!=="Frame"){
         await replRawMode(true);
+        
     }
-    await new Promise(r => setTimeout(r, 10));
+   await new Promise(r => setTimeout(r, 10));
     return true;
 }
 
 // list files and folders for the device under given path
 export async function listFilesDevice(currentPath="/"):Promise<string[]>{
-
+    if(!enterRawReplInternal()){return [];}
     if(deviceConnected==="Frame"){
-        internalOperation = true;
-        let cmd =`l=frame.file.listdir('${currentPath}');`;
-        await frameSend(cmd+'\r'); //0=size,1=type,2=name
-        cmd = `for _, b in ipairs(l) do 
+        
+        await frameSend(`l=frame.file.listdir('${currentPath}');`); //0=size,1=type,2=name
+        let cmd = `for _, b in ipairs(l) do 
 print(b[2]..'|'..b[1]..'\\n')
 end;`;
-        let response :any = await frameSend(cmd+'\r');
+cmd = `for _, b in ipairs(l) do
+print(b['name']..'|'..b['type']..'\\n')
+end`;
+        let response :any = await frameSend(cmd);
         if(!response.includes('|')){
             vscode.window.showErrorMessage(response);
             return [];
@@ -496,7 +503,6 @@ end;`;
         internalOperation = false;
         return files;
     }
-    if(!await enterRawReplInternal()){return[];};
     let cmd = `import os,ujson;
 d="${currentPath}"
 l =[]
@@ -552,7 +558,7 @@ export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
     let response:any;
     if(!await enterRawReplInternal()){return false;};
     if(deviceConnected==="Frame"){
-        let dirMakeCmd = `a=frame.file.mkdir('${devicePath}');print(a);\r`;
+        let dirMakeCmd = `a=frame.file.mkdir('${devicePath}');print(a);`;
         response = await frameSend(dirMakeCmd);
     }else{
         let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}');del(md,os)`;
@@ -572,7 +578,7 @@ export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string)
     
     if(!await enterRawReplInternal()){return false;};
         if(deviceConnected==="Frame"){
-            let dirMakeCmd = `a=frame.file.mkdir('${devicePath}');print(a);\r`;
+            let dirMakeCmd = `a=frame.file.mkdir('${devicePath}');print(a);`;
             await frameSend(dirMakeCmd);
         }else{
             let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}')`;
@@ -650,22 +656,24 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
         if(segments.length>1){
             let newDirTocreate = segments.slice(0,segments.length-1).join("/");
                 if(newDirTocreate!==devicePath){
-                    let dirCreate = `a=frame.file.mkdir('${newDirTocreate}');print(a);\r`;
+                    let dirCreate = `a=frame.file.mkdir('${newDirTocreate}');print(a);`;
                     await frameSend(dirCreate);
                 }
         }
         if(fileData.byteLength===0){
-            await frameSend("f = frame.file.open('"+ devicePath +"', 'w');f:write('');print(f:close());\r");
+            await frameSend("f = frame.file.open('"+ devicePath +"', 'w');f:write('');print(f:close());");
             updateToTerminal(`Creating  ${devicePath} `);
         }else{
-            await frameSend("f = frame.file.open('"+ devicePath +"', 'w');print(f);\r");
+            await frameSend("f = frame.file.open('"+ devicePath +"', 'w');print(f);");
             const dataString = decoder.decode(fileData);
             let chunkSize = maxmtu-40;
             for (let i = 0; i < dataString.length; i += chunkSize) {
                 const chunk = dataString.substring(i, i + chunkSize);
-                await frameSend(`print(f:write([[${chunk}]]));\r`);
+                // await frameSend(`f:write([[${chunk.replaceAll('\n','\\n')}]]);`);
+                await frameSend(`f:write([[${chunk.replaceAll('[','\[').replaceAll(']','\]')}]]);`);
+
             }
-            await frameSend("print(f:close());\r");
+            await frameSend("print(f:close());");
             // await frameSend(`f:write([[${decoder.decode(fileData)}]]);print(f:close());\r`);
             updateToTerminal(`Updating  ${devicePath} `);
         }
@@ -718,7 +726,7 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
 export async function renameFileDevice(oldDevicePath:string, newDevicePath:string):Promise<boolean>{
     if(!await enterRawReplInternal()){return false;};
     if(deviceConnected==="Frame"){
-        let response:any = await frameSend(`print(frame.file.rename('${oldDevicePath}','${newDevicePath}'));\r`);
+        let response:any = await frameSend(`frame.file.rename('${oldDevicePath}','${newDevicePath}');print(true);`);
         updateToTerminal(`Renaming ${oldDevicePath} To ${newDevicePath} `);
         await exitRawReplInternal();
 
@@ -743,12 +751,25 @@ os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
 export async function readFileDevice(devicePath:string):Promise<boolean|string>{
     if(!await enterRawReplInternal()){return false;};
     if(deviceConnected==="Frame"){
-        await frameSend(`f=frame.file.open('${devicePath}');\r`);
-        await frameSend(`a=f:read('a');f:close();\r`);
-        let cmd = `for i=1,750,250 do print(string.sub(a,i,i+250-1))end;`;
-        let response:any = await frameSend(cmd+'\r',true);
+        let content:any;
+        let readCmd = `a=f:read();if not a then print(a) end;`;
+        
+        await frameSend(`f=frame.file.open('${devicePath}');`);
+        let resp = await frameSend(readCmd);
+        while (resp!=="nil" && resp !==null){
+           
+            resp = await frameSend(`for i=1,#a,250 do print(string.sub(a,i,i+250-1))end;`);
+            if(content ===undefined){
+                content = resp;
+            }else{
+                content += '\n'+resp;
+            }
+            resp = await frameSend(readCmd);
+        };
+        
+        await frameSend("print(f:close());",10);
         await exitRawReplInternal();
-        return response;
+        return content;
     }
    
 
@@ -764,9 +785,7 @@ export async function deleteFilesDevice(devicePath:string):Promise<boolean>{
 
     if(!await enterRawReplInternal()){return false;};
     if(deviceConnected==="Frame"){
-        internalOperation = true;
-        let response:any = await frameSend(`print(frame.file.remove('${devicePath}'));\r`);
-        internalOperation = false;
+        let response:any = await frameSend(`print(frame.file.remove('${devicePath}'));print(true);`);
         await exitRawReplInternal();
         return response.includes('true');
         

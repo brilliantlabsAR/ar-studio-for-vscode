@@ -1,5 +1,5 @@
 
-import { replHandleResponse,onDisconnect,colorText, frameHandleResponse } from "./repl";
+import { replHandleResponse,onDisconnect,colorText, frameHandleResponse,setDeviceConnected } from "./repl";
 import { nordicDfuHandleControlResponse } from './nordicdfu';
 import {writeEmitterRaw} from './extension';
 import * as vscode from 'vscode';
@@ -176,6 +176,7 @@ export async function connect() {
     }
 
     if (frameService) {
+        setDeviceConnected("Frame");
         frameRxCharacteristic = await frameService.getCharacteristic(frameRxCharacteristicsUUID);
         frameTxCharacteristic = await frameService.getCharacteristic(frameTxCharacteristicsUUID);
         await frameTxCharacteristic.startNotifications();
