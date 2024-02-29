@@ -1,7 +1,7 @@
 
 import { replHandleResponse,onDisconnect,colorText, frameHandleResponse,setDeviceConnected } from "./repl";
 import { nordicDfuHandleControlResponse } from './nordicdfu';
-import {writeEmitterRaw} from './extension';
+import {writeEmitter, writeEmitterRaw} from './extension';
 import * as vscode from 'vscode';
 
 var util = require('util');
@@ -88,7 +88,6 @@ export async function connect() {
         // connection timeout = 10s
         if(connectionInProgress && (Date.now()-connectionInProgress)>10200){
             connectionInProgress = 0;
-            return Promise.reject("connection failure");
         }
         if(connectionInProgress){
             return Promise.resolve("inprogress");
@@ -98,7 +97,7 @@ export async function connect() {
             bluetooth.cancelRequest();
             if(!isConnected() && !currentSelectionTimeout){
                 onDisconnect();
-                console.log("couldn't find device");
+                vscode.window.showWarningMessage("No device found");
             }
 
         },10000);
@@ -220,6 +219,7 @@ export async function disconnect() {
     clearInterval(replTxTaskIntervalId);
     clearInterval(frameTxTaskIntervalId);
 
+	writeEmitter.fire("\r\nDisconnected \r\n");
     // Callback to main.js
     onDisconnect();
 }

@@ -876,7 +876,7 @@ export function updateStatusBarItem(status:string,msg:string="Monocle",): void {
 		statusBarItemBle.text = msg;
 	}else if(status==="progress"){
 		statusBarItemBle.command = undefined;
-		statusBarItemBle.text = "$(sync~spin) "+msg;
+		statusBarItemBle.text = "$(sync~spin) Searching";
 		statusBarItemBle.backgroundColor = bgColorWarning;
 		statusBarItemBle.tooltip = "Connecting";
 	}else if(status==="updating"){

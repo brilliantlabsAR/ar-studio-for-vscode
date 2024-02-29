@@ -1,5 +1,5 @@
 import { isConnected, replDataTxQueue,connect,disconnect, deviceInfo, frameDataTxQueue,maxmtu } from './bluetooth';
-import { checkForUpdates, startFirmwareUpdate, downloadLatestFpgaImage, updateFPGA } from "./update";
+import { checkForUpdates, startFirmwareUpdate, downloadLatestFpgaImage, updateFPGA, checkForFrameUpdates } from "./update";
 import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus, deviceTreeProvider, monocleFolder,deviceInfoWebview } from './extension';
 import { startNordicDFU } from './nordicdfu'; 
 import * as vscode from 'vscode';
@@ -209,7 +209,7 @@ export async function ensureConnected() {
            
             // console.log(updateInfo);
             
-            if (updateInfo !== "") {
+            if (updateInfo !== undefined) {
                 let newFirmware = updateInfo?.message?.includes('New firmware');
                 let newFpga = updateInfo?.message?.includes('New FPGA');
                 let newDeviceInfo = {...deviceInfo,...updateInfo};
@@ -251,11 +251,28 @@ export async function ensureConnected() {
             vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', true);
                 // writeEmitter.fire("Connected\r\n");
                 updateStatusBarItem("connected",deviceConnected);
+                try {
+                    updatePublishStatus();
+                } catch (error) {}
             let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
             if(allTerminals.length>0){
                 allTerminals[0].show();
                 vscode.commands.executeCommand('workbench.action.terminal.clear');
                 
+            }
+            await enterRawReplInternal();
+            let updateInfo = await checkForFrameUpdates();
+            await exitRawReplInternal();
+            let newDeviceInfo = {...deviceInfo,...updateInfo};
+            deviceInfoWebview.updateValues(newDeviceInfo);
+            if(updateInfo?.firmwareUpdate !== "Unknown"){
+                let items:string[] =["Update Now","Later"] ;
+                const updateMsg = new vscode.MarkdownString(updateInfo?.message);
+                vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
+                    if(op==="Update Now"){
+                        startFirmwareUpdate();
+                    }
+                });
             }
             await enterRawReplInternal();
             await frameSend("\x03",0.1); 
@@ -358,10 +375,9 @@ export async function onDisconnect() {
      replRawModeEnabled = false;
      fileWriteStart = false;
      internalOperation = false;
-     progressReport =null;
+     progressReport = null;
     vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', false);
     updateStatusBarItem("disconnected");
-	writeEmitter.fire("\r\nDisconnected \r\n");
     try {
         await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
     } catch (error) {
