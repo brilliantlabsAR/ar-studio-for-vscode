@@ -244,6 +244,9 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
     }
 	async getChildren(element?: MonocleFile): Promise<MonocleFile[]> {
 		let files:MonocleFile[]= [];
+		if(!isConnected()){
+			return [];
+		}
 		let rootPath = "";
 		if (element) {
 			if (element instanceof Directory) {
@@ -278,11 +281,7 @@ export class DeviceFs implements  vscode.TreeDataProvider<MonocleFile>,vscode.Te
 			files.push(entry);
 			this.data.set(rootPath,entry);
 		});
-		if(isConnected()){
-			return files;
-		}else{
-			return [];
-		}
+		return files;
 		
 	}
 
@@ -474,7 +473,7 @@ export class DeviceInfoProvider implements vscode.WebviewViewProvider{
 					document.getElementById('macAddress').innerHTML = data.macAddress.toUpperCase();
 					
 					
-					if(data.firmwareUpdate){
+					if(data.firmwareUpdate && data.firmwareUpdate !="Unknown"){
 						document.getElementById('firmwareUpdate').innerHTML = 'Update to'+data.firmwareUpdate;
 						document.getElementById('firmwareUpdate').style.display = 'block';
 						document.getElementById('firmwareVersion').innerHTML = data.firmwareVersion;
@@ -483,15 +482,24 @@ export class DeviceInfoProvider implements vscode.WebviewViewProvider{
 						document.getElementById('firmwareUpdate').style.display = 'none';
 						document.getElementById('firmwareUpdate').innerHTML = "(Latest)";
 					}
-					if(data.fpgaUpdate){
-						document.getElementById('fpgaUpdate').innerHTML = 'Update to '+data.fpgaUpdate;
-						document.getElementById('fpgaVersion').innerHTML = data.fpgaVersion;
-						document.getElementById('fpgaUpdate').style.display = 'block';
+					if (!data.name.toLowerCase().includes('frame')) {
+						if(data.fpgaUpdate){
+							document.getElementById('fpgaUpdate').innerHTML = 'Update to '+data.fpgaUpdate;
+							document.getElementById('fpgaVersion').innerHTML = data.fpgaVersion;
+							document.getElementById('fpgaUpdate').style.display = 'block';
+						}else{
+							document.getElementById('fpgaUpdate').style.display = 'none';
+							document.getElementById('fpgaVersion').innerHTML = data.fpgaVersion+ '(latest)';
+							document.getElementById('fpgaUpdate').innerHTML = "(Latest)";
+						}
 					}else{
+						// hide fpga update for frame
 						document.getElementById('fpgaUpdate').style.display = 'none';
-						document.getElementById('fpgaVersion').innerHTML = data.fpgaVersion+ '(latest)';
-						document.getElementById('fpgaUpdate').innerHTML = "(Latest)";
+						document.getElementById('fpgaVersion').innerHTML = "Built in";
+						document.getElementById('customFpga').style.display = 'none';
+
 					}
+					
 				}
 				${updateScript}
 				</script>

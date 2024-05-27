@@ -1,5 +1,5 @@
-import { isConnected, replDataTxQueue,connect,disconnect, deviceInfo } from './bluetooth';
-import { checkForUpdates, startFirmwareUpdate, downloadLatestFpgaImage, updateFPGA } from "./update";
+import { isConnected, replDataTxQueue,connect,disconnect, deviceInfo, frameDataTxQueue,maxmtu } from './bluetooth';
+import { checkForUpdates, startFirmwareUpdate, downloadLatestFpgaImage, updateFPGA, checkForFrameUpdates } from "./update";
 import { writeEmitter,updateStatusBarItem,outputChannel,updatePublishStatus, deviceTreeProvider, monocleFolder,deviceInfoWebview } from './extension';
 import { startNordicDFU } from './nordicdfu'; 
 import * as vscode from 'vscode';
@@ -11,9 +11,13 @@ let fpgaUpdateInProgress: any = false;
 let progressReport:any;
 export let replRawModeEnabled = false;
 let rawReplResponseString = '';
+let frameResponseString = '';
 let rawReplResponseCallback:any;
+let frameResponseCallback:any;
 let fileWriteStart = false;
-let internalOperation = false;
+export let internalOperation = false;
+let deviceConnected = "Monocle";
+let frameStringBuffer = "";
 const decoder = new util.TextDecoder('utf-8');
 const RESET_CMD = '\x03\x04';
 const FILE_WRITE_MAX = 1000000;
@@ -27,6 +31,9 @@ def md(p):
         except:
             pass
 `;
+export function setDeviceConnected(_deviceConnceted:string){
+deviceConnected =_deviceConnceted;
+}
 export async function replRawMode(enable:boolean) {
 
     if (enable === true) {
@@ -41,7 +48,46 @@ export async function replRawMode(enable:boolean) {
     replRawModeEnabled = false;
     
 }
-
+export async function frameSend(string:string,wait=5){
+ 
+    ensureConnected();
+    if (!isConnected()) {
+        return;
+    }
+   let iscontrolKey = string.length===1 && [3,4].includes(string.charCodeAt(0));
+    frameStringBuffer += string;
+    if(!internalOperation && !frameStringBuffer.endsWith("\r") && !iscontrolKey){
+        return;
+    }
+    if(internalOperation && !iscontrolKey){
+        frameStringBuffer += ";print('<|END');";
+    }
+    if(!frameStringBuffer.includes("print") && !iscontrolKey){
+        frameStringBuffer += "print('');";
+    }
+    // Encode the UTF-8 string into an array and populate the buffer
+    const encoder = new util.TextEncoder('utf-8');
+    frameDataTxQueue.push.apply(frameDataTxQueue, encoder.encode(frameStringBuffer));
+    frameStringBuffer ="";
+    // Return a promise which calls a function that'll eventually run when the
+    // response handler calls the function associated with rawReplResponseCallback
+    let isResolved = false;
+    return new Promise(resolve => {
+        frameResponseCallback = function (responseString:string) {
+            isResolved = true;
+            outputChannel.appendLine('FRAME ⬇️: ' + responseString.replaceAll('\r\n', '\\r\\n'));
+            resolve(responseString);
+        };
+            setTimeout(() => {
+                if(!isResolved){
+                    frameResponseString="";
+                    resolve(null);
+                }
+            }, wait*1000);
+        
+    });
+    
+}
 export async function replSend(string:string) {
 
     ensureConnected();
@@ -88,7 +134,7 @@ let initializedWorkspace = false;
 export async function ensureConnected() {
     
     if (isConnected() === true) {
-        updateStatusBarItem("connected");
+        updateStatusBarItem("connected",deviceConnected);
         return;
     }
     updateStatusBarItem("progress");
@@ -141,6 +187,50 @@ export async function ensureConnected() {
             
             // return;
         }
+        if (connectionResult === "frame update connected") {
+                 // infoText.innerHTML = "Starting firmware update..";
+                 updateStatusBarItem("connected","$(cloud-download) Updating");
+                 updateInProgress = true;
+                 prevPerc = 0;
+                 vscode.window.withProgress({
+                     location: vscode.ProgressLocation.Notification,
+                     cancellable: true,
+                     title: 'Updating firmware',
+                 }, async (progress,canceled) => {
+                     canceled.onCancellationRequested(()=>{
+                         disconnect();
+                         vscode.window.showErrorMessage("Cancelled firmware update! connect to Frame after few moments \n or connect now to again update")
+                     });
+                     progress.report({message:"updating",increment:0});
+                     progressReport = progress;
+                     await new Promise(r => {
+                         let clearIntervalId = setInterval(()=>{
+                             if(updateInProgress===false){
+                                 clearInterval(clearIntervalId);
+                                 progressReport = null;
+                                 r("");
+                             }
+                         });
+                     });
+     
+                 });
+                 let updateStatus = await startNordicDFU();
+                 if(updateStatus==='completed'){
+                     updateInProgress = false;
+                     await disconnect();
+                     vscode.window.showInformationMessage("Firmware Update done");
+                     updateStatusBarItem("progress");
+                     // after 2 sec try to connect;
+                     setTimeout(ensureConnected,2000);
+                 }else{
+                     console.log(updateStatus);
+                     vscode.window.showErrorMessage("firmware update failed");
+                     updateInProgress = false;
+                     disconnect();
+                 }
+                 progressReport = null;
+                 prevPerc = 0;
+        }
 
         if (connectionResult === "repl connected") {
             try {
@@ -163,7 +253,7 @@ export async function ensureConnected() {
            
             // console.log(updateInfo);
             
-            if (updateInfo !== "") {
+            if (updateInfo !== undefined) {
                 let newFirmware = updateInfo?.message?.includes('New firmware');
                 let newFpga = updateInfo?.message?.includes('New FPGA');
                 let newDeviceInfo = {...deviceInfo,...updateInfo};
@@ -201,6 +291,44 @@ export async function ensureConnected() {
             }  
             await replSend('\x02'); 
         }
+        if(connectionResult === "frame connected"){
+            vscode.commands.executeCommand('setContext', 'frame.deviceConnected', true);
+                // writeEmitter.fire("Connected\r\n");
+                updateStatusBarItem("connected",deviceConnected);
+                try {
+                    updatePublishStatus();
+                } catch (error) {}
+            let allTerminals = vscode.window.terminals.filter(ter=>ter.name==='REPL');
+            if(allTerminals.length>0){
+                allTerminals[0].show();
+                vscode.commands.executeCommand('workbench.action.terminal.clear');
+                
+            }
+            await enterRawReplInternal();
+            let updateInfo = await checkForFrameUpdates();
+            await exitRawReplInternal();
+            let newDeviceInfo = {...deviceInfo,...updateInfo};
+            deviceInfoWebview.updateValues(newDeviceInfo);
+            if(updateInfo?.firmwareUpdate !== "Unknown"){
+                let items:string[] =["Update Now","Later"] ;
+                const updateMsg = new vscode.MarkdownString(updateInfo?.message);
+                vscode.window.showInformationMessage(updateMsg.value,...items).then(op=>{
+                    if(op==="Update Now"){
+                        startFirmwareUpdate();
+                    }
+                });
+            }
+            await enterRawReplInternal();
+            await frameSend("\x03",0.1); 
+            await exitRawReplInternal();
+            await frameSend("print('Frame ' .. frame.FIRMWARE_VERSION .. ' - '.. frame.GIT_TAG);\r"); 
+            try {
+                await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
+            } catch (error) {
+                
+            }
+           
+        }
     }
 
     catch (error:any) {
@@ -215,6 +343,29 @@ export async function ensureConnected() {
     }
 }
 
+export function frameHandleResponse(string:string) {
+    if(fileWriteStart){
+    writeEmitter.fire(string);
+        return;
+    }
+    
+    if(internalOperation){
+        frameResponseString += string;
+        // Once the end of response '>' is received, run the callbacks
+        if (string.endsWith('<|END')) {
+            frameResponseCallback(frameResponseString.replace('<|END',''));
+            frameResponseString = '';
+        }
+        // frameResponseCallback(string);
+        return;
+    }
+    if(string.trimEnd()!==""){
+        writeEmitter.fire("\n\r"+string.trimEnd()+"\n\r> ");
+    }else{
+        writeEmitter.fire("\n\r> ");
+    }
+   
+}
 export function replHandleResponse(string:string) {
 
     if (replRawModeEnabled === true) {
@@ -268,10 +419,10 @@ export async function onDisconnect() {
      replRawModeEnabled = false;
      fileWriteStart = false;
      internalOperation = false;
-     progressReport =null;
+     progressReport = null;
     vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', false);
+    vscode.commands.executeCommand('setContext', 'frame.deviceConnected', false);
     updateStatusBarItem("disconnected");
-	writeEmitter.fire("\r\nDisconnected \r\n");
     try {
         await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');
     } catch (error) {
@@ -353,7 +504,9 @@ export async function triggerFpgaUpdate(binPath?:vscode.Uri){
 
 //  close the file operation and raw mode
 async function exitRawReplInternal(){
-    await replRawMode(false);
+    if(deviceConnected!=="Frame"){
+        await replRawMode(false);
+    }
     internalOperation = false;
 }
 
@@ -362,6 +515,7 @@ async function enterRawReplInternal(){
     if (!isConnected()) {
         return false;
     }
+   
     //  check if already a file operation going on
     if(replRawModeEnabled || internalOperation){
         await new Promise(r => {
@@ -375,16 +529,41 @@ async function enterRawReplInternal(){
             },10);
         });
     }
+    
     internalOperation = true;
-    await replRawMode(true);
-    await new Promise(r => setTimeout(r, 10));
+    if(deviceConnected!=="Frame"){
+        await replRawMode(true);
+        
+    }
+   await new Promise(r => setTimeout(r, 10));
     return true;
 }
 
 // list files and folders for the device under given path
 export async function listFilesDevice(currentPath="/"):Promise<string[]>{
-
-    if(!await enterRawReplInternal()){return[];};
+    if(!enterRawReplInternal()){return [];}
+    if(deviceConnected==="Frame"){
+        
+        await frameSend(`l=frame.file.listdir('${currentPath}');`); //0=size,1=type,2=name
+        let cmd = `for _, b in ipairs(l) do 
+print(b[2]..'|'..b[1]..'\\n')
+end;`;
+cmd = `for _, b in ipairs(l) do
+print(b['name']..'|'..b['type']..'\\n')
+end`;
+        let response :any = await frameSend(cmd);
+        if(!response.includes('|')){
+            vscode.window.showErrorMessage(response);
+            return [];
+        }
+        let items = response.split("\n").filter((s:string)=>!(s.startsWith("..|") || s.startsWith(".|") || s.trim()===""));
+        let files = items.map((it:string)=>{
+            let tuple = it.split("|");
+            return {"name":tuple[0],"file" : tuple[1]==="1"};
+        });
+        internalOperation = false;
+        return files;
+    }
     let cmd = `import os,ujson;
 d="${currentPath}"
 l =[]
@@ -428,15 +607,25 @@ export function colorText(text: string, colorIndex=4): string {
 	return output;
 }
 const updateToTerminal = function (msg:string,colorIndex=4){
-    writeEmitter.fire('\n\r'+colorText(msg,colorIndex)+'\n\r>>> ');
+    if(deviceConnected==="Frame"){
+        writeEmitter.fire('\n\r'+colorText(msg,colorIndex)+'\n\r> ');
+    }else{
+        writeEmitter.fire('\n\r'+colorText(msg,colorIndex)+'\n\r>>> ');
+    }
 
 };
 //  create directory recursively
 export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
-   
+    let response:any;
     if(!await enterRawReplInternal()){return false;};
-    let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}');del(md,os)`;
-    let response:any = await replSend(dirMakeCmd);
+    if(deviceConnected==="Frame"){
+        let dirMakeCmd = `a=frame.file.mkdir('${devicePath}');print(a);`;
+        response = await frameSend(dirMakeCmd);
+    }else{
+        let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}');del(md,os)`;
+        response = await replSend(dirMakeCmd);
+    }
+    
     updateToTerminal(`Creating  ${devicePath} `);
     await exitRawReplInternal();
     if(response && !response.includes("Error")){
@@ -448,12 +637,15 @@ export async function createDirectoryDevice(devicePath:string):Promise<boolean>{
 //  upload files recursively to device
 export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string):Promise<boolean>{
     
-    // if(!await enterRawReplInternal()){return false;};
-    // if(devicePath!==''){
-        let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}')`;
-        await replSend(dirMakeCmd);
-    // }
-
+    if(!await enterRawReplInternal()){return false;};
+        if(deviceConnected==="Frame"){
+            let dirMakeCmd = `a=frame.file.mkdir('${devicePath}');print(a);`;
+            await frameSend(dirMakeCmd);
+        }else{
+            let dirMakeCmd = DIR_MAKE_CMD+`md('${devicePath}')`;
+            await replSend(dirMakeCmd);
+        }
+    await exitRawReplInternal();
     await new Promise(async (res,rej)=>{
         for (let index = 0; index < uris.length; index++) {
             const uri = uris[index];
@@ -474,10 +666,10 @@ export async function uploadFileBulkDevice(uris:vscode.Uri[], devicePath:string)
         }
        
     });
-    await replSend("\x03");
-    // await exitRawReplInternal();
-    // updateToTerminal(`Applying Reset (ctrl-D)`,3);
-    // await replSend(RESET_CMD);
+    if(deviceConnected!=="Frame"){
+        await replSend("\x03");
+    }
+    await exitRawReplInternal();
     return true;
 }
 //  Build (upload all mapped files)
@@ -487,15 +679,14 @@ export interface FileMaps {
 }
 export async function buildMappedFiles(fileMaps:FileMaps[]):Promise<boolean>{
     
-    // if(!await enterRawReplInternal()){return false;}
 
     await new Promise(async (res,rej)=>{
         for (let index = 0; index < fileMaps.length; index++) {
             const fileMAp = fileMaps[index];
             
-        // uris.forEach(async (uri:vscode.Uri,index:number)=>{
             try {
-                await creatUpdateFileDevice(fileMAp.uri,fileMAp.devicePath);
+                let dPath = fileMAp.devicePath;
+                await creatUpdateFileDevice(fileMAp.uri,dPath);
                 if(index===(fileMaps.length-1)){
                     res("");
                 }
@@ -510,19 +701,47 @@ export async function buildMappedFiles(fileMaps:FileMaps[]):Promise<boolean>{
         }
        
     });
-    await replSend("\x03");
-    // await exitRawReplInternal();
-    updateToTerminal(`Applying Reset (ctrl-D)`,3);
-    await replSend(RESET_CMD);
+    if(deviceConnected!=="Frame"){
+        updateToTerminal(`Applying Reset (ctrl-D)`,3);
+        await replSend(RESET_CMD);
+    }
+    await exitRawReplInternal();
     return true;
 }
 //  create or update individual file on device
 export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):Promise<boolean>{
-    
     if(!await enterRawReplInternal()){return false;};
-    // let absPath = uri.path.replaceAll("\\","/");
-    // let dPath = absPath.slice(absPath.indexOf(devicePath));
     let segments = devicePath.split('/');
+    let fileData = await vscode.workspace.fs.readFile(uri);
+    if(deviceConnected==="Frame"){
+        if(segments.length>1){
+            let newDirTocreate = segments.slice(0,segments.length-1).join("/");
+                if(newDirTocreate!==devicePath){
+                    let dirCreate = `a=frame.file.mkdir('${newDirTocreate}');print(a);`;
+                    await frameSend(dirCreate);
+                }
+        }
+        if(fileData.byteLength===0){
+            await frameSend("f = frame.file.open('"+ devicePath +"', 'w');f:write('');print(f:close());");
+            updateToTerminal(`Creating  ${devicePath} `);
+        }else{
+            await frameSend("f = frame.file.open('"+ devicePath +"', 'w');print(f);");
+            const dataString = decoder.decode(fileData);
+            let chunkSize = maxmtu-40;
+            for (let i = 0; i < dataString.length; i += chunkSize) {
+                const chunk = dataString.substring(i, i + chunkSize);
+                // await frameSend(`f:write([[${chunk.replaceAll('\n','\\n')}]]);`);
+                await frameSend(`f:write([[${chunk.replaceAll('[','\[').replaceAll(']','\]')}]]);`);
+
+            }
+            await frameSend("print(f:close());");
+            // await frameSend(`f:write([[${decoder.decode(fileData)}]]);print(f:close());\r`);
+            updateToTerminal(`Updating  ${devicePath} `);
+        }
+        await exitRawReplInternal();
+        return true;
+    }
+   
     if(segments.length>1){
         let newDirTocreate = segments.slice(0,segments.length-1).join("/");
             if(newDirTocreate!==devicePath){
@@ -530,7 +749,6 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
                     await replSend(dirCreate);
             }
     }
-    let fileData = await vscode.workspace.fs.readFile(uri);
 
     if(fileData.byteLength===0){
         
@@ -584,8 +802,15 @@ export async function creatUpdateFileDevice(uri:vscode.Uri, devicePath:string):P
 }
 //  rename or move files and folders on device
 export async function renameFileDevice(oldDevicePath:string, newDevicePath:string):Promise<boolean>{
-    
     if(!await enterRawReplInternal()){return false;};
+    if(deviceConnected==="Frame"){
+        let response:any = await frameSend(`frame.file.rename('${oldDevicePath}','${newDevicePath}');print(true);`);
+        updateToTerminal(`Renaming ${oldDevicePath} To ${newDevicePath} `);
+        await exitRawReplInternal();
+
+        return response.includes('true');
+    }
+    
     
     let cmd = `import os;
 os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
@@ -602,8 +827,29 @@ os.rename('${oldDevicePath}','${newDevicePath}'); del(os)`;
 
 //  reading a individual file data from device
 export async function readFileDevice(devicePath:string):Promise<boolean|string>{
-   
     if(!await enterRawReplInternal()){return false;};
+    if(deviceConnected==="Frame"){
+        let content:any;
+        let readCmd = `a=f:read();if not a then print(a) end;`;
+        
+        await frameSend(`f=frame.file.open('${devicePath}');`);
+        let resp = await frameSend(readCmd);
+        while (resp!=="nil" && resp !==null){
+           
+            resp = await frameSend(`for i=1,#a,250 do print(string.sub(a,i,i+250-1))end;`);
+            if(content ===undefined){
+                content = resp;
+            }else{
+                content += '\n'+resp;
+            }
+            resp = await frameSend(readCmd);
+        };
+        
+        await frameSend("print(f:close());",10);
+        await exitRawReplInternal();
+        return content;
+    }
+   
 
     let cmd = `f=open('${devicePath}');print(f.read());f.close();del(f)`;
     let response:any = await replSend(cmd);
@@ -616,6 +862,13 @@ export async function readFileDevice(devicePath:string):Promise<boolean|string>{
 export async function deleteFilesDevice(devicePath:string):Promise<boolean>{
 
     if(!await enterRawReplInternal()){return false;};
+    if(deviceConnected==="Frame"){
+        let response:any = await frameSend(`print(frame.file.remove('${devicePath}'));print(true);`);
+        await exitRawReplInternal();
+        return response.includes('true');
+        
+    }
+    
     updateToTerminal(`Deleting  ${devicePath} `);
     let cmd = `import os;
 def rm(d):
@@ -653,5 +906,17 @@ export async function terminalHandleInput(data:string){
             },10);
         });
     }
-    replSend(data);
+    if(deviceConnected==="Frame"){
+        
+        if(data.charCodeAt(0)===127){
+            writeEmitter.fire("\b \b");
+            frameStringBuffer = frameStringBuffer.slice(0,frameStringBuffer.length-1);
+            return;
+        }
+        writeEmitter.fire(data);
+        frameSend(data);
+    }else{
+        replSend(data);
+    }
+    
 }
