@@ -7,7 +7,7 @@
     "url": "https://github.com/brilliantlabsAR/ar-studio-for-vscode"
   },
   "icon": "media/brilliant.png",
-  "version": "1.19.1",
+  "version": "1.20.0",
   "engines": {
     "vscode": "^1.76.0"
   },
@@ -33,24 +33,27 @@
         {
           "id": "snippetTemplates",
           "name": "Code templates",
-          "icon": "media/Monocle_Icon.svg"
+          "icon": "media/Monocle_Icon.svg",
+          "when": "!frame.deviceConnected"
         },
         {
           "id": "screens",
           "name": "screens",
-          "icon": "media/Monocle_Icon.svg"
+          "icon": "media/Monocle_Icon.svg",
+          "when": "!frame.deviceConnected"
         },
         {
           "id": "fpga",
           "name": "Device Status",
           "icon": "media/Monocle_Icon.svg",
           "type": "webview",
-          "when": "monocle.deviceConnected"
+          "when": "monocle.deviceConnected || frame.deviceConnected"
         },
         {
           "id": "projects",
           "name": "Community projects",
-          "icon": "media/Monocle_Icon.svg"
+          "icon": "media/Monocle_Icon.svg",
+          "when": "!frame.deviceConnected"
         }
       ],
       "explorer": [
@@ -65,7 +68,7 @@
       {
         "view": "fpga",
         "contents": "Device: Monocle \nMAC address: ...\nFirmware version: v23.117.1100 (Up to date) \nFPGA image: v23.130.1100 (Update available)",
-        "when": "monocle.deviceConnected"
+        "when": "monocle.deviceConnected || frame.deviceConnected"
       },
       {
         "view": "fpga",
@@ -79,29 +82,29 @@
       {
         "view": "fileExplorer",
         "contents": "[Connect](command:brilliant-ar-studio.connect)",
-        "when": "!monocle.deviceConnected"
+        "when": "!monocle.deviceConnected && !frame.deviceConnected"
       }
     ],
     "commands": [
       {
         "command": "brilliant-ar-studio.openDeviceFile",
         "title": "Brilliant AR Studio: Open Device file in editor",
-        "enablement": "monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected || frame.deviceConnected"
       },
       {
         "command": "fileExplorer.openFile",
         "title": "Brilliant AR Studio: openFile",
-        "enablement": "monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected || frame.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.disconnect",
         "title": "Brilliant AR Studio: Disconnect",
-        "enablement": "monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected || frame.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.connect",
         "title": "Brilliant AR Studio: Connect",
-        "enablement": "!monocle.deviceConnected"
+        "enablement": "!monocle.deviceConnected && !frame.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.runFile",
@@ -118,7 +121,7 @@
         "command": "brilliant-ar-studio.syncFiles",
         "title": "Brilliant AR Studio: Start auto run",
         "icon": "$(play-circle)",
-        "enablement": "monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected || frame.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.deleteDeviceFile",
@@ -176,17 +179,19 @@
         "command": "brilliant-ar-studio.uploadFilesToDevice",
         "title": "Brilliant AR Studio: Upload File To Device",
         "icon": "$(save)",
-        "enablement": "monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected || frame.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.openUIEditor",
         "title": "Brilliant AR Studio: Open New GUI Screen",
-        "icon": "$(plus)"
+        "icon": "$(plus)",
+        "enablement": "!frame.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.editUIEditor",
         "title": "Brilliant AR Studio:Edit GUI Screen",
-        "icon": "$(edit)"
+        "icon": "$(edit)",
+        "enablement": "!frame.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.sendRawData",
@@ -198,26 +203,26 @@
         "command": "brilliant-ar-studio.syncAllFiles",
         "title": "Brilliant AR Studio: Build",
         "icon": "$(sync)",
-        "enablement": "monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected || frame.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.renameDeviceFile",
         "title": "Brilliant AR Studio: Rename Device File",
         "icon": "$(sync)",
-        "enablement": "monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected || frame.deviceConnected"
       },
       {
         "command": "brilliant-ar-studio.downloadDeviceFile",
         "title": "Brilliant AR Studio: Download Device File",
         "icon": "$(cloud-download)",
-        "enablement": "monocle.deviceConnected"
+        "enablement": "monocle.deviceConnected || frame.deviceConnected"
       }
     ],
     "menus": {
       "view/title": [
         {
           "command": "brilliant-ar-studio.refreshDeviceFiles",
-          "when": "view == fileExplorer && monocle.deviceConnected",
+          "when": "view == fileExplorer && (monocle.deviceConnected || frame.deviceConnected)",
           "group": "navigation@1"
         },
         {
@@ -228,17 +233,20 @@
         {
           "command": "brilliant-ar-studio.publishMonocleApp",
           "when": "view == projects && workspaceFolderCount !=0 && !monocle.published",
-          "group": "navigation@3"
+          "group": "navigation@3",
+          "enablement": "monocle.deviceConnected"
         },
         {
           "command": "brilliant-ar-studio.UnPublishMonocleApp",
           "when": "view == projects && workspaceFolderCount !=0 && monocle.published==true",
-          "group": "navigation@3"
+          "group": "navigation@3",
+          "enablement": "monocle.deviceConnected"
         },
         {
           "command": "brilliant-ar-studio.openUIEditor",
           "when": "view == screens",
-          "group": "navigation@0"
+          "group": "navigation@0",
+          "enablement": "!frame.deviceConnected"
         }
       ],
       "view/item/context": [
@@ -286,7 +294,7 @@
       {
         "command": "brilliant-ar-studio.syncAllFiles",
         "key": "ctrl+shift+b",
-        "when": "monocle.deviceConnected"
+        "when": "monocle.deviceConnected || frame.deviceConnected"
       }
     ],
     "snippets": [

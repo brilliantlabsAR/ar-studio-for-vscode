@@ -73,7 +73,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - fixed file transfer bugs
 - context menu in device files
 
-## [1.15.0] - 2023-06-23
+## [1.19.0] - 2023-06-23
 
 ### ADDED Device Info tab
 
@@ -82,4 +82,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - fixed file transfer bugs
 - context menu in device files
 
-## [1.15.0] - 2023-07-13
+## [1.19.3] - 2023-07-13
+
+
+## [1.20.0] - 2024-05-27
+
+ - Added Frame support
+ - Smooth file operations for monocle and frame
+ - more visible error messages

@@ -187,6 +187,50 @@ export async function ensureConnected() {
             
             // return;
         }
+        if (connectionResult === "frame update connected") {
+                 // infoText.innerHTML = "Starting firmware update..";
+                 updateStatusBarItem("connected","$(cloud-download) Updating");
+                 updateInProgress = true;
+                 prevPerc = 0;
+                 vscode.window.withProgress({
+                     location: vscode.ProgressLocation.Notification,
+                     cancellable: true,
+                     title: 'Updating firmware',
+                 }, async (progress,canceled) => {
+                     canceled.onCancellationRequested(()=>{
+                         disconnect();
+                         vscode.window.showErrorMessage("Cancelled firmware update! connect to Frame after few moments \n or connect now to again update")
+                     });
+                     progress.report({message:"updating",increment:0});
+                     progressReport = progress;
+                     await new Promise(r => {
+                         let clearIntervalId = setInterval(()=>{
+                             if(updateInProgress===false){
+                                 clearInterval(clearIntervalId);
+                                 progressReport = null;
+                                 r("");
+                             }
+                         });
+                     });
+     
+                 });
+                 let updateStatus = await startNordicDFU();
+                 if(updateStatus==='completed'){
+                     updateInProgress = false;
+                     await disconnect();
+                     vscode.window.showInformationMessage("Firmware Update done");
+                     updateStatusBarItem("progress");
+                     // after 2 sec try to connect;
+                     setTimeout(ensureConnected,2000);
+                 }else{
+                     console.log(updateStatus);
+                     vscode.window.showErrorMessage("firmware update failed");
+                     updateInProgress = false;
+                     disconnect();
+                 }
+                 progressReport = null;
+                 prevPerc = 0;
+        }
 
         if (connectionResult === "repl connected") {
             try {
@@ -248,7 +292,7 @@ export async function ensureConnected() {
             await replSend('\x02'); 
         }
         if(connectionResult === "frame connected"){
-            vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', true);
+            vscode.commands.executeCommand('setContext', 'frame.deviceConnected', true);
                 // writeEmitter.fire("Connected\r\n");
                 updateStatusBarItem("connected",deviceConnected);
                 try {
@@ -377,6 +421,7 @@ export async function onDisconnect() {
      internalOperation = false;
      progressReport = null;
     vscode.commands.executeCommand('setContext', 'monocle.deviceConnected', false);
+    vscode.commands.executeCommand('setContext', 'frame.deviceConnected', false);
     updateStatusBarItem("disconnected");
     try {
         await vscode.commands.executeCommand('workbench.actions.treeView.fileExplorer.refresh');

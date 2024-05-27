@@ -11,12 +11,12 @@ let JSZIP = require("jszip");
 let fetch = require('node-fetch');
 let controlResponseCallback:any;
 
-export async function startNordicDFU() {
+export async function startNordicDFU(device:any="frame") {
     try {
         
         outputChannel.appendLine('Entering nRF52 DFU');
 
-        let files:any = await obtainFiles();
+        let files:any = await obtainFiles(device);
 
         await transferFile(files.dat, 'init');
         await transferFile(files.bin, 'image');
@@ -59,13 +59,18 @@ export async function nordicDfuSendPacket(bytes:Uint8Array) {
     await new Promise(r => setTimeout(r, 10));
 }
 
-async function obtainFiles() {
+async function obtainFiles(device:string) {
 
     if (!micropythonGit.owner || !micropythonGit.repo) {
         // TODO
         micropythonGit.owner = 'brilliantlabsAR';
         micropythonGit.repo = 'monocle-micropython';
     }
+    if(device==="frame"){
+        micropythonGit.owner = 'brilliantlabsAR';
+        micropythonGit.repo = 'frame-codebase';
+    }
+    //TODO take from git repo
 
     outputChannel.appendLine("Downloading latest release from: github.com/" +
     micropythonGit.owner + "/" + micropythonGit.repo);
