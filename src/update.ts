@@ -3,6 +3,7 @@ import {
   replRawMode,
   ensureConnected,
   reportUpdatePercentage,
+  frameSend,
 } from "./repl";
 import { outputChannel } from "./extension";
 import { request } from "@octokit/request";
@@ -12,6 +13,15 @@ let fetch = require("node-fetch");
 export let micropythonGit: any = {};
 export let fpgaGit: any = {};
 
+// declare a type for update details with optional properties
+type UpdateDetails = {
+  firmwareVersion?: string;
+  macAddress?: string;
+  fpgaVersion?: string;
+  firmwareUpdate?: string;
+  fpgaUpdate?: string;
+  message?: string;
+};
 export async function checkForUpdates() {
   try {
     await replRawMode(true);
@@ -24,9 +34,24 @@ export async function checkForUpdates() {
     await replRawMode(false);
   }
 }
+export async function checkForFrameUpdates() {
+  try {
+    let updateDetails:UpdateDetails = {};
+    let response:any = await frameSend("print(frame.FIRMWARE_VERSION);",2);
+    let macAddress:any = await frameSend("print(frame.bluetooth.address());",2);
+    updateDetails.firmwareVersion = response||'Unknown';
+    updateDetails.macAddress = macAddress||'Unknown';
+    updateDetails.firmwareUpdate = 'Unknown';
+
+  
+    return Promise.resolve(updateDetails);
+  } catch (error: any) {
+    outputChannel.appendLine(error);
+  }
+}
 async function getUpdateInfo() {
   // Check nRF firmware
-  let updateDetails:any = {};
+  let updateDetails:UpdateDetails = {};
   let getTag:any;
   let response: any = await replSend("import device;print(device.VERSION);print('MACADDR#'+device.mac_address())");
   if (response && response.includes("Error")) {
@@ -71,7 +96,7 @@ async function getUpdateInfo() {
             updateDetails.message = `New firmware ([${latestVersion}](${getTag.url})) update available, Do you want to update?`;
           }
       }
-      
+      return updateDetails;
   }
   
 
