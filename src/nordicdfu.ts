@@ -204,7 +204,8 @@ async function transferFile(file:any, type:any) {
         outputChannel.appendLine("returnedOffset: " + returnedOffset + ", returnedCrc: " + returnedCrc);
 
         if (returnedCrc !== chunkCrc) {
-             vscode.window.showErrorMessage('CRC mismatch after sending this chunk. Expected: ' + chunkCrc);
+            outputChannel.appendLine('CRC mismatch after sending this chunk. Expected: ' + chunkCrc);
+            //  vscode.window.showErrorMessage('CRC mismatch after sending this chunk. Expected: ' + chunkCrc);
              chk--;
              continue;
             //  return Promise.reject('');

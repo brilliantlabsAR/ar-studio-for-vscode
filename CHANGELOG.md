@@ -90,3 +90,6 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
  - Added Frame support
  - Smooth file operations for monocle and frame
  - more visible error messages
+
+## [1.20.0] - 2024-05-28
+ - Firmware update fix for frame
