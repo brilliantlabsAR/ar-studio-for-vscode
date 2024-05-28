@@ -4,6 +4,8 @@ import {
   ensureConnected,
   reportUpdatePercentage,
   frameSend,
+  enterRawReplInternal,
+  exitRawReplInternal
 } from "./repl";
 import { outputChannel } from "./extension";
 import { request } from "@octokit/request";
@@ -42,7 +44,18 @@ export async function checkForFrameUpdates() {
     updateDetails.firmwareVersion = response||'Unknown';
     updateDetails.macAddress = macAddress||'Unknown';
     updateDetails.firmwareUpdate = 'Unknown';
-
+    micropythonGit.owner = "brilliantlabsAR";
+    micropythonGit.repo = "frame-codebase";
+    let getTag = await request("GET /repos/{owner}/{repo}/releases/latest", {
+      owner: micropythonGit.owner,
+      repo: micropythonGit.repo,
+    });
+    let latestVersion = getTag.data.tag_name;
+   
+    if (response !== latestVersion) {
+      updateDetails.firmwareUpdate= latestVersion;
+      updateDetails.message = `New firmware ([${latestVersion}](${getTag.url})) update available, Do you want to update?`;
+    }
   
     return Promise.resolve(updateDetails);
   } catch (error: any) {
@@ -136,17 +149,27 @@ return updateDetails;
   
 }
 
-export async function startFirmwareUpdate() {
-  await replRawMode(true);
-  await replSend(
-    "import display as d;" +
-      "m= d.Text('Updating firmware...',120,180,0xffffff,justify=d.MIDDLE_LEFT);" +
-      "d.show(m);" +
-      "import update;" +
-      "update.micropython()"
-  );
-  await replRawMode(false);
+export async function startFirmwareUpdate(device:string="monocle") {
+  if (device==="frame"){
+    await enterRawReplInternal();
+    await frameSend("frame.display.clear()",0.1);
+     await frameSend("frame.display.text('Updating firmware...', 120, 180, {align='MIDDLE_LEFT'});\r",0.1);
+     await frameSend("frame.display.show()",0.1);
+     await frameSend("frame.update()",0.1);
+     await exitRawReplInternal();
+  }else{
 
+    await replRawMode(true);
+    await replSend(
+      "import display as d;" +
+        "m= d.Text('Updating firmware...',120,180,0xffffff,justify=d.MIDDLE_LEFT);" +
+        "d.show(m);" +
+        "import update;" +
+        "update.micropython()"
+    );
+    await replRawMode(false);
+
+  }
   // try to connect after 1 sec
   await disconnect();
   await ensureConnected();

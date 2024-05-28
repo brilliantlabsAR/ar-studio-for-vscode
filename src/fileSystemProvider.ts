@@ -13,7 +13,7 @@ import {
 } from './repl';
 import { startFirmwareUpdate } from './update';
 import {deviceTreeProvider, isPathExist, monocleFolder,configScreenReadUpdate} from './extension';
-import { isConnected } from './bluetooth';
+import { isConnected,deviceInfo } from './bluetooth';
 
 export class File extends vscode.TreeItem implements vscode.FileStat {
 
@@ -368,7 +368,8 @@ export class DeviceInfoProvider implements vscode.WebviewViewProvider{
 					vscode.commands.executeCommand('brilliant-ar-studio.fpgaUpdateCustom');
 					break;
 				case "firmwareUpdate":
-					startFirmwareUpdate();
+					let deviceName = String(deviceInfo.name).toLowerCase();
+					startFirmwareUpdate(deviceName);
 					break;
 				default:
 					break;
